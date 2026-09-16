@@ -943,6 +943,11 @@ img {
   padding: 28px 22px;
   display: grid;
   gap: 18px;
+  align-content: start;
+}
+
+.lbb-cart-drawer-empty .lbb-btn {
+  align-self: start;
 }
 
 .lbb-sticky-panel {

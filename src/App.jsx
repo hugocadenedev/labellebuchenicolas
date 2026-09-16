@@ -978,8 +978,6 @@ function StorefrontApp() {
   const activeAccount = useMemo(() => (customerAccount ? normalizeAccountView(customerAccount) : null), [customerAccount]);
   const defaultCategory = storefrontCategories[0] || null;
   const defaultCategoryPath = defaultCategory ? getCategoryHref(defaultCategory.slug) : "/boutique";
-
-  const cartCount = Object.values(cart).reduce((sum, line) => sum + Number(line.quantity || 0), 0);
   const cartItems = Object.entries(cart).map(([lineId, line]) => {
     const product = siteProducts.find((item) => item.id === line.productId);
     if (!product || line.quantity <= 0) return null;
@@ -997,6 +995,21 @@ function StorefrontApp() {
       selectedDrying
     };
   }).filter(Boolean);
+  const cartCount = cartItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+
+  useEffect(() => {
+    if (siteStatus !== "ready" || siteProducts.length === 0) {
+      return;
+    }
+
+    setCart((current) => {
+      const next = Object.fromEntries(
+        Object.entries(current).filter(([, line]) => siteProducts.some((product) => product.id === line.productId))
+      );
+
+      return Object.keys(next).length === Object.keys(current).length ? current : next;
+    });
+  }, [siteProducts, siteStatus]);
 
   function addToCart(productId, quantity = 1, options = {}) {
     const lineId = buildCartLineId(productId, options);
