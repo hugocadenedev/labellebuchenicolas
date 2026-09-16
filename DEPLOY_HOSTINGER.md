@@ -119,6 +119,30 @@ Resolution appliquee:
 - retirer `CREATE DATABASE` et `USE` de `db/schema.mysql.sql`
 - importer le schema dans la base deja selectionnee
 
+### 4. Images produit absentes sur les fiches en prod
+
+Cause reelle:
+
+- les images uploadées depuis le back office sont stockées en `data:image/...;base64,...`
+- la colonne `products.image_url` et potentiellement `categories.image_url` était en `VARCHAR(255)`
+- MySQL tronquait la valeur, ce qui cassait l'URL de l'image côté storefront
+
+Resolution appliquee:
+
+- passer `image_url` en `LONGTEXT` dans `db/schema.mysql.sql`
+- si la base de prod existe déjà, appliquer aussi la migration SQL ci-dessous
+
+Migration prod Hostinger:
+
+```sql
+ALTER TABLE products MODIFY image_url LONGTEXT NULL;
+ALTER TABLE categories MODIFY image_url LONGTEXT NULL;
+```
+
+Important:
+
+- les produits déjà enregistrés avec une image tronquée doivent être ré-enregistrés depuis l'admin pour réécrire la vraie image complète en base
+
 ## Verification de la base en SSH
 
 Connexion SSH Hostinger utilisee:

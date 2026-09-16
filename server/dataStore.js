@@ -46,6 +46,7 @@ export const createCategory = bindBackendMethod("createCategory");
 export const createCustomerAccount = bindBackendMethod("createCustomerAccount");
 export const createOrder = bindBackendMethod("createOrder");
 export const createProduct = bindBackendMethod("createProduct");
+export const deleteCategory = bindBackendMethod("deleteCategory");
 export const deleteProduct = bindBackendMethod("deleteProduct");
 export const getBootstrap = bindBackendMethod("getBootstrap");
 export const getCustomerAccount = bindBackendMethod("getCustomerAccount");

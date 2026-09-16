@@ -121,6 +121,10 @@ function normalizeOptionList(values, fallback = []) {
   return normalized.length > 0 ? normalized : [...fallback];
 }
 
+function normalizeOptionalOptionList(values) {
+  return uniqueValues((Array.isArray(values) ? values : []).map(normalizeText).filter(Boolean));
+}
+
 function normalizeLengthPrices(lengthPrices, availableLengths = [], fallbackPrice = 0) {
   const fallback = roundCurrency(fallbackPrice);
   return uniqueValues(availableLengths).reduce((accumulator, length) => {
@@ -492,25 +496,32 @@ function buildProductSpecs(input) {
   return [
     { k: "Essence", v: label || "Feuillus" },
     { k: "Origine", v: input.origin || "Sud-Ouest" },
-    { k: "Longueur", v: input.length || "33 cm" },
+    input.length ? { k: "Longueur", v: input.length } : null,
     { k: "Humidite", v: input.humidity || "16 %" },
     { k: "Pouvoir calorifique", v: input.calorificValue || "1 800 kWh / stere" }
-  ];
+  ].filter(Boolean);
 }
 
 function buildProductTabs(input) {
   const productName = input.name || "Ce lot";
   const family = input.essence || input.family || "bois";
-  const length = String(input.length || "33 cm");
-  const drying = String(input.drying || "Seche 18 mois");
+  const length = normalizeText(input.length);
+  const drying = normalizeText(input.drying);
   const desc = input.desc || `${productName} est prepare pour une chauffe reguliere et une utilisation simple au quotidien.`;
+  const optionFragments = [
+    length ? `une coupe ${length}` : "",
+    drying ? `un lot ${drying.toLowerCase()}` : ""
+  ].filter(Boolean);
+  const optionSentence = optionFragments.length > 0
+    ? `${family} propose ${optionFragments.join(" avec ")} pour un usage immediat.`
+    : `${family} propose un lot prepare pour un usage immediat.`;
 
   return {
     overview: {
       title: `Pourquoi choisir ${productName}`,
       paragraphs: [
         desc,
-        `${family} propose une coupe ${length} avec un lot ${drying.toLowerCase()} pour un usage immediat.`
+        optionSentence
       ],
       points: [
         `Reference ${input.sku || input.id}.`,
@@ -542,11 +553,12 @@ function normalizeProductInput(input) {
   const family = input.family || "Bois de chauffage";
   const slug = input.slug || input.id;
   const generatedSku = String(input.sku || input.id || slug || "PRODUIT").toUpperCase();
-  const length = input.length || "33 cm";
-  const drying = input.drying || "Seche 18 mois";
-  const availableLengths = normalizeOptionList(input.availableLengths, [length]);
+  const availableLengths = normalizeOptionalOptionList(input.availableLengths);
+  const length = normalizeText(input.length) || availableLengths[0] || "";
+  const dryingOptions = normalizeOptionalOptionList(input.availableDryingDurations);
+  const drying = normalizeText(input.drying) || dryingOptions[0] || "";
   const lengthPrices = normalizeLengthPrices(input.lengthPrices, availableLengths, price);
-  const defaultPrice = getProductPriceForLength({ price, lengthPrices, length }, length);
+  const defaultPrice = length ? getProductPriceForLength({ price, lengthPrices, length }, length) : roundCurrency(price);
 
   return {
     id: input.id,
@@ -570,7 +582,7 @@ function normalizeProductInput(input) {
     drying,
     availableLengths,
     lengthPrices,
-    availableDryingDurations: normalizeOptionList(input.availableDryingDurations, [drying]),
+    availableDryingDurations: dryingOptions,
     humidity: input.humidity || "16 % humidite",
     desc: input.desc || "",
     origin: input.origin || "Sud-Ouest",
@@ -815,11 +827,11 @@ async function readSqlState() {
     badgeTone: row.badge_tone || "green",
     rating: row.rating_label || "",
     reviews: row.reviews_label || "",
-    length: row.default_length || "33 cm",
-    drying: row.default_drying || "Seche 18 mois",
-    availableLengths: parseJson(row.available_lengths_json, [row.default_length || "33 cm"]),
+    length: row.default_length || "",
+    drying: row.default_drying || "",
+    availableLengths: parseJson(row.available_lengths_json, []),
     lengthPrices: parseJson(row.length_prices_json, {}),
-    availableDryingDurations: parseJson(row.available_drying_durations_json, [row.default_drying || "Seche 18 mois"]),
+    availableDryingDurations: parseJson(row.available_drying_durations_json, []),
     humidity: row.humidity_label || "16 % humidite",
     desc: row.description || "",
     origin: row.origin_label || "Sud-Ouest",
@@ -1436,6 +1448,25 @@ export async function updateCategory(id, input) {
   };
   await writeStore(data);
   return makeCategoryView(data.categories[index], data.products);
+}
+
+export async function deleteCategory(id) {
+  const data = await readStore();
+  const category = data.categories.find((item) => item.id === id);
+  if (!category) return null;
+  if (category.slug === "services") {
+    throw httpError(400, "The services category cannot be deleted");
+  }
+
+  data.categories = data.categories.filter((item) => item.id !== id);
+  data.products = data.products.map((product) => (
+    product.categoryId === id
+      ? { ...product, categoryId: null }
+      : product
+  ));
+
+  await writeStore(data);
+  return makeCategoryView(category, data.products);
 }
 
 export async function listProducts() {

@@ -13,6 +13,7 @@ import {
   createOrder,
   createProduct,
   createCategory,
+  deleteCategory,
   deleteProduct,
   getBootstrap,
   getCustomerAccount,
@@ -155,6 +156,18 @@ app.put("/api/admin/categories/:id", async (req, res, next) => {
       return res.status(404).json({ message: "Category not found" });
     }
     return res.json(category);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete("/api/admin/categories/:id", async (req, res, next) => {
+  try {
+    const category = await deleteCategory(req.params.id);
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    return res.status(204).send();
   } catch (error) {
     next(error);
   }

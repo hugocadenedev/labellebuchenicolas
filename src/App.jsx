@@ -371,10 +371,10 @@ function buildProductSpecsFromDraft(product, baseProduct) {
   return baseProduct?.specs || [
     { k: "Essence", v: product.essence || product.family || "Feuillus" },
     { k: "Origine", v: product.origin || "Sud-Ouest" },
-    { k: "Longueur", v: product.length || "33 cm" },
+    product.length ? { k: "Longueur", v: product.length } : null,
     { k: "Humidite", v: product.humidity || "16 %" },
     { k: "Pouvoir calorifique", v: product.calorificValue || "1 800 kWh / stere" }
-  ];
+  ].filter(Boolean);
 }
 
 function findMediaKeyBySrc(src) {
@@ -633,10 +633,13 @@ function materializeStorefrontProduct(baseProducts, apiProduct) {
   const priceHt = Number(apiProduct.price ?? baseProduct?.price ?? 0);
   const oldPriceSource = apiProduct.oldPrice ?? baseProduct?.oldPrice ?? null;
   const oldPriceHt = oldPriceSource == null ? null : Number(oldPriceSource);
-  const availableLengths = uniqueByValue(apiProduct.availableLengths || [apiProduct.length, baseProduct?.length].filter(Boolean));
+  const optionFallbackProduct = canInheritMedia ? baseProduct : null;
+  const availableLengths = uniqueByValue(apiProduct.availableLengths || [apiProduct.length, optionFallbackProduct?.length].filter(Boolean));
   const lengthPricesHt = normalizeLengthPrices(apiProduct.lengthPrices || baseProduct?.lengthPrices, availableLengths, priceHt);
-  const defaultLength = apiProduct.length || baseProduct?.length || availableLengths[0] || "33 cm";
+  const defaultLength = apiProduct.length || availableLengths[0] || optionFallbackProduct?.length || "";
   const defaultPriceHt = getProductPriceForLength({ ...baseProduct, ...apiProduct, price: priceHt, lengthPrices: lengthPricesHt }, defaultLength);
+  const availableDryingDurations = uniqueByValue(apiProduct.availableDryingDurations || [apiProduct.drying, optionFallbackProduct?.drying].filter(Boolean));
+  const defaultDrying = apiProduct.drying || availableDryingDurations[0] || optionFallbackProduct?.drying || "";
 
   return {
     ...baseProduct,
@@ -656,9 +659,9 @@ function materializeStorefrontProduct(baseProducts, apiProduct) {
     rating: apiProduct.rating || baseProduct?.rating || "★★★★★",
     reviews: apiProduct.reviews || baseProduct?.reviews || "0 avis",
     length: defaultLength,
-    drying: apiProduct.drying || baseProduct?.drying || "Seche 18 mois",
+    drying: defaultDrying,
     availableLengths,
-    availableDryingDurations: uniqueByValue(apiProduct.availableDryingDurations || [apiProduct.drying, baseProduct?.drying].filter(Boolean)),
+    availableDryingDurations,
     lengthPricesHt,
     lengthPrices: convertPriceMapHtToTtc(lengthPricesHt),
     humidity: apiProduct.humidity || baseProduct?.humidity || "16 % humidite",
@@ -1429,7 +1432,7 @@ function CartDrawer({ cartItems, setQuantity, isOpen, onClose, defaultCategoryPa
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start" }}>
                       <div style={{ minWidth: 0 }}>
                         <strong style={{ ...sans, display: "block", fontWeight: 700, fontSize: 18, lineHeight: 1.2, letterSpacing: "-.02em", color: "#5B321D" }}>{item.name}</strong>
-                        <span style={{ display: "block", marginTop: 4, ...mono, fontSize: 10.5, lineHeight: 1.55, color: "#8A9180" }}>{[item.selectedLength, item.selectedDrying].filter(Boolean).join(" · ")} · {item.unit.replace("/ ", "")}</span>
+                        <span style={{ display: "block", marginTop: 4, ...mono, fontSize: 10.5, lineHeight: 1.55, color: "#8A9180" }}>{[...([item.selectedLength, item.selectedDrying].filter(Boolean)), item.unit ? item.unit.replace("/ ", "") : ""].filter(Boolean).join(" · ")}</span>
                       </div>
                       <span style={{ ...sans, fontWeight: 700, fontSize: 18, whiteSpace: "nowrap", color: "#55715B" }}>{formatPrice(item.price * item.quantity)}</span>
                     </div>
@@ -1902,9 +1905,9 @@ function CategoryPage({ addToCart, categories, siteProducts, defaultCategoryPath
               <button type="button" onClick={() => { setSelectedEssences([]); setSelectedLength([]); setSelectedDrying([]); setPriceMax(140); }} style={{ background: "transparent", border: 0, cursor: "pointer", ...mono, fontSize: 10.5, letterSpacing: ".06em", color: "#A8AE9C", padding: 0 }}>Tout effacer</button>
             </div>
             <FacetList title="ESSENCE" valueLabel={`${selectedEssences.length || "Toutes"}`} options={Array.from(new Set(woodProducts.map((product) => product.essence)))} values={selectedEssences} onToggle={(value) => toggleArray(setSelectedEssences, value)} />
-            <FacetPills title="LONGUEUR" valueLabel={selectedLength[0] || "Toutes"} options={Array.from(new Set(woodProducts.map((product) => product.length)))} values={selectedLength} onToggle={(value) => toggleArray(setSelectedLength, value)} />
+            <FacetPills title="LONGUEUR" valueLabel={selectedLength[0] || "Toutes"} options={Array.from(new Set(woodProducts.map((product) => product.length).filter(Boolean)))} values={selectedLength} onToggle={(value) => toggleArray(setSelectedLength, value)} />
             <FacetRange title="PRIX" valueLabel={`≤ ${formatPrice(priceMax)}`} value={priceMax} min={90} max={600} step={5} onChange={setPriceMax} />
-            <FacetPills title="SÉCHAGE" valueLabel={selectedDrying[0] || "Tous"} options={Array.from(new Set(woodProducts.map((product) => product.drying)))} values={selectedDrying} onToggle={(value) => toggleArray(setSelectedDrying, value)} />
+            <FacetPills title="SÉCHAGE" valueLabel={selectedDrying[0] || "Tous"} options={Array.from(new Set(woodProducts.map((product) => product.drying).filter(Boolean)))} values={selectedDrying} onToggle={(value) => toggleArray(setSelectedDrying, value)} />
             <div style={{ background: "#5B321D", color: "#FBF6EE", borderRadius: 22, padding: 24 }}>
               <div style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#E8C9B3", marginBottom: 10 }}>AIDE AU CHOIX</div>
               <p style={{ margin: "0 0 16px", fontSize: 16.5, lineHeight: 1.5, color: "#FBF6EE" }}>Vous hésitez entre deux coupes ? Lancez l'estimation dédiée avant de choisir votre volume.</p>
@@ -2043,9 +2046,9 @@ function CatalogPage({ addToCart, categories, siteProducts, defaultCategoryPath,
             <FacetList title="CATÉGORIES" valueLabel={`${selectedCategories.length || "Toutes"}`} options={categories.map((category) => category.label)} values={selectedCategories} onToggle={(value) => toggleArray(setSelectedCategories, value)} />
             <FacetPills title="TYPE" valueLabel={selectedTypes[0] || "Tous"} options={["Bois de chauffage", "Allumage", "Service"]} values={selectedTypes} onToggle={(value) => toggleArray(setSelectedTypes, value)} />
             <FacetList title="ESSENCE" valueLabel={`${selectedEssences.length || "Toutes"}`} options={Array.from(new Set(catalogProducts.map((product) => product.essence)))} values={selectedEssences} onToggle={(value) => toggleArray(setSelectedEssences, value)} />
-            <FacetPills title="TAILLES" valueLabel={selectedLength[0] || "Toutes"} options={Array.from(new Set(catalogProducts.map((product) => product.length)))} values={selectedLength} onToggle={(value) => toggleArray(setSelectedLength, value)} />
+            <FacetPills title="TAILLES" valueLabel={selectedLength[0] || "Toutes"} options={Array.from(new Set(catalogProducts.map((product) => product.length).filter(Boolean)))} values={selectedLength} onToggle={(value) => toggleArray(setSelectedLength, value)} />
             <FacetRange title="PRIX" valueLabel={`≤ ${formatPrice(priceMax)}`} value={priceMax} min={0} max={maxCatalogPrice} step={5} onChange={setPriceMax} />
-            <FacetPills title="SÉCHAGE" valueLabel={selectedDrying[0] || "Tous"} options={Array.from(new Set(catalogProducts.map((product) => product.drying)))} values={selectedDrying} onToggle={(value) => toggleArray(setSelectedDrying, value)} />
+            <FacetPills title="SÉCHAGE" valueLabel={selectedDrying[0] || "Tous"} options={Array.from(new Set(catalogProducts.map((product) => product.drying).filter(Boolean)))} values={selectedDrying} onToggle={(value) => toggleArray(setSelectedDrying, value)} />
           </aside>
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, flexWrap: "wrap", paddingBottom: 20, borderBottom: "1px solid rgba(35,41,31,.09)" }}>
@@ -2093,15 +2096,15 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
   const [shotIndex, setShotIndex] = useState(0);
   const [qty, setQty] = useState(4);
   const [tab, setTab] = useState("overview");
-  const [length, setLength] = useState(product?.length ?? productSettings.productOptions.lengths[0] ?? "33 cm");
-  const [drying, setDrying] = useState(product?.drying ?? productSettings.productOptions.dryingDurations[0] ?? "Seche 18 mois");
+  const [length, setLength] = useState(product?.length ?? "");
+  const [drying, setDrying] = useState(product?.drying ?? "");
 
   useEffect(() => {
     setShotIndex(0);
     setQty(4);
     setTab("overview");
-    setLength(product?.length ?? productSettings.productOptions.lengths[0] ?? "33 cm");
-    setDrying(product?.drying ?? productSettings.productOptions.dryingDurations[0] ?? "Seche 18 mois");
+    setLength(product?.length ?? "");
+    setDrying(product?.drying ?? "");
   }, [product?.id, productSettings.productOptions.dryingDurations, productSettings.productOptions.lengths]);
 
   if (!product && siteStatus === "loading") {
@@ -2200,9 +2203,9 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
           </div>
           <p style={{ fontSize: 19, lineHeight: 1.6, color: "#4E5647", maxWidth: "56ch", margin: "0 0 30px" }}>{activeProduct.desc}</p>
           <div style={{ display: "grid", gap: 24, background: "#FFFFFF", border: "1px solid rgba(35,41,31,.09)", borderRadius: 28, padding: 28, boxShadow: "0 24px 54px -44px rgba(35,41,31,.65)" }}>
-            {!isService ? <SelectorRow title={optionTitle} options={optionChoices} value={length} onChange={handleLengthChange} card /> : null}
-            {!isService ? <SelectorRow title={secondaryOptionTitle} options={secondaryOptionChoices} value={drying} onChange={handleDryingChange} /> : null}
-            {!isService ? <div style={{ height: 1, background: "rgba(35,41,31,.09)" }} /> : null}
+            {!isService && optionChoices.length > 0 ? <SelectorRow title={optionTitle} options={optionChoices} value={length} onChange={handleLengthChange} card /> : null}
+            {!isService && secondaryOptionChoices.length > 0 ? <SelectorRow title={secondaryOptionTitle} options={secondaryOptionChoices} value={drying} onChange={handleDryingChange} /> : null}
+            {!isService && (optionChoices.length > 0 || secondaryOptionChoices.length > 0) ? <div style={{ height: 1, background: "rgba(35,41,31,.09)" }} /> : null}
             <div style={{ display: "grid", gap: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
                 <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>{isService ? "QUANTITÉ DE PRESTATIONS" : isAccessory ? "QUANTITÉ" : "NOMBRE DE STÈRES"}</span>
@@ -2894,9 +2897,7 @@ function AdminLoginPage() {
 }
 
 function createProductDraft(categories, settings, creationMode = "product") {
-  const productSettings = normalizeProductOptionSettings(settings);
   const serviceCategory = categories.find((category) => category.slug === "services");
-  const defaultLength = productSettings.productOptions.lengths[0] || "33 cm";
   return {
     name: "",
     desc: "",
@@ -2904,19 +2905,18 @@ function createProductDraft(categories, settings, creationMode = "product") {
     price: "",
     oldPrice: "",
     stockQty: "",
-    length: defaultLength,
-    drying: productSettings.productOptions.dryingDurations[0] || "Seche 18 mois",
-    availableLengths: [defaultLength],
-    lengthPrices: { [defaultLength]: "" },
-    availableDryingDurations: [productSettings.productOptions.dryingDurations[0] || "Seche 18 mois"],
+    length: "",
+    drying: "",
+    availableLengths: [],
+    lengthPrices: {},
+    availableDryingDurations: [],
     imageUrl: "",
     status: "active"
   };
 }
 
 function createProductDraftFromProduct(categories, product, settings) {
-  const productSettings = normalizeProductOptionSettings(settings);
-  const availableLengths = product?.availableLengths?.length ? product.availableLengths : [product?.length || productSettings.productOptions.lengths[0] || "33 cm"];
+  const availableLengths = product?.availableLengths?.length ? product.availableLengths : [product?.length].filter(Boolean);
   return {
     name: product?.name || "",
     desc: product?.desc || "",
@@ -2924,14 +2924,14 @@ function createProductDraftFromProduct(categories, product, settings) {
     price: product?.price ?? "",
     oldPrice: product?.oldPrice ?? "",
     stockQty: product?.stockQty ?? "",
-    length: product?.length || productSettings.productOptions.lengths[0] || "33 cm",
-    drying: product?.drying || productSettings.productOptions.dryingDurations[0] || "Seche 18 mois",
+    length: product?.length || "",
+    drying: product?.drying || "",
     availableLengths,
     lengthPrices: availableLengths.reduce((accumulator, length) => ({
       ...accumulator,
       [length]: product?.lengthPrices?.[length] ?? product?.price ?? ""
     }), {}),
-    availableDryingDurations: product?.availableDryingDurations?.length ? product.availableDryingDurations : [product?.drying || productSettings.productOptions.dryingDurations[0] || "Seche 18 mois"],
+    availableDryingDurations: product?.availableDryingDurations?.length ? product.availableDryingDurations : [product?.drying].filter(Boolean),
     imageUrl: product?.imageUrl || "",
     status: product?.status || "active"
   };
@@ -3129,6 +3129,13 @@ function AdminPage() {
     await loadAdmin();
   }
 
+  async function handleDeleteCategory(categoryId) {
+    await apiRequest(`/api/admin/categories/${categoryId}`, {
+      method: "DELETE"
+    });
+    await loadAdmin();
+  }
+
   async function handleSettingsUpdate(settingsDraft) {
     await apiRequest("/api/admin/settings", {
       method: "PATCH",
@@ -3240,7 +3247,7 @@ function AdminPage() {
               <Route path="products/new" element={<AdminProductCreatePage categories={adminState.categories} settings={adminState.settings} onCreateProduct={handleCreateProduct} creationMode="product" />} />
               <Route path="products/new-service" element={<AdminProductCreatePage categories={adminState.categories} settings={adminState.settings} onCreateProduct={handleCreateProduct} creationMode="service" />} />
               <Route path="products/:productId/edit" element={<AdminProductEditPage categories={adminState.categories} settings={adminState.settings} products={adminState.products} onUpdateProduct={handleUpdateProduct} />} />
-              <Route path="categories" element={<AdminCategoriesIndex categories={adminState.categories} products={adminState.products} onUpdateCategory={handleCategoryUpdate} />} />
+              <Route path="categories" element={<AdminCategoriesIndex categories={adminState.categories} products={adminState.products} onUpdateCategory={handleCategoryUpdate} onDeleteCategory={handleDeleteCategory} />} />
               <Route path="categories/new" element={<AdminCategoryCreatePage products={adminState.products} onCreateCategory={handleCreateCategory} />} />
               <Route path="orders" element={<AdminOrders orders={adminState.orders} onOrderUpdate={handleOrderUpdate} onOrderFulfillmentUpdate={handleOrderFulfillmentUpdate} />} />
               <Route path="orders/:orderId" element={<AdminOrderDetail orders={adminState.orders} customers={adminState.customers} products={adminState.products} deliveries={adminState.deliveries} onOrderUpdate={handleOrderUpdate} onOrderFulfillmentUpdate={handleOrderFulfillmentUpdate} />} />
@@ -3395,20 +3402,17 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
     setDraft((current) => {
       const values = Array.isArray(current[field]) ? current[field] : [];
       const nextValues = values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
-      if (nextValues.length === 0) {
-        return current;
-      }
 
       const nextDraft = { ...current, [field]: nextValues };
       if (field === "availableLengths") {
-        nextDraft.length = nextValues[0];
+        nextDraft.length = nextValues[0] || "";
         nextDraft.lengthPrices = nextValues.reduce((accumulator, option) => ({
           ...accumulator,
           [option]: current.lengthPrices?.[option] ?? current.price ?? ""
         }), {});
       }
       if (field === "availableDryingDurations") {
-        nextDraft.drying = nextValues[0];
+        nextDraft.drying = nextValues[0] || "";
       }
       return nextDraft;
     });
@@ -3435,8 +3439,8 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
     try {
       const slug = initialProduct?.slug || slugify(draft.name);
       const id = initialProduct?.id || slugify(draft.name);
-      const nextLength = isAccessoryCategory || isServiceCategory ? draft.length : draft.availableLengths[0] || draft.length;
-      const nextDrying = isAccessoryCategory || isServiceCategory ? draft.drying : draft.availableDryingDurations[0] || draft.drying;
+      const nextLength = isAccessoryCategory || isServiceCategory ? draft.length : draft.availableLengths[0] || draft.length || "";
+      const nextDrying = isAccessoryCategory || isServiceCategory ? draft.drying : draft.availableDryingDurations[0] || draft.drying || "";
       const categoryType = isServiceCategory ? "services" : isAccessoryCategory ? "accessoires" : "bois-de-chauffage";
       const familyLabel = selectedCategory?.label || (isServiceCategory ? "Service" : "Bois de chauffage");
       const normalizedLengthPrices = !isAccessoryCategory && !isServiceCategory
@@ -3447,7 +3451,7 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
           }, {})
         : {};
       const submittedPrice = !isAccessoryCategory && !isServiceCategory
-        ? normalizedLengthPrices[nextLength] ?? Number(draft.price || 0)
+        ? (nextLength ? (normalizedLengthPrices[nextLength] ?? Number(draft.price || 0)) : Number(draft.price || 0))
         : draft.price;
       await onSubmitProduct({
         id,
@@ -3516,6 +3520,10 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
         ) : null}
         {!isAccessoryCategory && !isServiceCategory ? (
           <div style={{ display: "grid", gap: 14 }}>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>PRIX HT DE BASE</span>
+              <input value={draft.price} onChange={(event) => updateDraft("price", event.target.value)} placeholder="Ex: 119" type="number" step="0.01" min="0" className="lbb-admin-input" required />
+            </label>
             <div className="lbb-two-col" style={{ alignItems: "start", gap: 14 }}>
             <div style={{ display: "grid", gap: 8 }}>
               <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>TAILLES DISPONIBLES SUR LA FICHE PRODUIT</span>
@@ -3525,6 +3533,7 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
                   return <button key={option} type="button" onClick={() => toggleDraftOption("availableLengths", option)} style={{ ...mono, fontSize: 11, letterSpacing: ".04em", padding: "10px 14px", borderRadius: 999, cursor: "pointer", border: `1px solid ${active ? "#5B321D" : "rgba(35,41,31,.16)"}`, background: active ? "#5B321D" : "#FFFFFF", color: active ? "#FBF6EE" : "#4E5647" }}>{option}</button>;
                 })}
               </div>
+              <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>Options proposées depuis les parametres admin. Aucune taille selectionnee = pas de choix client.</span>
               <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>Par defaut sur la fiche: {draft.availableLengths[0] || "-"}</span>
             </div>
             <div style={{ display: "grid", gap: 8 }}>
@@ -3535,11 +3544,13 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
                   return <button key={option} type="button" onClick={() => toggleDraftOption("availableDryingDurations", option)} style={{ ...mono, fontSize: 11, letterSpacing: ".04em", padding: "10px 14px", borderRadius: 999, cursor: "pointer", border: `1px solid ${active ? "#5B321D" : "rgba(35,41,31,.16)"}`, background: active ? "#5B321D" : "#FFFFFF", color: active ? "#FBF6EE" : "#4E5647" }}>{option}</button>;
                 })}
               </div>
+              <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>Options proposées depuis les parametres admin. Aucun sechage selectionne = pas de choix client.</span>
               <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>Par defaut sur la fiche: {draft.availableDryingDurations[0] || "-"}</span>
             </div>
             </div>
             <div style={{ display: "grid", gap: 10 }}>
               <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>PRIX HT PAR TAILLE</span>
+              {draft.availableLengths.length === 0 ? <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>Aucune taille selectionnee. Le prix de base sera utilise tel quel.</span> : null}
               {draft.availableLengths.map((lengthOption) => (
                 <label key={lengthOption} style={{ display: "grid", gap: 6 }}>
                   <span style={{ ...mono, fontSize: 10.5, color: "#4E5647" }}>{lengthOption}</span>
@@ -3734,7 +3745,7 @@ function AdminCategoryCreatePage({ products: productOptions, onCreateCategory })
   );
 }
 
-function AdminCategoriesIndex({ categories, products: productOptions, onUpdateCategory }) {
+function AdminCategoriesIndex({ categories, products: productOptions, onUpdateCategory, onDeleteCategory }) {
   const [edits, setEdits] = useState({});
   const [query, setQuery] = useState("");
 
@@ -3744,6 +3755,19 @@ function AdminCategoriesIndex({ categories, products: productOptions, onUpdateCa
 
   function updateEdit(categoryId, field, value) {
     setEdits((current) => ({ ...current, [categoryId]: { ...current[categoryId], [field]: value } }));
+  }
+
+  async function handleDeleteClick(category) {
+    if (category.slug === "services") {
+      window.alert("La categorie systeme des services ne peut pas etre supprimee.");
+      return;
+    }
+
+    if (!window.confirm(`Supprimer la categorie ${category.label} ? Les produits resteront actifs mais ne seront plus relies a cette categorie.`)) {
+      return;
+    }
+
+    await onDeleteCategory(category.id);
   }
 
   const filteredCategories = useMemo(() => {
@@ -3769,7 +3793,10 @@ function AdminCategoriesIndex({ categories, products: productOptions, onUpdateCa
             <input value={edits[category.id]?.slug || ""} onChange={(event) => updateEdit(category.id, "slug", event.target.value)} className="lbb-admin-input" style={{ minHeight: 40 }} />,
             <span style={{ display: "grid", gap: 6 }}>{productOptions.filter((product) => category.productIds.includes(product.id)).slice(0, 3).map((product) => <span key={product.id} style={{ fontSize: 14.5, color: "#4E5647" }}>{product.name}</span>)}<span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>{category.productIds.length} produit(s) relies</span></span>,
             <Link to={getCategoryHref(category.slug)} className="lbb-btn lbb-btn-secondary lbb-btn-small">Voir page</Link>,
-            <button type="button" className="lbb-btn lbb-btn-small lbb-btn-primary" onClick={() => onUpdateCategory(category.id, { ...category, slug: edits[category.id]?.slug || category.slug })}>Sauver</button>
+            <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button type="button" className="lbb-btn lbb-btn-small lbb-btn-primary" onClick={() => onUpdateCategory(category.id, { ...category, slug: edits[category.id]?.slug || category.slug })}>Sauver</button>
+              <button type="button" className="lbb-btn lbb-btn-small lbb-btn-secondary" onClick={() => handleDeleteClick(category)}>Supprimer</button>
+            </span>
           ]} />)}
         </div>
       </div>
