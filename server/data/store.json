@@ -1,0 +1,18 @@
+{
+  "profile": {
+    "name": "Admin La Belle Buche",
+    "role": "Manager depot",
+    "initials": "AL"
+  },
+  "categories": [],
+  "products": [],
+  "orders": [],
+  "customers": [],
+  "deliveries": [],
+  "settings": {
+    "productOptions": {
+      "lengths": ["25 cm", "33 cm", "50 cm", "2 m"],
+      "dryingDurations": ["Seche 18 mois", "Seche 2 ans", "Seche 2 ans et demi"]
+    }
+  }
+}

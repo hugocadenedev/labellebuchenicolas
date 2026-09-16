@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; background: #FBFAF5; font-family: "Newsreader", Georgia, serif; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  a:hover { color: #3E5C33; }
+  input, button, select { font-family: inherit; }
+  @keyframes riseIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  ::selection { background: #DCE5CE; color: #23291F; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #CFD8C2; border-radius: 999px; }
+</style>
+<script src="./image-slot.js"></script>
+</helmet>
+
+<div style="background: #FBFAF5; color: #23291F; min-height: 100vh; overflow-x: hidden;">
+
+  <div style="background: #EEF2E4; color: #3E5C33; font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .06em; display: flex; justify-content: center; gap: 44px; padding: 11px 32px; flex-wrap: wrap;">
+    <span>Livraison Occitanie sous 5 jours ouvrés</span>
+    <span style="color: #C05621;">Dépôts Toulouse &amp; Muret — Lun. au Ven. 8h30–18h30</span>
+    <span>Paiement en 3× sans frais</span>
+  </div>
+
+  <header style="position: sticky; top: 0; z-index: 40; background: rgba(251,250,245,.9); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(35,41,31,.08);">
+    <div style="max-width: 1400px; margin: 0 auto; padding: 18px 32px; display: flex; align-items: center; gap: 36px;">
+      <a href="La Belle Buche - Boutique v2.dc.html" style="display: flex; align-items: center; flex-shrink: 0;">
+        <img src="logo-la-belle-buche.png" alt="La Belle Bûche — bois de chauffage au stère" style="height: 72px; width: auto; display: block;">
+      </a>
+      <div style="flex: 1; display: flex; align-items: center; gap: 12px; background: #FFFFFF; border: 1px solid rgba(35,41,31,.1); border-radius: 999px; padding: 13px 22px; max-width: 430px; box-shadow: 0 1px 2px rgba(35,41,31,.04);">
+        <span style="font-family: 'DM Mono', monospace; font-size: 13px; color: #8A9180;">⌕</span>
+        <input placeholder="Une commande, une facture, un bois…" style="border: 0; outline: 0; background: transparent; font-family: 'Newsreader', serif; font-size: 15px; width: 100%; color: #23291F;">
+        <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .06em; color: #A8AE9C; border: 1px solid rgba(35,41,31,.12); border-radius: 6px; padding: 2px 6px;">⌘K</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 24px; margin-left: auto; font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .05em;">
+        <div style="display: grid; gap: 3px; text-align: right; line-height: 1.3;">
+          <span style="color: #23291F;">06 30 46 09 35</span>
+          <span style="color: #8A9180;">Votre conseiller : Rémi</span>
+        </div>
+        <span style="display: flex; align-items: center; gap: 8px; color: #33512F;">
+          <span style="width: 30px; height: 30px; border-radius: 999px; background: #33512F; color: #F4F7EC; display: inline-flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 11px;">CV</span>
+          Camille
+        </span>
+        <a href="La Belle Buche - Panier.dc.html" style="font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .05em; background: #33512F; color: #F4F7EC; border-radius: 999px; padding: 12px 16px 12px 20px; display: flex; align-items: center; gap: 10px;" style-hover="background: #23291F; color: #F4F7EC;">
+          Panier <span style="background: #C05621; color: #fff; border-radius: 999px; min-width: 21px; height: 21px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px;">9</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <section style="max-width: 1400px; margin: 0 auto; padding: 34px 32px 90px; display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start; animation: riseIn .6s ease both;">
+
+    <aside style="flex: 1 1 240px; max-width: 300px; min-width: 0; display: grid; gap: 14px; position: sticky; top: 140px;">
+      <div style="background: #23291F; color: #E7EBDD; border-radius: 26px; padding: 24px 24px 22px;">
+        <div style="display: flex; align-items: center; gap: 13px; margin-bottom: 18px;">
+          <span style="width: 44px; height: 44px; border-radius: 999px; background: #C05621; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px;">CV</span>
+          <span style="display: grid; gap: 3px;">
+            <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -.02em; color: #F4F7EC;">Camille Vasseur</span>
+            <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .06em; color: #9AA391;">Cliente depuis 2021</span>
+          </span>
+        </div>
+        <div style="display: grid; gap: 8px; font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .05em; color: #9AA391;">
+          <span style="color: #C05621;">Palier Braise — 7 stères</span>
+          <div style="height: 6px; border-radius: 999px; background: rgba(244,247,236,.14); overflow: hidden;">
+            <div style="width: 70%; height: 100%; background: #C05621;"></div>
+          </div>
+          <span>3 stères avant le rangement offert</span>
+        </div>
+      </div>
+
+      <nav style="background: #FFFFFF; border: 1px solid rgba(35,41,31,.09); border-radius: 26px; padding: 12px; display: grid; gap: 2px;">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="7">
+          <button onClick="{{ t.onClick }}" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left; cursor: pointer; border: 0; background: {{ t.bg }}; color: {{ t.color }}; border-radius: 16px; padding: 14px 16px; font-family: 'Outfit', sans-serif; font-weight: {{ t.weight }}; font-size: 14.5px; letter-spacing: -.01em; transition: background .18s ease;" style-hover="background: #EEF2E4;">
+            {{ t.label }}
+            <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .05em; color: {{ t.badgeColor }};">{{ t.badge }}</span>
+          </button>
+        </sc-for>
+        <div style="height: 1px; background: rgba(35,41,31,.08); margin: 8px 12px;"></div>
+        <button style="text-align: left; cursor: pointer; border: 0; background: transparent; color: #A8AE9C; border-radius: 16px; padding: 12px 16px; font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .06em;" style-hover="color: #C05621;">Se déconnecter</button>
+      </nav>
+
+      <div style="background: #F5EFE2; border-radius: 26px; padding: 22px 24px; display: grid; gap: 10px;">
+        <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .08em; color: #C05621;">VOTRE CONSEILLER</span>
+        <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15.5px; letter-spacing: -.015em;">Rémi — dépôt de Muret</span>
+        <p style="margin: 0; font-size: 15.5px; line-height: 1.45; color: #4E5647;">Il connaît votre accès et le portail de 2,10 m. Appelez-le avant d'ajouter un stère.</p>
+        <span style="font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .05em;">05 61 76 70 78</span>
+      </div>
+    </aside>
+
+    <div style="flex: 1 1 480px; min-width: 0; display: grid; gap: 20px;">
+
+      <div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #C05621; margin-bottom: 12px;">{{ pageKicker }}</div>
+        <h1 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: clamp(32px, 3.3vw, 44px); line-height: 1.03; letter-spacing: -.034em; margin: 0 0 12px;">{{ pageTitle }}</h1>
+        <p style="font-size: 19px; line-height: 1.55; color: #4E5647; max-width: 62ch; margin: 0; text-wrap: pretty;">{{ pageIntro }}</p>
+      </div>
+
+      <sc-if value="{{ isDash }}" hint-placeholder-val="{{ true }}">
+        <div style="display: grid; gap: 20px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px;">
+            <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+              <div style="background: #FFFFFF; border: 1px solid rgba(35,41,31,.09); border-radius: 22px; padding: 22px; display: grid; gap: 7px;">
+                <span style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .08em; color: #8A9180;">{{ s.kicker }}</span>
+                <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 30px; letter-spacing: -.035em;">{{ s.value }}</span>
+                <span style="font-size: 15.5px; line-height: 1.4; color: #4E5647;">{{ s.desc }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 18px; align-items: start;">
+            <div style="background: #FFFFFF; border: 1px solid rgba(35,41,31,.09); border-radius: 28px; overflow: hidden; box-shadow: 0 24px 54px -48px rgba(35,41,31,.6);">
+              <div style="height: 176px; background: #E4E9D9;">
+                <image-slot id="ec-livraison" shape="rect" src="photos/wood/livraison.jpg" placeholder="Camion de livraison au portail"></image-slot>
+              </div>
+              <div style="padding: 26px 28px 28px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap;">
+                  <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 21px; letter-spacing: -.024em;">Livraison LB-2609 — 4 stères de chêne</span>
+                  <span style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .06em; background: #33512F; color: #F4F7EC; border-radius: 999px; padding: 7px 13px;">En route</span>
+                </div>
+                <div style="display: grid; gap: 0;">
+                  <sc-for list="{{ trackSteps }}" as="p" hint-placeholder-count="4">
+                    <div style="display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 16px; align-items: start;">
+                      <div style="display: grid; justify-items: center; gap: 0; height: 100%;">
+                        <span style="width: 13px; height: 13px; border-radius: 999px; background: {{ p.dot }}; margin-top: 5px;"></span>
+                        <span style="width: 2px; flex: 1; min-height: {{ p.lineHeight }}; background: {{ p.line }};"></span>
+                      </div>
+                      <div style="display: grid; gap: 4px; padding-bottom: 16px;">
+                        <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15.5px; letter-spacing: -.015em; color: {{ p.color }};">{{ p.label }}</span>
+                        <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .05em; color: #8A9180;">{{ p.when }}</span>
+                        <span style="font-size: 15.5px; line-height: 1.45; color: #4E5647; max-width: 52ch;">{{ p.desc }}</span>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px;">
+                  <button onClick="{{ goDeliveries }}" style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .05em; background: #33512F; color: #F4F7EC; border: 0; border-radius: 999px; padding: 14px 24px; cursor: pointer;" style-hover="background: #23291F;">Suivre la livraison</button>
+                  <button style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .05em; background: transparent; border: 1px solid rgba(35,41,31,.16); border-radius: 999px; padding: 14px 24px; cursor: pointer; color: #23291F;" style-hover="background: #EEF2E4;">Modifier le créneau</button>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: grid; gap: 18px;">
+              <div style="background: #FFFFFF; border: 1px solid rgba(35,41,31,.09); border-radius: 28px; padding: 26px 28px;">
+                <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 14px; margin-bottom: 20px;">
+                  <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -.02em;">Vos saisons de chauffe</span>
+                  <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .06em; color: #8A9180;">en stères</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; align-items: end; height: 140px;">
+                  <sc-for list="{{ seasons }}" as="b" hint-placeholder-count="5">
+                    <div style="display: grid; gap: 8px; justify-items: center; align-content: end; height: 100%;">
+                      <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px; color: {{ b.labelColor }};">{{ b.value }}</span>
+                      <div style="width: 100%; height: {{ b.h }}; border-radius: 10px 10px 4px 4px; background: {{ b.fill }};"></div>
+                      <span style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .05em; color: #8A9180;">{{ b.label }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <p style="margin: 18px 0 0; font-size: 15.5px; line-height: 1.45; color: #4E5647;">Vous consommez en moyenne 6,8 stères par saison. On peut bloquer votre volume dès juin au tarif d'été.</p>
+              </div>
+
+              <div style="background: #EEF2E4; border-radius: 28px; padding: 26px 28px; display: grid; gap: 14px;">
+                <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -.02em; color: #23291F;">Recommander en un geste</span>
+                <sc-for list="{{ reorder }}" as="r" hint-placeholder-count="3">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; background: #FBFAF5; border-radius: 18px; padding: 14px 16px;">
+                    <span style="display: grid; gap: 3px;">
+                      <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: -.015em;">{{ r.name }}</span>
+                      <span style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .05em; color: #8A9180;">{{ r.last }}</span>
+                    </span>
+                    <a href="La Belle Buche - Panier.dc.html" style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .06em; border: 1px solid rgba(35,41,31,.16); border-radius: 999px; padding: 9px 14px; color: #23291F;" style-hover="background: #33512F; color: #F4F7EC;">{{ r.cta }}</a>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isOrders }}">
+        <div style="display: grid; gap: 14px;">
+          <sc-for list="{{ orders }}" as="o" hint-placeholder-count="4">
+            <div style="background: #FFFFFF; border: 1px solid rgba(35,41,31,.09); border-radius: 26px; padding: 24px 26px; display: grid; gap: 18px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap;">
+                <span style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                  <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 19px; letter-spacing: -.022em;">{{ o.ref }}</span>
+                  <span style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .06em; background: {{ o.statusBg }}; color: {{ o.statusColor }}; border-radius: 999px; padding: 7px 13px;">{{ o.status }}</span>
+                  <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .05em; color: #8A9180;">{{ o.date }}</span>
+                </span>
+                <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: -.03em;">{{ o.total }}</span>
+              </div>
+              <div style="display: grid; gap: 7px; font-size: 16.5px; line-height: 1.5; color: #4E5647;">
+                <sc-for list="{{ o.items }}" as="it" hint-placeholder-count="2">
+                  <span style="display: flex; gap: 12px;"><span style="font-family: 'DM Mono', monospace; font-size: 11px; color: #C05621; min-width: 58px;">{{ it.qty }}</span>{{ it.name }}</span>
+                </sc-for>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-top: 1px solid rgba(35,41,31,.08); padding-top: 16px;">
+                <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .05em; color: #8A9180;">{{ o.note }}</span>
+                <span style="display: flex; gap: 9px; flex-wrap: wrap;">
+                  <a href="#" style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .06em; border: 1px solid rgba(35,41,31,.16); border-radius: 999px; padding: 10px 15px;">Facture PDF</a>
+                  <a href="La Belle Buche - Panier.dc.html" style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .06em; background: #33512F; color: #F4F7EC; border-radius: 999px; padding: 10px 15px;" style-hover="background: #23291F; color: #F4F7EC;">Recommander</a>
+                </span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDeliveries }}">
+        <div style="display: grid; gap: 18px;">
+          <div style="background: #FFFFFF; border: 1px solid rgba(35,41,31,.09); border-radius: 28px; padding: 28px; display: grid; gap: 22px;">
+            <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 18px; flex-wrap: wrap;">
+              <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 21px; letter-spacing: -.024em;">Créneau de la livraison LB-2609</span>
+              <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .06em; color: #8A9180;">Modifiable jusqu'à 48 h avant</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px;">
+              <sc-for list="{{ slots }}" as="s" hint-placeholder-count="3">
+                <button onClick="{{ s.onClick }}" style="display: grid; gap: 7px; text-align: left; cursor: pointer; border: 1px solid {{ s.border }}; background: {{ s.bg }}; border-radius: 20px; padding: 20px; transition: border-color .2s ease, background .2s ease;">
+                  <span style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .07em; color: #C05621;">{{ s.day }}</span>
+                  <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -.02em;">{{ s.hours }}</span>
+                  <span style="font-size: 15.5px; line-height: 1.4; color: #4E5647;">{{ s.desc }}</span>
+                </button>
+              </sc-for>
+            </div>
+            <div style="background: #EEF2E4; border-radius: 20px; padding: 20px 22px; display: grid; gap: 8px;">
+              <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .07em; color: #3E5C33;">CONSIGNE D'ACCÈS ENREGISTRÉE</span>
+              <p style="margin: 0; font-size: 16.5px; line-height: 1.5; color: #3E5C33; max-width: 64ch;">Portail de 2,10 m côté impasse, gravier stable. Décharger côté bûcher, ne pas passer sur la pelouse. Chien à l'attache pendant la manœuvre.</p>
+              <button style="justify-self: start; margin-top: 6px; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .06em; background: transparent; border: 1px solid rgba(62,92,51,.3); border-radius: 999px; padding: 9px 15px; cursor: pointer; color: #3E5C33;" style-hover="background: #FBFAF5;">Modifier la consigne</button>
+            </div>
+          </div>
+
+          <div style="background: #FFFFFF; border: 1px solid rgba(35,41,31,.09); border-radius: 28px; padding: 28px;">
+            <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 21px; letter-spacing: -.024em; margin: 0 0 20px;">Historique et humidité mesurée</h2>
+            <div style="display: grid; gap: 0;">
+              <sc-for list="{{ pastDeliveries }}" as="d" hint-placeholder-count="4">
+                <div style="display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; padding: 16px 0; border-bottom: 1px solid rgba(35,41,31,.07);">
+                  <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .05em; color: #8A9180;">{{ d.date }}</span>
+                  <span style="flex: 1 1 200px; min-width: 0; font-size: 16.5px; color: #23291F;">{{ d.what }}</span>
+                  <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .05em; color: #6B7263;">{{ d.driver }}</span>
+                  <span style="margin-left: auto; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .05em; background: #EEF2E4; color: #3E5C33; border-radius: 999px; padding: 7px 12px;">{{ d.humidity }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isAddresses }}">
+        <div style="display: grid; gap: 18px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+            <sc-for list="{{ addresses }}" as="a" hint-placeholder-count="2">
+              <div style="background: #FFFFFF; border: 1px solid {{ a.border }}; border-radius: 26px; padding: 26px; display: grid; gap: 14px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                  <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -.02em;">{{ a.label }}</span>
+                  <span style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .06em; background: {{ a.badgeBg }}; color: {{ a.badgeColor }}; border-radius: 999px; padding: 6px 12px;">{{ a.badge }}</span>
+                </div>
+                <p style="margin: 0; font-size: 17px; line-height: 1.55; color: #4E5647; white-space: pre-line;">{{ a.lines }}</p>
+                <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .05em; color: #8A9180;">{{ a.access }}</span>
+                <div style="display: flex; gap: 9px; flex-wrap: wrap; margin-top: 4px;">
+                  <button style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .06em; border: 1px solid rgba(35,41,31,.16); background: transparent; border-radius: 999px; padding: 10px 15px; cursor: pointer; color: #23291F;" style-hover="background: #EEF2E4;">Modifier</button>
+                  <button onClick="{{ a.onDefault }}" style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .06em; border: 0; background: {{ a.ctaBg }}; color: {{ a.ctaColor }}; border-radius: 999px; padding: 10px 15px; cursor: pointer;">{{ a.cta }}</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background: #F5EFE2; border-radius: 26px; padding: 28px; display: grid; gap: 14px;">
+            <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .08em; color: #C05621;">DÉPÔT D'ENLÈVEMENT PRÉFÉRÉ</span>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;">
+              <sc-for list="{{ depots }}" as="d" hint-placeholder-count="2">
+                <button onClick="{{ d.onClick }}" style="display: grid; gap: 6px; text-align: left; cursor: pointer; border: 1px solid {{ d.border }}; background: {{ d.bg }}; border-radius: 20px; padding: 20px; transition: border-color .2s ease, background .2s ease;">
+                  <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16.5px; letter-spacing: -.018em;">{{ d.name }}</span>
+                  <span style="font-size: 16px; line-height: 1.45; color: #4E5647;">{{ d.addr }}</span>
+                  <span style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .05em; color: #8A9180;">{{ d.hours }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isLoyalty }}">
+        <div style="display: grid; gap: 18px;">
+          <div style="background: #23291F; color: #E7EBDD; border-radius: 28px; padding: 34px 36px; display: grid; gap: 22px;">
+            <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+              <div style="display: grid; gap: 8px;">
+                <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .08em; color: #C05621;">SAISON 2026 — PALIER BRAISE</span>
+                <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 42px; letter-spacing: -.035em; color: #F4F7EC;">7 stères sur 10</span>
+              </div>
+              <span style="font-size: 17px; line-height: 1.5; max-width: 34ch;">Au 10ᵉ stère, on vous offre le rangement au tas et un sac d'allume-feu de 5 kg.</span>
+            </div>
+            <div style="height: 12px; border-radius: 999px; background: rgba(244,247,236,.14); overflow: hidden;">
+              <div style="width: 70%; height: 100%; background: #C05621;"></div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .06em;">
+              <span>3 stères — Braise · atteint</span>
+              <span style="color: #C05621;">7 stères — Flambée · en cours</span>
+              <span style="color: #6E7A63;">10 stères — Bûcheron</span>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px;">
+            <sc-for list="{{ vouchers }}" as="v" hint-placeholder-count="3">
+              <div style="background: #FFFFFF; border: 1px solid rgba(35,41,31,.09); border-radius: 26px; padding: 24px; display: grid; gap: 10px;">
+                <span style="font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .08em; color: {{ v.kickerColor }};">{{ v.kicker }}</span>
+                <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -.02em; line-height: 1.2;">{{ v.title }}</span>
+                <span style="font-size: 15.5px; line-height: 1.45; color: #4E5647;">{{ v.desc }}</span>
+                <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .05em; color: #8A9180; margin-top: 2px;">{{ v.expiry }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isInvoices }}">
+        <div style="background: #FFFFFF; border: 1px solid rgba(35,41,31,.09); border-radius: 28px; padding: 28px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 18px; flex-wrap: wrap; padding-bottom: 14px; border-bottom: 1px solid rgba(35,41,31,.1); font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .08em; color: #8A9180;">
+            <span>5 FACTURES — MONTANTS TTC</span><span>PDF CONSERVÉ 10 ANS</span>
+          </div>
+          <sc-for list="{{ invoices }}" as="f" hint-placeholder-count="5">
+            <div style="display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 16px 0; border-bottom: 1px solid rgba(35,41,31,.07);">
+              <span style="flex: 0 0 130px; font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .05em; color: #23291F;">{{ f.num }}</span>
+              <span style="flex: 1 1 200px; min-width: 160px; font-size: 16.5px; color: #23291F;">{{ f.label }}</span>
+              <span style="flex: 0 0 auto; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: -.02em;">{{ f.amount }}</span>
+              <span style="flex: 0 0 auto; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .05em; color: {{ f.payColor }};">{{ f.pay }}</span>
+              <a href="#" style="flex: 0 0 auto; margin-left: auto; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .06em; border: 1px solid rgba(35,41,31,.16); border-radius: 999px; padding: 9px 14px;">PDF</a>
+            </div>
+          </sc-for>
+          <p style="margin: 20px 0 0; font-size: 16px; line-height: 1.5; color: #4E5647;">Besoin d'une facture au nom d'une société ou d'un syndic ? Rémi la réédite dans la journée.</p>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSettings }}">
+        <div style="display: grid; gap: 18px;">
+          <div style="background: #FFFFFF; border: 1px solid rgba(35,41,31,.09); border-radius: 28px; padding: 28px; display: grid; gap: 20px;">
+            <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 21px; letter-spacing: -.024em; margin: 0;">Vos informations</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+              <sc-for list="{{ fields }}" as="f" hint-placeholder-count="4">
+                <label style="display: grid; gap: 8px;">
+                  <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .08em; color: #8A9180;">{{ f.label }}</span>
+                  <input value="{{ f.value }}" readonly="{{ true }}" style="border: 1px solid rgba(35,41,31,.14); border-radius: 16px; padding: 15px 18px; font-family: 'Newsreader', serif; font-size: 17px; background: #FBFAF5; color: #23291F; outline: 0;">
+                </label>
+              </sc-for>
+            </div>
+            <button style="justify-self: start; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .05em; background: #33512F; color: #F4F7EC; border: 0; border-radius: 999px; padding: 15px 26px; cursor: pointer;" style-hover="background: #23291F;">Enregistrer</button>
+          </div>
+          <div style="background: #FFFFFF; border: 1px solid rgba(35,41,31,.09); border-radius: 28px; padding: 28px; display: grid; gap: 16px;">
+            <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 21px; letter-spacing: -.024em; margin: 0;">Ce qu'on vous envoie</h2>
+            <sc-for list="{{ notifs }}" as="n" hint-placeholder-count="4">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 14px 0; border-bottom: 1px solid rgba(35,41,31,.07);">
+                <span style="display: grid; gap: 4px;">
+                  <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15.5px; letter-spacing: -.015em;">{{ n.title }}</span>
+                  <span style="font-size: 15.5px; line-height: 1.4; color: #4E5647; max-width: 58ch;">{{ n.desc }}</span>
+                </span>
+                <button onClick="{{ n.onToggle }}" style="flex-shrink: 0; width: 52px; height: 30px; border-radius: 999px; border: 0; cursor: pointer; background: {{ n.trackBg }}; padding: 4px; display: flex; justify-content: {{ n.justify }}; transition: background .22s ease;">
+                  <span style="width: 22px; height: 22px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 3px rgba(35,41,31,.3);"></span>
+                </button>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </section>
+
+  <footer style="background: #23291F; color: #9AA391;">
+    <div style="max-width: 1400px; margin: 0 auto; padding: 80px 32px 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 48px;">
+      <div>
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 25px; letter-spacing: -.03em; color: #F4F7EC; margin-bottom: 14px;">La Belle Bûche</div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .08em; color: #C05621; margin-bottom: 16px;">Bois de chauffage vendu au stère</div>
+        <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.55; max-width: 40ch;">Bûcherons-négociants dans le Sud-Ouest. Du bois coupé près de chez vous, séché deux ans, livré et rangé.</p>
+        <div style="display: flex; gap: 16px; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .07em;">
+          <a href="#">Facebook</a><a href="#">YouTube</a><a href="#">LinkedIn</a>
+        </div>
+      </div>
+      <div style="display: grid; gap: 11px; align-content: start; font-size: 16px;">
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .05em; color: #F4F7EC; margin-bottom: 6px;">Dépôt de Toulouse</div>
+        <span>06 30 46 09 35</span>
+        <span>14 chemin des Charbonniers<br>31200 Toulouse</span>
+        <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; color: #6E7A63;">Enlèvement au stère sous 2 h</span>
+      </div>
+      <div style="display: grid; gap: 11px; align-content: start; font-size: 16px;">
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .05em; color: #F4F7EC; margin-bottom: 6px;">Parc à bois de Muret</div>
+        <span>05 61 76 70 78</span>
+        <span>ZA de Joffrery, av. des Pins<br>31600 Muret</span>
+        <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; color: #6E7A63;">Chargement remorque sur place</span>
+      </div>
+      <div style="display: grid; gap: 11px; align-content: start; font-size: 16px;">
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .05em; color: #F4F7EC; margin-bottom: 6px;">Informations</div>
+        <a href="#">Livraison</a><a href="#">Qu'est-ce qu'un stère ?</a><a href="#">Programme de fidélité</a><a href="#">CGV — CGU</a><a href="#">Mentions légales</a>
+      </div>
+    </div>
+    <div style="max-width: 1400px; margin: 0 auto; padding: 22px 32px 40px; border-top: 1px solid rgba(244,247,236,.1); font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .07em; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+      <span>© 2026 La Belle Bûche — Maquette</span>
+      <span>Paiement CB · Virement · 3× sans frais</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;onglet&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Tableau de bord&quot;,&quot;Mes commandes&quot;,&quot;Livraisons&quot;,&quot;Adresses &amp; dépôt&quot;,&quot;Fidélité&quot;,&quot;Factures&quot;,&quot;Paramètres&quot;],&quot;default&quot;:&quot;Tableau de bord&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Navigation&quot;}}">
+const TABS = [
+  { id: "dash", label: "Tableau de bord", badge: "" },
+  { id: "orders", label: "Mes commandes", badge: "12" },
+  { id: "deliveries", label: "Livraisons", badge: "1 en cours" },
+  { id: "addresses", label: "Adresses & dépôt", badge: "2" },
+  { id: "loyalty", label: "Fidélité", badge: "7 st." },
+  { id: "invoices", label: "Factures", badge: "" },
+  { id: "settings", label: "Paramètres", badge: "" }
+];
+
+const HEADS = {
+  dash: { kicker: "ESPACE CLIENT — TOULOUSE 31200", title: "Bonjour Camille", intro: "Quatre stères de chêne sont sur la route. Voici où en est le chargement et ce qu'il reste à faire avant l'hiver." },
+  orders: { kicker: "12 COMMANDES DEPUIS 2021", title: "Mes commandes", intro: "Chaque commande garde le détail du cordage, l'humidité relevée et la facture. Recommandez le même lot en un clic." },
+  deliveries: { kicker: "1 LIVRAISON EN COURS", title: "Livraisons", intro: "Choisissez le créneau, gardez vos consignes d'accès à jour : le chauffeur les lit avant de partir du parc." },
+  addresses: { kicker: "2 ADRESSES ENREGISTRÉES", title: "Adresses & dépôt", intro: "L'adresse par défaut sert au calcul de la zone de livraison. Le dépôt préféré s'applique aux enlèvements en remorque." },
+  loyalty: { kicker: "PROGRAMME AU STÈRE", title: "Fidélité", intro: "Un stère acheté, un stère compté. Les paliers se remettent à zéro chaque 1ᵉʳ mai, en fin de saison de chauffe." },
+  invoices: { kicker: "DOCUMENTS COMPTABLES", title: "Factures", intro: "Toutes vos factures TTC, téléchargeables en PDF, conservées dix ans." },
+  settings: { kicker: "VOTRE COMPTE", title: "Paramètres", intro: "Coordonnées, préférences d'alerte et rappels de saison. Rien n'est transmis à des tiers." }
+};
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const map = { "Tableau de bord": "dash", "Mes commandes": "orders", "Livraisons": "deliveries", "Adresses & dépôt": "addresses", "Fidélité": "loyalty", "Factures": "invoices", "Paramètres": "settings" };
+    this.state = {
+      tab: map[props.onglet] || "dash",
+      slot: "jeu",
+      defaultAddr: "maison",
+      depot: "muret",
+      notifs: { corde: true, creneau: true, saison: false, promo: true }
+    };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const head = HEADS[s.tab] || HEADS.dash;
+
+    const slots = [
+      { id: "mar", day: "Mardi 15 sept.", hours: "8h30 – 12h30", desc: "Camion-grue déjà sur votre secteur." },
+      { id: "jeu", day: "Jeudi 17 sept.", hours: "13h30 – 18h00", desc: "Deux bûcherons pour le rangement au tas." },
+      { id: "sam", day: "Samedi 19 sept.", hours: "8h30 – 12h00", desc: "Créneau week-end, + 25 € de majoration." }
+    ];
+
+    const track = [
+      { id: "t1", label: "Commande validée", when: "8 sept. — 14h12", desc: "Acompte de 1er tiers encaissé, 148,00 €.", done: true },
+      { id: "t2", label: "Bois cordé au parc de Muret", when: "11 sept. — 9h40", desc: "4 stères cordés et mesurés, humidité relevée à 16 %.", done: true },
+      { id: "t3", label: "Chargé, en route", when: "Aujourd'hui — 7h55", desc: "Chauffeur Rémi, camion-grue 19 t, 3ᵉ tournée de la matinée.", done: true, current: true },
+      { id: "t4", label: "Rangement au tas puis quitus", when: "Prévu 17 sept. — 13h30", desc: "Signature sur place après contrôle d'humidité devant vous.", done: false }
+    ];
+
+    return {
+      tabs: TABS.map(t => {
+        const on = t.id === s.tab;
+        return {
+          key: t.id, label: t.label, badge: t.badge,
+          bg: on ? "#EEF2E4" : "transparent",
+          color: on ? "#23291F" : "#4E5647",
+          weight: on ? 700 : 400,
+          badgeColor: on ? "#3E5C33" : "#A8AE9C",
+          onClick: () => this.setState({ tab: t.id })
+        };
+      }),
+      pageKicker: head.kicker, pageTitle: head.title, pageIntro: head.intro,
+      isDash: s.tab === "dash", isOrders: s.tab === "orders", isDeliveries: s.tab === "deliveries",
+      isAddresses: s.tab === "addresses", isLoyalty: s.tab === "loyalty", isInvoices: s.tab === "invoices",
+      isSettings: s.tab === "settings",
+      goDeliveries: () => this.setState({ tab: "deliveries" }),
+
+      stats: [
+        { key: "s1", kicker: "SAISON EN COURS", value: "7 stères", desc: "Chêne et charme, soit env. 3 150 kg." },
+        { key: "s2", kicker: "PROCHAINE LIVRAISON", value: "17 sept.", desc: "Créneau 13h30 – 18h, rangement au tas." },
+        { key: "s3", kicker: "HUMIDITÉ MOYENNE", value: "16 %", desc: "Relevée à la sonde sur vos 3 dernières livraisons." },
+        { key: "s4", kicker: "BON FIDÉLITÉ", value: "1 dispo.", desc: "Sac d'allume-feu 5 kg, valable jusqu'au 30 nov." }
+      ],
+
+      trackSteps: track.map((p, i) => ({
+        key: p.id, label: p.label, when: p.when, desc: p.desc,
+        dot: p.current ? "#C05621" : (p.done ? "#33512F" : "#D8DECB"),
+        line: i === track.length - 1 ? "transparent" : (p.done ? "#33512F" : "#D8DECB"),
+        lineHeight: i === track.length - 1 ? "0px" : "46px",
+        color: p.done ? "#23291F" : "#8A9180"
+      })),
+
+      seasons: [
+        { key: "y1", label: "21/22", value: "5", h: "50%", fill: "#DCE5CE", labelColor: "#8A9180" },
+        { key: "y2", label: "22/23", value: "7", h: "70%", fill: "#DCE5CE", labelColor: "#8A9180" },
+        { key: "y3", label: "23/24", value: "6", h: "60%", fill: "#DCE5CE", labelColor: "#8A9180" },
+        { key: "y4", label: "24/25", value: "9", h: "90%", fill: "#33512F", labelColor: "#23291F" },
+        { key: "y5", label: "25/26", value: "7", h: "70%", fill: "#C05621", labelColor: "#C05621" }
+      ],
+
+      reorder: [
+        { key: "r1", name: "Chêne 33 cm — 4 stères", last: "Commandé 3 fois · dernier le 8 sept.", cta: "Remettre au panier" },
+        { key: "r2", name: "Charme 25 cm — 2 stères", last: "Commandé 2 fois · dernier le 8 sept.", cta: "Remettre au panier" },
+        { key: "r3", name: "Allume-feu 5 kg — 3 sacs", last: "Commandé 5 fois · dernier le 8 sept.", cta: "Remettre au panier" }
+      ],
+
+      orders: [
+        { key: "o1", ref: "LB-2609", date: "8 septembre 2026", status: "En route", statusBg: "#33512F", statusColor: "#F4F7EC", total: "531,10 €",
+          items: [{ key: "a", qty: "4 stères", name: "Chêne 33 cm — Comminges" }, { key: "b", qty: "2 stères", name: "Charme 25 cm — Lauragais" }, { key: "c", qty: "3 sacs", name: "Allume-feu résineux 5 kg" }],
+          note: "Livraison rangée au tas · 3× sans frais, 2 échéances restantes" },
+        { key: "o2", ref: "LB-2411", date: "14 juin 2026", status: "Livrée", statusBg: "#EEF2E4", statusColor: "#3E5C33", total: "349,00 €",
+          items: [{ key: "a", qty: "1 palette", name: "Bûches densifiées nuit — 96 bûches" }],
+          note: "Tarif d'été · humidité relevée 9 %" },
+        { key: "o3", ref: "LB-2188", date: "2 février 2026", status: "Livrée", statusBg: "#EEF2E4", statusColor: "#3E5C33", total: "267,00 €",
+          items: [{ key: "a", qty: "3 stères", name: "Chêne 50 cm — cheminée ouverte" }],
+          note: "Enlèvement au dépôt de Muret" },
+        { key: "o4", ref: "LB-1974", date: "19 octobre 2025", status: "Livrée", statusBg: "#EEF2E4", statusColor: "#3E5C33", total: "445,90 €",
+          items: [{ key: "a", qty: "5 stères", name: "Mélange chêne-charme 33 cm" }, { key: "b", qty: "1 pièce", name: "Seau à cendres acier 15 L" }],
+          note: "Livraison déposée · humidité relevée 17 %" }
+      ],
+
+      slots: slots.map(x => {
+        const on = x.id === s.slot;
+        return { key: x.id, day: x.day, hours: x.hours, desc: x.desc, border: on ? "#33512F" : "rgba(35,41,31,.12)", bg: on ? "#F3F7EA" : "#FFFFFF", onClick: () => this.setState({ slot: x.id }) };
+      }),
+
+      pastDeliveries: [
+        { key: "p1", date: "14 juin 2026", what: "1 palette de bûches densifiées", driver: "Chauffeur — Rémi", humidity: "9 %" },
+        { key: "p2", date: "2 février 2026", what: "3 stères de chêne 50 cm", driver: "Enlèvement — Muret", humidity: "17 %" },
+        { key: "p3", date: "19 octobre 2025", what: "5 stères mélange 33 cm", driver: "Chauffeur — Loïc", humidity: "17 %" },
+        { key: "p4", date: "6 septembre 2025", what: "2 stères de charme 25 cm", driver: "Chauffeur — Rémi", humidity: "15 %" }
+      ],
+
+      addresses: [
+        { key: "maison", label: "Maison — chemin de Lardenne", lines: "Camille Vasseur\n38 chemin de Lardenne\n31200 Toulouse", access: "Portail 2,10 m · gravier stable · bûcher côté nord", isDefault: s.defaultAddr === "maison" },
+        { key: "gite", label: "Gîte du Volvestre", lines: "Camille Vasseur\n1420 route de Rieux\n31390 Carbonne", access: "Cour fermée · manœuvre camion 19 t possible", isDefault: s.defaultAddr === "gite" }
+      ].map(a => ({
+        key: a.key, label: a.label, lines: a.lines, access: a.access,
+        border: a.isDefault ? "#33512F" : "rgba(35,41,31,.09)",
+        badge: a.isDefault ? "Par défaut" : "Secondaire",
+        badgeBg: a.isDefault ? "#33512F" : "#EEF2E4",
+        badgeColor: a.isDefault ? "#F4F7EC" : "#3E5C33",
+        cta: a.isDefault ? "Adresse utilisée" : "Définir par défaut",
+        ctaBg: a.isDefault ? "#EEF2E4" : "#33512F",
+        ctaColor: a.isDefault ? "#8A9180" : "#F4F7EC",
+        onDefault: () => this.setState({ defaultAddr: a.key })
+      })),
+
+      depots: [
+        { key: "toulouse", name: "Dépôt de Toulouse", addr: "14 chemin des Charbonniers, 31200", hours: "Lun.–Ven. 8h30–18h30 · sam. 9h–12h" },
+        { key: "muret", name: "Parc à bois de Muret", addr: "ZA de Joffrery, av. des Pins, 31600", hours: "Lun.–Ven. 8h–18h · chargement remorque" }
+      ].map(d => {
+        const on = d.key === s.depot;
+        return { key: d.key, name: d.name, addr: d.addr, hours: d.hours, border: on ? "#33512F" : "rgba(35,41,31,.12)", bg: on ? "#FBFAF5" : "#FFFFFF", onClick: () => this.setState({ depot: d.key }) };
+      }),
+
+      vouchers: [
+        { key: "v1", kicker: "DISPONIBLE", kickerColor: "#3E5C33", title: "Sac d'allume-feu 5 kg", desc: "Ajouté automatiquement à votre prochaine livraison.", expiry: "Valable jusqu'au 30 nov. 2026" },
+        { key: "v2", kicker: "AU 10ᵉ STÈRE", kickerColor: "#C05621", title: "Rangement au tas offert", desc: "Économie de 89 € sur la livraison rangée.", expiry: "3 stères restants" },
+        { key: "v3", kicker: "UTILISÉ", kickerColor: "#A8AE9C", title: "Remise été −10 %", desc: "Appliquée sur la commande LB-2411 de juin.", expiry: "Consommé le 14 juin 2026" }
+      ],
+
+      invoices: [
+        { key: "f1", num: "FA-2026-0412", label: "Commande LB-2609 — chêne, charme, allume-feu", amount: "531,10 €", pay: "3× — 2 restants", payColor: "#C05621" },
+        { key: "f2", num: "FA-2026-0288", label: "Commande LB-2411 — palette densifiée", amount: "349,00 €", pay: "Réglée — CB", payColor: "#3E5C33" },
+        { key: "f3", num: "FA-2026-0071", label: "Commande LB-2188 — chêne 50 cm", amount: "267,00 €", pay: "Réglée — virement", payColor: "#3E5C33" },
+        { key: "f4", num: "FA-2025-1653", label: "Commande LB-1974 — mélange 33 cm", amount: "445,90 €", pay: "Réglée — CB", payColor: "#3E5C33" },
+        { key: "f5", num: "FA-2025-1502", label: "Commande LB-1830 — charme 25 cm", amount: "198,00 €", pay: "Réglée — espèces", payColor: "#3E5C33" }
+      ],
+
+      fields: [
+        { key: "n", label: "NOM ET PRÉNOM", value: "Camille Vasseur" },
+        { key: "e", label: "ADRESSE E-MAIL", value: "camille.vasseur@mail.fr" },
+        { key: "t", label: "TÉLÉPHONE MOBILE", value: "06 14 82 77 03" },
+        { key: "a", label: "TYPE D'APPAREIL", value: "Insert bois 11 kW + poêle d'appoint" }
+      ],
+
+      notifs: [
+        { key: "corde", title: "Photo du cordage avant départ", desc: "On vous envoie la photo des stères mesurés au parc, la veille du départ." },
+        { key: "creneau", title: "SMS du chauffeur", desc: "Créneau confirmé la veille et appel 30 minutes avant l'arrivée." },
+        { key: "saison", title: "Rappel de saison en juin", desc: "Un message quand le tarif d'été ouvre, pour bloquer votre volume." },
+        { key: "promo", title: "Offres du dépôt", desc: "Deux ou trois e-mails par an, jamais pendant la saison de chauffe." }
+      ].map(n => {
+        const on = s.notifs[n.key];
+        return {
+          key: n.key, title: n.title, desc: n.desc,
+          trackBg: on ? "#33512F" : "#D8DECB",
+          justify: on ? "flex-end" : "flex-start",
+          onToggle: () => this.setState(st => {
+            const next = Object.assign({}, st.notifs);
+            next[n.key] = !next[n.key];
+            return { notifs: next };
+          })
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; background: #FBFAF5; font-family: "Newsreader", Georgia, serif; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  a:hover { color: #3E5C33; }
+  input, button, select { font-family: inherit; }
+  @keyframes riseIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  ::selection { background: #DCE5CE; color: #23291F; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #CFD8C2; border-radius: 999px; }
+</style>
+<script src="./image-slot.js"></script>
+</helmet>
+
+<div style="background: #FBFAF5; color: #23291F; min-height: 100vh; overflow-x: hidden;">
+
+  <div style="background: #EEF2E4; color: #3E5C33; font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .06em; display: flex; justify-content: center; gap: 44px; padding: 11px 32px; flex-wrap: wrap;">
+    <span>Livraison Occitanie sous 5 jours ouvrés</span>
+    <span style="color: #C05621;">Dépôts Toulouse &amp; Muret — Lun. au Ven. 8h30–18h30</span>
+    <span>Paiement en 3× sans frais</span>
+  </div>
+
+  <header style="position: sticky; top: 0; z-index: 40; background: rgba(251,250,245,.9); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(35,41,31,.08);">
+    <div style="max-width: 1400px; margin: 0 auto; padding: 18px 32px; display: flex; align-items: center; gap: 36px;">
+      <a href="La Belle Buche - Boutique v2.dc.html" style="display: flex; align-items: center; flex-shrink: 0;">
+        <img src="logo-la-belle-buche.png" alt="La Belle Bûche — bois de chauffage au stère" style="height: 72px; width: auto; display: block;">
+      </a>
+      <div style="flex: 1; display: flex; align-items: center; gap: 12px; background: #FFFFFF; border: 1px solid rgba(35,41,31,.1); border-radius: 999px; padding: 13px 22px; max-width: 430px; box-shadow: 0 1px 2px rgba(35,41,31,.04);">
+        <span style="font-family: 'DM Mono', monospace; font-size: 13px; color: #8A9180;">⌕</span>
+        <input placeholder="Chêne, granulés, hache, 33 cm…" style="border: 0; outline: 0; background: transparent; font-family: 'Newsreader', serif; font-size: 15px; width: 100%; color: #23291F;">
+        <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .06em; color: #A8AE9C; border: 1px solid rgba(35,41,31,.12); border-radius: 6px; padding: 2px 6px;">⌘K</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 24px; margin-left: auto; font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .05em;">
+        <div style="display: grid; gap: 3px; text-align: right; line-height: 1.3;">
+          <span style="color: #23291F;">06 30 46 09 35</span>
+          <span style="color: #8A9180;">Rappel gratuit sous 2 h</span>
+        </div>
+        <a href="La Belle Buche - Espace Client.dc.html" style="display: flex; align-items: center; gap: 8px;">
+          <span style="width: 30px; height: 30px; border-radius: 999px; background: #EEF2E4; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: #3E5C33;">◦</span>
+          Compte
+        </a>
+        <button style="font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .05em; background: #33512F; color: #F4F7EC; border: 0; border-radius: 999px; padding: 12px 16px 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px;" style-hover="background: #23291F;">
+          Panier <span style="background: #C05621; color: #fff; border-radius: 999px; min-width: 21px; height: 21px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px;">{{ cartCount }}</span>
+        </button>
+      </div>
+    </div>
+    <nav style="max-width: 1400px; margin: 0 auto; padding: 0 32px 16px; display: flex; align-items: center; gap: 30px; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: .03em; flex-wrap: wrap;">
+      <sc-for list="{{ navCats }}" as="n" hint-placeholder-count="4">
+        <a href="#grille" onClick="{{ n.onClick }}" style="color: {{ n.color }}; border-bottom: 2px solid {{ n.underline }}; padding-bottom: 3px;">{{ n.label }}</a>
+      </sc-for>
+      <span style="width: 1px; height: 14px; background: rgba(35,41,31,.14);"></span>
+      <a href="La Belle Buche - Boutique v2.dc.html#comparateur">Comparateur d'essences</a>
+      <a href="La Belle Buche - Boutique v2.dc.html#services">Nos services</a>
+      <a href="La Belle Buche - Boutique v2.dc.html#histoire">Notre histoire</a>
+      <span style="margin-left: auto; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 400; letter-spacing: .06em; color: #C05621; display: flex; align-items: center; gap: 8px;">
+        <span style="width: 6px; height: 6px; border-radius: 999px; background: #C05621; display: inline-block;"></span>
+        {{ stockTicker }}
+      </span>
+    </nav>
+  </header>
+
+  <div style="max-width: 1400px; margin: 0 auto; padding: 22px 32px 0; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .06em; color: #8A9180; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+    <a href="La Belle Buche - Boutique v2.dc.html">Accueil</a><span>/</span>
+    <a href="#grille">Boutique</a><span>/</span>
+    <span style="color: #23291F;">{{ crumb }}</span>
+  </div>
+
+  <section style="max-width: 1400px; margin: 0 auto; padding: 30px 32px 0;">
+    <div style="display: grid; grid-template-columns: 1.25fr .75fr; gap: 60px; align-items: end;">
+      <div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #C05621; margin-bottom: 14px;">{{ eyebrow }}</div>
+        <h1 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: clamp(38px, 4.4vw, 62px); line-height: .98; letter-spacing: -.036em; margin: 0 0 20px;">{{ title }}</h1>
+        <p style="font-size: 19px; line-height: 1.58; color: #4E5647; max-width: 62ch; margin: 0; text-wrap: pretty;">{{ intro }}</p>
+      </div>
+      <div style="display: grid; gap: 12px;">
+        <div style="background: #FFFFFF; border: 1px solid rgba(35,41,31,.09); border-radius: 22px; padding: 20px 22px; display: flex; align-items: center; gap: 16px;">
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 30px; letter-spacing: -.03em; color: #33512F;">{{ score }}<span style="font-size: 15px; color: #8A9180;">/5</span></span>
+          <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; line-height: 1.6; color: #6B7263;">{{ scoreNote }}</span>
+        </div>
+        <div style="background: #F5EFE2; border-radius: 22px; padding: 20px 22px; font-family: 'DM Mono', monospace; font-size: 11px; line-height: 1.65; color: #7A6A55;">
+          {{ promise }} <span style="color: #A8501B;">{{ promiseHighlight }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1400px; margin: 0 auto; padding: 44px 32px 0;">
+    <div style="display: flex; gap: 14px; overflow-x: auto; padding-bottom: 6px;">
+      <sc-for list="{{ subcats }}" as="s" hint-placeholder-count="5">
+        <a href="#grille" onClick="{{ s.onClick }}" style="flex: 0 0 auto; width: 178px; display: grid; gap: 10px; background: {{ s.bg }}; border: 1px solid {{ s.border }}; border-radius: 20px; padding: 14px; transition: border-color .25s ease, background .25s ease;" style-hover="border-color: rgba(110,143,78,.55);">
+          <div style="position: relative; aspect-ratio: 1.5; border-radius: 13px; overflow: hidden; background: #E4E9D9;">
+            <image-slot id="{{ s.slotId }}" shape="rect" src="{{ s.photo }}" placeholder="{{ s.slotHint }}"></image-slot>
+          </div>
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 13.5px; letter-spacing: .01em; color: {{ s.color }};">{{ s.label }}</span>
+          <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .04em; color: #8A9180;">{{ s.meta }}</span>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="grille" style="max-width: 1400px; margin: 0 auto; padding: 46px 32px 0; display: grid; grid-template-columns: 268px 1fr; gap: 44px; align-items: start;">
+
+    <aside style="position: sticky; top: 158px; display: grid; gap: 26px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between;">
+        <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: -.01em;">Filtrer</span>
+        <button onClick="{{ resetFilters }}" style="background: transparent; border: 0; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .06em; color: #A8AE9C; padding: 0;" style-hover="color: #C05621;">Tout effacer</button>
+      </div>
+
+      <sc-for list="{{ facets }}" as="f" hint-placeholder-count="4">
+        <div style="display: grid; gap: 12px; padding-bottom: 26px; border-bottom: 1px solid rgba(35,41,31,.09);">
+          <div style="display: flex; justify-content: space-between; gap: 12px; font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .08em; color: #8A9180;">
+            <span>{{ f.label }}</span><span style="color: #33512F;">{{ f.valueLabel }}</span>
+          </div>
+
+          <sc-if value="{{ f.isList }}" hint-placeholder-val="{{ true }}">
+            <div style="display: grid; gap: 12px;">
+              <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="4">
+                <button onClick="{{ o.onClick }}" style="display: flex; align-items: center; gap: 11px; background: transparent; border: 0; cursor: pointer; padding: 0; text-align: left; font-family: 'Newsreader', serif; font-size: 16px; color: {{ o.color }};">
+                  <span style="width: 17px; height: 17px; border-radius: {{ o.radius }}; border: 1px solid {{ o.box }}; background: {{ o.fill }}; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; color: #F4F7EC; flex-shrink: 0;">{{ o.mark }}</span>
+                  {{ o.label }}
+                  <span style="margin-left: auto; font-family: 'DM Mono', monospace; font-size: 10.5px; color: #A8AE9C;">{{ o.count }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ f.isPills }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; gap: 7px; flex-wrap: wrap;">
+              <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="4">
+                <button onClick="{{ o.onClick }}" style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .04em; padding: 10px 14px; border-radius: 999px; cursor: pointer; border: 1px solid {{ o.box }}; background: {{ o.fill2 }}; color: {{ o.pillColor }}; transition: background .2s ease, color .2s ease;">{{ o.label }}</button>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ f.isRange }}" hint-placeholder-val="{{ false }}">
+            <input type="range" min="{{ f.min }}" max="{{ f.max }}" step="{{ f.step }}" value="{{ f.value }}" onChange="{{ f.onRange }}" style="width: 100%; accent-color: #33512F;">
+          </sc-if>
+        </div>
+      </sc-for>
+
+      <div style="background: #23291F; color: #F4F7EC; border-radius: 22px; padding: 24px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .08em; color: #A8AE9C; margin-bottom: 10px;">{{ helpEyebrow }}</div>
+        <p style="margin: 0 0 16px; font-size: 16.5px; line-height: 1.5; color: #DCE5CE;">{{ helpText }}</p>
+        <a href="La Belle Buche - Boutique v2.dc.html#simulateur" style="display: inline-block; background: #A3C47E; color: #23291F; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .06em; padding: 13px 20px; border-radius: 999px;" style-hover="background: #F4F7EC; color: #23291F;">{{ helpCta }}</a>
+      </div>
+    </aside>
+
+    <div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; padding-bottom: 20px; border-bottom: 1px solid rgba(35,41,31,.09);">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <span style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .05em; color: #8A9180;">{{ resultCount }}</span>
+          <sc-for list="{{ activeTags }}" as="t" hint-placeholder-count="0">
+            <button onClick="{{ t.remove }}" style="font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .05em; background: #EEF2E4; color: #33512F; border: 0; border-radius: 999px; padding: 8px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px;" style-hover="background: #DCE5CE;">{{ t.label }} <span style="color: #6E8F4E;">✕</span></button>
+          </sc-for>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="display: flex; gap: 4px; background: #EEF2E4; border-radius: 999px; padding: 4px;">
+            <sc-for list="{{ sorts }}" as="s" hint-placeholder-count="4">
+              <button onClick="{{ s.onClick }}" style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .05em; padding: 9px 15px; border-radius: 999px; cursor: pointer; border: 0; background: {{ s.bg }}; color: {{ s.color }};">{{ s.label }}</button>
+            </sc-for>
+          </div>
+          <div style="display: flex; gap: 4px;">
+            <sc-for list="{{ views }}" as="v" hint-placeholder-count="2">
+              <button onClick="{{ v.onClick }}" style="width: 36px; height: 36px; border-radius: 10px; cursor: pointer; border: 1px solid {{ v.border }}; background: {{ v.bg }}; color: {{ v.color }}; font-family: 'DM Mono', monospace; font-size: 13px;">{{ v.icon }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: {{ gridCols }}; gap: 24px; padding-top: 28px;">
+        <sc-for list="{{ cards }}" as="p" hint-placeholder-count="9">
+          <article style="background: #FFFFFF; border: 1px solid rgba(35,41,31,.08); border-radius: 26px; padding: 18px; display: grid; grid-template-columns: {{ p.cardCols }}; gap: {{ p.cardGap }}; align-content: start; box-shadow: 0 1px 2px rgba(35,41,31,.03); transition: border-color .25s ease, box-shadow .3s ease, transform .3s ease;" style-hover="border-color: rgba(110,143,78,.5); box-shadow: 0 30px 54px -34px rgba(35,41,31,.5); transform: translateY(-3px);">
+            <div style="position: relative; aspect-ratio: {{ p.imgRatio }}; border-radius: 18px; background: #E4E9D9; overflow: hidden;">
+              <image-slot id="{{ p.slotId }}" shape="rect" src="{{ p.photo }}" placeholder="{{ p.shot }}"></image-slot>
+              <span style="position: absolute; left: 11px; top: 11px; pointer-events: none; font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .07em; background: {{ p.badgeBg }}; color: {{ p.badgeColor }}; padding: 6px 12px; border-radius: 999px;">{{ p.badge }}</span>
+            </div>
+
+            <div style="display: grid; gap: 14px; align-content: start;">
+              <div style="display: grid; gap: 7px;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .05em; color: #8A9180;">{{ p.cat }}</span>
+                  <span style="font-family: 'DM Mono', monospace; font-size: 10px; color: #C05621;">{{ p.stars }}</span>
+                  <span style="font-family: 'DM Mono', monospace; font-size: 10px; color: #A8AE9C;">{{ p.reviews }}</span>
+                </div>
+                <h3 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -.012em; margin: 0; line-height: 1.25;">
+                  <a href="La Belle Buche - Fiche Produit.dc.html">{{ p.name }}</a>
+                </h3>
+                <p style="margin: 0; font-size: 15.5px; line-height: 1.5; color: #55604F; text-wrap: pretty;">{{ p.desc }}</p>
+              </div>
+
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <sc-for list="{{ p.tags }}" as="tg" hint-placeholder-count="3">
+                  <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .04em; background: #F1F4E9; color: #4E5647; border-radius: 999px; padding: 6px 11px;">{{ tg }}</span>
+                </sc-for>
+              </div>
+
+              <div style="display: grid; gap: 7px;">
+                <div style="height: 4px; border-radius: 999px; background: #E7EADF; overflow: hidden;">
+                  <div style="height: 100%; width: {{ p.stockPct }}; background: {{ p.stockColor }}; border-radius: 999px;"></div>
+                </div>
+                <span style="font-family: 'DM Mono', monospace; font-size: 10px; color: {{ p.stockColor }};">{{ p.stockLabel }}</span>
+              </div>
+
+              <div style="display: flex; align-items: end; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;">
+                  <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 25px; letter-spacing: -.025em; white-space: nowrap;">{{ p.price }}</span>
+                  <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; color: #A8AE9C; text-decoration: line-through;">{{ p.oldPrice }}</span>
+                  <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; color: #8A9180;">{{ p.unit }}</span>
+                </div>
+                <button onClick="{{ p.add }}" style="background: #EEF2E4; color: #33512F; border: 0; border-radius: 999px; padding: 13px 22px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .06em; cursor: pointer; transition: background .2s ease, color .2s ease;" style-hover="background: #33512F; color: #F4F7EC;">Ajouter</button>
+              </div>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ noResult }}" hint-placeholder-val="{{ false }}">
+        <div style="padding: 60px 0; text-align: center;">
+          <p style="font-size: 19px; color: #4E5647; margin: 0 0 18px;">Aucune référence ne correspond à ces filtres.</p>
+          <button onClick="{{ resetFilters }}" style="background: #33512F; color: #F4F7EC; border: 0; border-radius: 999px; padding: 14px 26px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .06em; cursor: pointer;">Réinitialiser les filtres</button>
+        </div>
+      </sc-if>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-top: 40px; padding-top: 26px; border-top: 1px solid rgba(35,41,31,.09);">
+        <span style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .05em; color: #8A9180;">{{ pageInfo }}</span>
+        <div style="display: flex; gap: 6px; font-family: 'DM Mono', monospace; font-size: 11.5px;">
+          <span style="width: 38px; height: 38px; border-radius: 999px; background: #33512F; color: #F4F7EC; display: inline-flex; align-items: center; justify-content: center;">1</span>
+          <a href="#grille" style="width: 38px; height: 38px; border-radius: 999px; border: 1px solid rgba(35,41,31,.12); display: inline-flex; align-items: center; justify-content: center;">2</a>
+          <a href="#grille" style="height: 38px; border-radius: 999px; border: 1px solid rgba(35,41,31,.12); display: inline-flex; align-items: center; justify-content: center; padding: 0 20px; letter-spacing: .05em;">Suivant →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1400px; margin: 0 auto; padding: 96px 32px 0;">
+    <div style="background: #F5EFE2; border-radius: 34px; padding: 46px 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 64px;">
+      <div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #A8501B; margin-bottom: 14px;">{{ guideEyebrow }}</div>
+        <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 30px; line-height: 1.08; letter-spacing: -.03em; margin: 0 0 16px; color: #3B2A17;">{{ guideTitle }}</h2>
+        <p style="margin: 0 0 22px; font-size: 17px; line-height: 1.6; color: #6B5842; max-width: 44ch; text-wrap: pretty;">{{ guideText }}</p>
+        <a href="La Belle Buche - Boutique v2.dc.html#comparateur" style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .06em; color: #A8501B; border-bottom: 2px solid #C08B57; padding-bottom: 4px;">{{ guideCta }}</a>
+      </div>
+      <div style="display: grid; gap: 12px; align-content: center;">
+        <sc-for list="{{ guide }}" as="g" hint-placeholder-count="4">
+          <div style="display: grid; grid-template-columns: 96px 1fr; gap: 20px; align-items: baseline; padding-bottom: 12px; border-bottom: 1px solid rgba(59,42,23,.12);">
+            <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: #3B2A17;">{{ g.len }}</span>
+            <span style="font-family: 'DM Mono', monospace; font-size: 11.5px; line-height: 1.6; color: #6B5842;">{{ g.use }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1400px; margin: 0 auto; padding: 96px 32px 0; display: grid; grid-template-columns: .8fr 1.2fr; gap: 72px; align-items: start;">
+    <div>
+      <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #C05621; margin-bottom: 16px;">À savoir sur cette catégorie</div>
+      <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: clamp(28px, 3vw, 40px); line-height: 1.05; letter-spacing: -.032em; margin: 0 0 22px;">{{ faqTitle }}</h2>
+      <p style="font-size: 17px; line-height: 1.6; color: #55604F; margin: 0;">Nos conseillers connaissent chaque lot du parc. Un doute sur l'accès, la quantité ou le matériel ? Appelez, c'est plus rapide.</p>
+    </div>
+    <div style="display: grid;">
+      <sc-for list="{{ faqs }}" as="q" hint-placeholder-count="4">
+        <div style="border-top: 1px solid rgba(35,41,31,.1);">
+          <button onClick="{{ q.toggle }}" style="width: 100%; background: transparent; border: 0; cursor: pointer; text-align: left; padding: 24px 0; display: flex; align-items: center; justify-content: space-between; gap: 20px; font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: -.01em; color: #23291F;">
+            {{ q.q }}
+            <span style="font-family: 'DM Mono', monospace; font-size: 16px; color: #6E8F4E; flex-shrink: 0;">{{ q.sign }}</span>
+          </button>
+          <p style="margin: 0; padding: 0 0 {{ q.pad }}; max-height: {{ q.max }}; overflow: hidden; font-size: 17px; line-height: 1.6; color: #55604F; max-width: 62ch; transition: max-height .3s ease, padding .3s ease; text-wrap: pretty;">{{ q.a }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <footer style="background: #23291F; color: #9AA391; margin-top: 100px;">
+    <div style="max-width: 1400px; margin: 0 auto; padding: 76px 32px 30px; display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 48px;">
+      <div>
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 25px; letter-spacing: -.03em; color: #F4F7EC; margin-bottom: 14px;">La Belle Bûche</div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .08em; color: #C05621; margin-bottom: 16px;">Bois de chauffage vendu au stère</div>
+        <p style="margin: 0; font-size: 16px; line-height: 1.55; max-width: 40ch;">Bûcherons-négociants dans le Sud-Ouest. Du bois coupé près de chez vous, séché deux ans, livré et rangé.</p>
+      </div>
+      <div style="display: grid; gap: 11px; align-content: start; font-size: 16px;">
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .05em; color: #F4F7EC; margin-bottom: 6px;">Dépôt de Toulouse</div>
+        <span>06 30 46 09 35</span>
+        <span>14 chemin des Charbonniers<br>31200 Toulouse</span>
+      </div>
+      <div style="display: grid; gap: 11px; align-content: start; font-size: 16px;">
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .05em; color: #F4F7EC; margin-bottom: 6px;">Parc à bois de Muret</div>
+        <span>05 61 76 70 78</span>
+        <span>ZA de Joffrery, av. des Pins<br>31600 Muret</span>
+      </div>
+      <div style="display: grid; gap: 11px; align-content: start; font-size: 16px;">
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .05em; color: #F4F7EC; margin-bottom: 6px;">Nos catégories</div>
+        <sc-for list="{{ footerCats }}" as="c" hint-placeholder-count="4">
+          <a href="#grille" onClick="{{ c.onClick }}">{{ c.label }}</a>
+        </sc-for>
+      </div>
+    </div>
+    <div style="max-width: 1400px; margin: 0 auto; padding: 22px 32px 40px; border-top: 1px solid rgba(244,247,236,.1); font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .07em; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+      <span>© 2026 La Belle Bûche — Maquette</span>
+      <span>Paiement CB · Virement · 3× sans frais</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;category&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Bois de chauffage&quot;,&quot;options&quot;:[&quot;Bois de chauffage&quot;,&quot;Bûches densifiées&quot;,&quot;Allumage&quot;,&quot;Rangement &amp; outils&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Catégorie&quot;},&quot;columns&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:3,&quot;min&quot;:2,&quot;max&quot;:4,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Grille&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Confortable&quot;,&quot;options&quot;:[&quot;Confortable&quot;,&quot;Compacte&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Grille&quot;}}">
+const W = n => "photos/wood/" + n + ".jpg";
+
+/* ---------- Catalogue : un objet par catégorie, même forme partout ---------- */
+const CATEGORIES = {
+  bois: {
+    label: "Bois de chauffage",
+    crumb: "Bois de chauffage au stère",
+    eyebrow: n => "Catégorie · " + n + " références · prix au stère livré",
+    title: "Bois de chauffage au stère",
+    intro: "Chêne, charme, hêtre, frêne et mélanges feuillus, coupés à moins de 100 km de nos dépôts, fendus au printemps et séchés deux étés sous auvent. Humidité mesurée devant vous à la livraison, entre 12 et 20 % selon le lot.",
+    score: "4,8", scoreNote: "1 284 avis vérifiés\ncollectés après livraison",
+    promise: "Livraison", promiseHighlight: "offerte dès 4 stères en Haute-Garonne · rangement au bûcher en option",
+    ticker: "1 240 stères de chêne sec en parc",
+    stockNoun: "stères en parc",
+    help: { eyebrow: "BESOIN D'UN AVIS ?", text: "Dites-nous votre surface et votre appareil, on vous dit combien de stères commander.", cta: "Ouvrir le simulateur" },
+    guide: {
+      eyebrow: "Bien choisir", title: "Quelle longueur pour votre appareil ?",
+      text: "Mesurez la largeur intérieure de votre foyer et retirez 5 cm : c'est la longueur maximale de bûche que vous pouvez charger sans forcer.",
+      cta: "Comparer les essences →",
+      rows: [
+        { len: "25 cm", use: "Poêles compacts et scandinaves, foyers étroits de moins de 40 cm." },
+        { len: "33 cm", use: "Le standard : inserts, foyers fermés, la majorité des poêles récents." },
+        { len: "50 cm", use: "Grands foyers ouverts, inserts profonds, cheminées anciennes." },
+        { len: "1 m", use: "À refendre soi-même : chaudière bûche longue ou stockage longue durée." }
+      ]
+    },
+    faqTitle: "Le bois de chauffage vendu au stère",
+    faqs: [
+      { q: "Les prix affichés incluent-ils la livraison ?", a: "Oui, tous les prix au stère de cette catégorie incluent la livraison en Haute-Garonne dès 4 stères commandés. En dessous, une participation de 45 € s'applique ; hors département, comptez 0,90 €/km depuis le dépôt le plus proche." },
+      { q: "Puis-je mélanger plusieurs essences dans une commande ?", a: "Sans problème. Le camion charge autant de lots que nécessaire, et la remise de volume s'applique sur le total de stères commandés, quelles que soient les essences." },
+      { q: "Quelle différence entre bois séché et bois étuvé ?", a: "Le bois séché naturellement passe 24 mois sous auvent et descend entre 16 et 20 % d'humidité. Le bois étuvé finit son séchage en four à 12 % : il est immédiatement utilisable, rend plus de chaleur, mais coûte environ 25 % de plus au stère." },
+      { q: "Combien de temps garder le bois avant de le brûler ?", a: "Un bois livré à 17 % peut être brûlé le jour même s'il est stocké à l'abri. Si vous achetez du 1 m à refendre à 20 %, laissez-le un été supplémentaire fendu et surélevé." }
+    ],
+    subcats: [
+      { label: "Tout le bois", meta: "12 références", filter: null, photo: W("bucher") },
+      { label: "Chêne", meta: "5 formats", filter: { ess: ["Chêne"] }, photo: W("chene-33") },
+      { label: "Charme & hêtre", meta: "3 formats", filter: { ess: ["Charme & hêtre"] }, photo: W("charme-33") },
+      { label: "Frêne", meta: "2 formats", filter: { ess: ["Frêne"] }, photo: W("frene-33") },
+      { label: "Mélange feuillus", meta: "2 formats", filter: { ess: ["Mélange feuillus"] }, photo: W("melange-33") }
+    ],
+    facets: [
+      { key: "ess", label: "ESSENCE", type: "list", radius: "5px", options: ["Chêne", "Charme & hêtre", "Frêne", "Mélange feuillus"] },
+      { key: "len", label: "LONGUEUR DE BÛCHE", type: "pills", options: ["25 cm", "33 cm", "50 cm", "1 m"] },
+      { key: "price", label: "PRIX MAX / STÈRE", type: "range", min: 60, max: 160, step: 5, suffix: " €" },
+      { key: "humid", label: "HUMIDITÉ", type: "list", radius: "999px", options: [
+        { label: "Étuvé — 12 %", test: p => p.humid <= 12 },
+        { label: "Sec — 16 à 18 %", test: p => p.humid > 12 && p.humid <= 18 },
+        { label: "À finir de sécher — 20 %", test: p => p.humid > 18 }
+      ] },
+      { key: "dispo", label: "DISPONIBILITÉ", type: "list", radius: "5px", options: [
+        { label: "En parc, livrable sous 5 j", test: p => p.stock >= 30 },
+        { label: "En promotion", test: p => p.old > 0 }
+      ] }
+    ],
+    products: [
+      { id: "b1", ess: "Chêne", len: "33 cm", name: "Chêne 33 cm — 1 stère", desc: "Le classique : longue flambée, belles braises, vitre propre. Séché 24 mois sous auvent.", price: 119, old: 129, unit: "le stère livré", badge: "Best-seller", tone: "dark", rating: 4.9, reviews: 412, stock: 92, humid: 17, tags: ["17 % d'humidité", "Séché 24 mois", "Insert & foyer fermé"], photo: W("chene-33") },
+      { id: "b2", ess: "Chêne", len: "50 cm", name: "Chêne 50 cm — 1 stère", desc: "Pour les grands foyers ouverts et les inserts profonds. Moins de découpe, meilleur prix.", price: 99, old: 0, unit: "le stère livré", badge: "Économique", tone: "green", rating: 4.7, reviews: 118, stock: 74, humid: 18, tags: ["18 % d'humidité", "Grands foyers", "Livré en benne"], photo: W("chene-50") },
+      { id: "b3", ess: "Charme & hêtre", len: "33 cm", name: "Charme & hêtre 33 cm — 1 stère", desc: "Bois dense, chaleur vive et régulière. Le meilleur rendement de notre parc.", price: 129, old: 0, unit: "le stère livré", badge: "Haut rendement", tone: "green", rating: 4.9, reviews: 236, stock: 58, humid: 16, tags: ["16 % d'humidité", "2 050 kWh/stère", "Poêle & insert"], photo: W("charme-33") },
+      { id: "b4", ess: "Frêne", len: "33 cm", name: "Frêne 33 cm — 1 stère", desc: "Prend feu facilement, peu de fumée, idéal en mi-saison et pour les poêles à bois.", price: 109, old: 0, unit: "le stère livré", badge: "Mi-saison", tone: "green", rating: 4.6, reviews: 94, stock: 46, humid: 17, tags: ["Allumage facile", "Peu de fumée", "Poêle à bois"], photo: W("frene-33") },
+      { id: "b5", ess: "Mélange feuillus", len: "25 cm", name: "Mélange feuillus 25 cm — 1 stère", desc: "Chêne, charme, hêtre et frêne mélangés. Format court pour poêles compacts.", price: 105, old: 112, unit: "le stère livré", badge: "−6 %", tone: "orange", rating: 4.7, reviews: 143, stock: 81, humid: 18, tags: ["4 feuillus durs", "Poêles compacts", "18 % d'humidité"], photo: W("melange-25") },
+      { id: "b6", ess: "Chêne", len: "1 m", name: "Chêne 1 m à refendre — 1 stère", desc: "Bois de deux ans en rondins d'un mètre, à recouper vous-même. Le stère le moins cher.", price: 69, old: 0, unit: "le stère livré", badge: "À recouper", tone: "dark", rating: 4.5, reviews: 61, stock: 88, humid: 20, tags: ["Rondins 1 m", "Prix plancher", "Fendeuse requise"], photo: W("chene-1m") },
+      { id: "b7", ess: "Chêne", len: "33 cm", name: "Chêne étuvé 33 cm — 1 stère", desc: "Passé en étuve à 12 % d'humidité : prêt à brûler dès la livraison, rendement maximal.", price: 149, old: 0, unit: "le stère livré", badge: "12 % H₂O", tone: "orange", rating: 4.8, reviews: 187, stock: 22, humid: 12, tags: ["Prêt à brûler", "12 % d'humidité", "Chaudière & poêle"], photo: W("etuve-33") },
+      { id: "b8", ess: "Charme & hêtre", len: "25 cm", name: "Hêtre 25 cm — 1 stère", desc: "Format court, flamme claire et braises longues. Le préféré des poêles scandinaves.", price: 124, old: 132, unit: "le stère livré", badge: "−6 %", tone: "orange", rating: 4.8, reviews: 88, stock: 51, humid: 16, tags: ["Flamme claire", "16 % d'humidité", "Poêle récent"], photo: W("hetre-25") },
+      { id: "b9", ess: "Mélange feuillus", len: "33 cm", name: "Mélange feuillus 33 cm — 1 stère", desc: "Le stère polyvalent de la maison : bon rendement, prix contenu, tous appareils.", price: 112, old: 0, unit: "le stère livré", badge: "Polyvalent", tone: "green", rating: 4.6, reviews: 205, stock: 96, humid: 18, tags: ["Tous appareils", "Bon rapport", "Stock important"], photo: W("melange-33") },
+      { id: "b10", ess: "Frêne", len: "50 cm", name: "Frêne 50 cm — 1 stère", desc: "Bûches longues pour foyer ouvert, allumage immédiat même par temps humide.", price: 96, old: 0, unit: "le stère livré", badge: "Foyer ouvert", tone: "green", rating: 4.4, reviews: 42, stock: 28, humid: 18, tags: ["Foyer ouvert", "Allumage rapide", "Stock limité"], photo: W("frene-50") },
+      { id: "b11", ess: "Chêne", len: "33 cm", name: "Lot saison — 5 stères chêne 33 cm", desc: "La saison complète d'une maison bien isolée, livrée en une fois. Remise de 8 %.", price: 547, old: 595, unit: "le lot livré", badge: "−8 %", tone: "orange", rating: 4.9, reviews: 76, stock: 35, humid: 17, tags: ["5 stères", "109,40 €/stère", "Camion benne"], photo: W("lot5"), noPriceFilter: true },
+      { id: "b12", ess: "Charme & hêtre", len: "33 cm", name: "Charme étuvé 33 cm — 1 stère", desc: "Le plus haut rendement du parc, séché en étuve. Pour ceux qui comptent chaque kWh.", price: 159, old: 0, unit: "le stère livré", badge: "Premium", tone: "dark", rating: 4.9, reviews: 64, stock: 18, humid: 12, tags: ["2 100 kWh/stère", "12 % d'humidité", "Édition limitée"], photo: W("charme-etuve") }
+    ]
+  },
+
+  densifiees: {
+    label: "Bûches densifiées",
+    crumb: "Bûches densifiées & granulés",
+    eyebrow: n => "Catégorie · " + n + " références · vendues au pack ou à la palette",
+    title: "Bûches densifiées & granulés",
+    intro: "Sciure de feuillus et de résineux compressée sans colle ni liant, à 8 % d'humidité. Le complément du stère : montée en température immédiate le matin, bûche de nuit pour tenir jusqu'à l'aube, granulés DINplus pour poêle et chaudière.",
+    score: "4,7", scoreNote: "612 avis vérifiés\nsur les produits densifiés",
+    promise: "Palette", promiseHighlight: "livrée sur transpalette, déchargée devant chez vous en Haute-Garonne",
+    ticker: "182 palettes de densifié en stock",
+    stockNoun: "palettes en stock",
+    help: { eyebrow: "JOUR OU NUIT ?", text: "Une bûche de jour pour lancer le feu, une bûche de nuit pour tenir 8 h : le bon dosage dépend de votre appareil.", cta: "Voir notre dosage type" },
+    guide: {
+      eyebrow: "Bien choisir", title: "Quelle bûche densifiée pour quel moment ?",
+      text: "Les bûches claires (100 % feuillus ou mixtes) montent vite en température ; les bûches sombres, plus denses, rougeoient longtemps et se chargent le soir.",
+      cta: "Comparer avec le stère →",
+      rows: [
+        { len: "Bûche jour", use: "Feuillus clairs : flamme vive en 10 min, pour relancer un poêle froid." },
+        { len: "Bûche nuit", use: "Compressée à froid, sombre et dense : 6 à 8 h de braises sans recharge." },
+        { len: "Granulés", use: "Poêles et chaudières à granulés uniquement — jamais dans un foyer bûche." },
+        { len: "Briquettes", use: "Format court pour petits poêles, cuisinières à bois et barbecues fermés." }
+      ]
+    },
+    faqTitle: "Le densifié, en complément du bois bûche",
+    faqs: [
+      { q: "Peut-on brûler du densifié dans un poêle à bûches classique ?", a: "Oui pour les bûches et briquettes densifiées, à condition de charger deux ou trois unités maximum : elles dégagent beaucoup plus de chaleur qu'une bûche de bois. Les granulés, eux, ne conviennent qu'aux appareils à granulés." },
+      { q: "Combien de bûches densifiées pour remplacer un stère ?", a: "Un pack de 5 bûches de nuit équivaut environ à 45 kg de bois sec. Comptez 1 palette (96 bûches) pour l'équivalent chaleur d'environ 2,5 stères de chêne à 17 %." },
+      { q: "Comment stocker les palettes ?", a: "À l'abri absolu de l'humidité : le densifié gonfle et s'effrite au contact de l'eau. Un garage, un cellier ou un abri fermé conviennent ; la housse de palette n'est pas étanche à long terme." },
+      { q: "Vos granulés sont-ils certifiés ?", a: "Tous nos granulés sont DINplus et ENplus A1, produits en Occitanie et dans le Massif central, avec un taux de cendres inférieur à 0,5 % et un pouvoir calorifique de 4,8 kWh/kg." }
+    ],
+    subcats: [
+      { label: "Tout le densifié", meta: "10 références", filter: null, photo: "" },
+      { label: "Bûches de jour", meta: "3 références", filter: { usage: ["Jour"] }, photo: "" },
+      { label: "Bûches de nuit", meta: "3 références", filter: { usage: ["Nuit"] }, photo: "" },
+      { label: "Granulés", meta: "3 références", filter: { usage: ["Granulés"] }, photo: "" },
+      { label: "Palettes complètes", meta: "4 références", filter: { cond: ["Palette"] }, photo: "" }
+    ],
+    facets: [
+      { key: "usage", label: "USAGE", type: "list", radius: "5px", options: ["Jour", "Nuit", "Mixte", "Granulés"] },
+      { key: "cond", label: "CONDITIONNEMENT", type: "pills", options: ["Pack", "Demi-palette", "Palette", "Sac 15 kg"] },
+      { key: "price", label: "PRIX MAX", type: "range", min: 5, max: 600, step: 5, suffix: " €" },
+      { key: "compo", label: "COMPOSITION", type: "list", radius: "999px", options: ["100 % feuillus", "Feuillus & résineux", "100 % résineux"] },
+      { key: "dispo", label: "DISPONIBILITÉ", type: "list", radius: "5px", options: [
+        { label: "Enlèvement immédiat au dépôt", test: p => p.stock >= 40 },
+        { label: "En promotion", test: p => p.old > 0 }
+      ] }
+    ],
+    products: [
+      { id: "d1", usage: "Jour", cond: "Pack", compo: "100 % feuillus", name: "Bûche de jour — pack de 5", desc: "Chêne et hêtre compressés, flamme vive en dix minutes pour relancer un poêle froid.", price: 6.9, old: 0, unit: "le pack de 5", badge: "Allumage rapide", tone: "green", rating: 4.7, reviews: 214, stock: 96, tags: ["8 % d'humidité", "5 × 2 kg", "Poêle & insert"], photo: "" },
+      { id: "d2", usage: "Nuit", cond: "Pack", compo: "100 % feuillus", name: "Bûche de nuit — pack de 5", desc: "Compressée à froid, très dense : 6 à 8 h de braises sans recharger le poêle.", price: 8.5, old: 9.2, unit: "le pack de 5", badge: "8 h de braises", tone: "dark", rating: 4.9, reviews: 328, stock: 88, tags: ["Nuit complète", "5 × 2,5 kg", "Sans liant"], photo: "" },
+      { id: "d3", usage: "Mixte", cond: "Demi-palette", compo: "Feuillus & résineux", name: "Demi-palette mixte — 48 bûches", desc: "Moitié jour, moitié nuit : de quoi passer un mois d'hiver en complément du stère.", price: 219, old: 0, unit: "les 48 bûches", badge: "Le bon dosage", tone: "green", rating: 4.6, reviews: 97, stock: 62, tags: ["48 bûches", "≈ 1,2 stère", "Sous housse"], photo: "" },
+      { id: "d4", usage: "Nuit", cond: "Palette", compo: "100 % feuillus", name: "Palette nuit — 96 bûches", desc: "La saison de chauffage d'appoint complète, livrée sur transpalette devant chez vous.", price: 469, old: 512, unit: "la palette", badge: "−8 %", tone: "orange", rating: 4.8, reviews: 141, stock: 44, tags: ["96 bûches", "≈ 2,5 stères", "Livraison incluse"], photo: "" },
+      { id: "d5", usage: "Jour", cond: "Palette", compo: "Feuillus & résineux", name: "Palette jour — 96 bûches", desc: "Montée en température immédiate, idéale en mi-saison quand un stère serait excessif.", price: 429, old: 0, unit: "la palette", badge: "Mi-saison", tone: "green", rating: 4.6, reviews: 76, stock: 51, tags: ["96 bûches", "Flamme vive", "Livraison incluse"], photo: "" },
+      { id: "d6", usage: "Granulés", cond: "Sac 15 kg", compo: "100 % résineux", name: "Granulés DINplus — sac de 15 kg", desc: "Résineux du Massif central, 4,8 kWh/kg, moins de 0,5 % de cendres. Pour poêle à granulés.", price: 6.4, old: 0, unit: "le sac de 15 kg", badge: "DINplus", tone: "green", rating: 4.8, reviews: 402, stock: 98, tags: ["ENplus A1", "4,8 kWh/kg", "Poêle à granulés"], photo: "" },
+      { id: "d7", usage: "Granulés", cond: "Palette", compo: "100 % résineux", name: "Palette granulés — 66 sacs", desc: "Une tonne de granulés certifiés, la saison complète d'un poêle en appoint principal.", price: 379, old: 405, unit: "la palette (990 kg)", badge: "−6 %", tone: "orange", rating: 4.8, reviews: 188, stock: 57, tags: ["66 × 15 kg", "ENplus A1", "Transpalette"], photo: "" },
+      { id: "d8", usage: "Granulés", cond: "Demi-palette", compo: "100 % résineux", name: "Demi-palette granulés — 33 sacs", desc: "Pour les caves et garages étroits : même granulé, demi-volume, même prix au kilo.", price: 199, old: 0, unit: "les 33 sacs", badge: "Petit stockage", tone: "green", rating: 4.7, reviews: 63, stock: 38, tags: ["33 × 15 kg", "495 kg", "Cave étroite"], photo: "" },
+      { id: "d9", usage: "Mixte", cond: "Pack", compo: "Feuillus & résineux", name: "Briquettes densifiées — pack de 12", desc: "Format court pour petits poêles, cuisinières à bois et fours à pain.", price: 7.8, old: 0, unit: "le pack de 12", badge: "Format court", tone: "green", rating: 4.5, reviews: 58, stock: 72, tags: ["12 briquettes", "Cuisinière & four", "8 % d'humidité"], photo: "" },
+      { id: "d10", usage: "Nuit", cond: "Palette", compo: "Feuillus & résineux", name: "Palette nuit XL — 120 bûches", desc: "Le plus gros volume du dépôt, réservé aux maisons chauffées principalement au poêle.", price: 549, old: 0, unit: "la palette XL", badge: "Gros volume", tone: "dark", rating: 4.7, reviews: 44, stock: 21, tags: ["120 bûches", "≈ 3 stères", "Stock limité"], photo: "" }
+    ]
+  },
+
+  allumage: {
+    label: "Allumage",
+    crumb: "Allumage & entretien du feu",
+    eyebrow: n => "Catégorie · " + n + " références · petits prix, gros effet",
+    title: "Allumage & entretien du feu",
+    intro: "Tout ce qui fait démarrer un feu du premier coup et le garde propre : petit bois de résineux, allume-feu en laine de bois, bûches de ramonage, humidimètre et nettoyants de vitre. Vendu à l'unité, en filet ou en carton.",
+    score: "4,6", scoreNote: "874 avis vérifiés\nsur l'allumage & l'entretien",
+    promise: "Ajouté", promiseHighlight: "gratuitement à votre livraison de bois, sans frais de port supplémentaires",
+    ticker: "Petit bois sec disponible sur les 2 dépôts",
+    stockNoun: "unités au dépôt",
+    help: { eyebrow: "PREMIER FEU DIFFICILE ?", text: "Neuf feux sur dix qui fument mal sont un problème d'allumage, pas de bois. On vous montre la méthode top-down.", cta: "Lire la méthode" },
+    guide: {
+      eyebrow: "Bien démarrer", title: "La bonne méthode d'allumage",
+      text: "Allumage par le haut : grosses bûches en bas, petit bois au milieu, allume-feu au sommet. La fumée traverse la flamme au lieu de l'étouffer.",
+      cta: "Voir le bois adapté →",
+      rows: [
+        { len: "1. Base", use: "Deux bûches de 33 cm posées à plat, écartées de trois doigts." },
+        { len: "2. Milieu", use: "Une dizaine de baguettes de résineux croisées en deux couches." },
+        { len: "3. Sommet", use: "Deux cubes de laine de bois — jamais de papier journal, qui salit le conduit." },
+        { len: "4. Réglage", use: "Arrivée d'air grande ouverte 15 min, puis réduite de moitié." }
+      ]
+    },
+    faqTitle: "Allumage, ramonage et entretien courant",
+    faqs: [
+      { q: "La bûche de ramonage remplace-t-elle le ramoneur ?", a: "Non. Elle décolle le bistre et facilite le travail, mais le ramonage mécanique par un professionnel reste obligatoire une à deux fois par an selon votre commune, et votre assurance l'exige en cas de sinistre." },
+      { q: "Pourquoi éviter le papier journal ?", a: "L'encre et le papier produisent des cendres volantes qui salissent la vitre et se déposent dans le conduit. Deux cubes de laine de bois imbibés de cire coûtent quelques centimes et brûlent proprement six minutes." },
+      { q: "À quoi sert un humidimètre si votre bois est déjà sec ?", a: "À vérifier votre stockage : un bois livré à 17 % remonte à 22 % en trois mois dans un abri mal ventilé ou posé à même le sol. La mesure se fait sur une bûche fraîchement refendue, au cœur." },
+      { q: "Livrez-vous l'allumage seul ?", a: "Oui, en point relais sous 48 h dès 25 € de commande. Sinon, on l'ajoute gratuitement à votre livraison de bois : dites-le au moment de la commande." }
+    ],
+    subcats: [
+      { label: "Tout l'allumage", meta: "9 références", filter: null, photo: W("allumage") },
+      { label: "Petit bois", meta: "3 références", filter: { fam: ["Petit bois"] }, photo: "" },
+      { label: "Allume-feu", meta: "2 références", filter: { fam: ["Allume-feu"] }, photo: "" },
+      { label: "Ramonage", meta: "2 références", filter: { fam: ["Ramonage"] }, photo: "" },
+      { label: "Mesure & entretien", meta: "2 références", filter: { fam: ["Mesure & entretien"] }, photo: "" }
+    ],
+    facets: [
+      { key: "fam", label: "FAMILLE", type: "list", radius: "5px", options: ["Petit bois", "Allume-feu", "Ramonage", "Mesure & entretien"] },
+      { key: "cond", label: "CONDITIONNEMENT", type: "pills", options: ["À l'unité", "Filet", "Carton", "Sachet"] },
+      { key: "price", label: "PRIX MAX", type: "range", min: 3, max: 60, step: 1, suffix: " €" },
+      { key: "nat", label: "COMPOSITION", type: "list", radius: "999px", options: [
+        { label: "100 % naturel", test: p => p.nat === "Naturel" },
+        { label: "Traité / chimique", test: p => p.nat !== "Naturel" }
+      ] },
+      { key: "dispo", label: "DISPONIBILITÉ", type: "list", radius: "5px", options: [
+        { label: "Expédié sous 48 h", test: p => p.stock >= 40 },
+        { label: "En promotion", test: p => p.old > 0 }
+      ] }
+    ],
+    products: [
+      { id: "a1", fam: "Petit bois", cond: "Filet", nat: "Naturel", name: "Petit bois de résineux — filet 25 L", desc: "Baguettes de pin refendues et séchées deux ans, calibrées pour l'allumage par le haut.", price: 7.5, old: 0, unit: "le filet de 25 L", badge: "Indispensable", tone: "green", rating: 4.8, reviews: 356, stock: 94, tags: ["25 L", "Résineux sec", "≈ 12 feux"], photo: "" },
+      { id: "a2", fam: "Petit bois", cond: "Filet", nat: "Naturel", name: "Petit bois — lot de 3 filets", desc: "La saison d'un poêle allumé chaque soir, à prix dégressif.", price: 19.5, old: 22.5, unit: "les 3 filets", badge: "−13 %", tone: "orange", rating: 4.7, reviews: 112, stock: 76, tags: ["75 L", "≈ 36 feux", "Prix dégressif"], photo: "" },
+      { id: "a3", fam: "Petit bois", cond: "Carton", nat: "Naturel", name: "Bûchettes d'allumage — carton 10 kg", desc: "Chutes de feuillus sec calibrées à 20 cm, plus denses que le résineux, sans résine.", price: 12.9, old: 0, unit: "le carton de 10 kg", badge: "Sans résine", tone: "green", rating: 4.6, reviews: 64, stock: 58, tags: ["10 kg", "Feuillus", "20 cm"], photo: "" },
+      { id: "a4", fam: "Allume-feu", cond: "Sachet", nat: "Naturel", name: "Allume-feu laine de bois — 100 cubes", desc: "Laine de bois et cire végétale : six minutes de flamme, aucune odeur, zéro pétrole.", price: 8.9, old: 0, unit: "les 100 cubes", badge: "100 % naturel", tone: "green", rating: 4.9, reviews: 487, stock: 97, tags: ["100 cubes", "Cire végétale", "6 min de flamme"], photo: "" },
+      { id: "a5", fam: "Allume-feu", cond: "À l'unité", nat: "Traité", name: "Gel d'allumage — flacon 1 L", desc: "Pour les foyers ouverts et les barbecues fermés, quand le petit bois manque.", price: 5.9, old: 6.9, unit: "le flacon d'1 L", badge: "−14 %", tone: "orange", rating: 4.1, reviews: 73, stock: 66, tags: ["1 L", "Foyer ouvert", "≈ 30 feux"], photo: "" },
+      { id: "a6", fam: "Ramonage", cond: "À l'unité", nat: "Traité", name: "Bûche de ramonage — 1,1 kg", desc: "Décolle le bistre entre deux ramonages mécaniques. Une bûche par saison de chauffe.", price: 14.9, old: 0, unit: "la bûche", badge: "1 fois / saison", tone: "green", rating: 4.5, reviews: 231, stock: 84, tags: ["1,1 kg", "Anti-bistre", "Complément"], photo: "" },
+      { id: "a7", fam: "Ramonage", cond: "Sachet", nat: "Traité", name: "Poudre anti-suie — 1 kg", desc: "Une dose par semaine sur le lit de braises pour limiter le dépôt dans le conduit.", price: 16.5, old: 0, unit: "le pot d'1 kg", badge: "Usage régulier", tone: "green", rating: 4.4, reviews: 58, stock: 41, tags: ["1 kg", "≈ 40 doses", "Conduit propre"], photo: "" },
+      { id: "a8", fam: "Mesure & entretien", cond: "À l'unité", nat: "Traité", name: "Humidimètre à pointes", desc: "Mesure le taux d'humidité au cœur d'une bûche refendue, de 6 à 44 %. Le même que le nôtre.", price: 29.9, old: 34.9, unit: "l'appareil", badge: "−14 %", tone: "dark", rating: 4.7, reviews: 149, stock: 47, tags: ["6 à 44 %", "Pointes acier", "Garanti 2 ans"], photo: "" },
+      { id: "a9", fam: "Mesure & entretien", cond: "À l'unité", nat: "Naturel", name: "Nettoyant vitre d'insert — 500 ml", desc: "Base cendre et argile, sans solvant : dissout le dépôt brun sans rayer la vitrocéramique.", price: 9.5, old: 0, unit: "le flacon 500 ml", badge: "Sans solvant", tone: "green", rating: 4.6, reviews: 96, stock: 62, tags: ["500 ml", "Sans solvant", "Vitrocéramique"], photo: "" }
+    ]
+  },
+
+  rangement: {
+    label: "Rangement & outils",
+    crumb: "Rangement & outils",
+    eyebrow: n => "Catégorie · " + n + " références · fabriqué pour durer",
+    title: "Rangement & outils",
+    intro: "Le matériel qu'on utilise nous-mêmes au parc : abris et range-bûches en acier thermolaqué, sacs de portage en toile, haches et merlins forgés, coins éclateurs. Testé une saison complète avant d'entrer au catalogue.",
+    score: "4,7", scoreNote: "398 avis vérifiés\nsur le rangement & l'outillage",
+    promise: "Garantie", promiseHighlight: "5 ans sur les structures acier · aiguisage offert à vie sur les haches",
+    ticker: "Abris bûcher en stock aux deux dépôts",
+    stockNoun: "pièces au dépôt",
+    help: { eyebrow: "COMBIEN DE MÈTRES DE MUR ?", text: "Un stère de 33 cm occupe 1,5 m de mur sur 1,2 m de haut. Donnez-nous votre place, on vous dit quel abri prendre.", cta: "Calculer mon abri" },
+    guide: {
+      eyebrow: "Bien stocker", title: "Un bois qui reste sec toute la saison",
+      text: "Trois règles : surélevé de 10 cm, adossé mais pas collé au mur, couvert sur le dessus seulement. Une bâche descendue sur les côtés fait pourrir le tas.",
+      cta: "Voir les essences →",
+      rows: [
+        { len: "Surélever", use: "Palette ou support acier : 10 cm d'air sous le tas contre l'humidité du sol." },
+        { len: "Ventiler", use: "5 cm entre le mur et le tas, bûches en travers pour laisser circuler l'air." },
+        { len: "Couvrir", use: "Toit ou bâche sur le dessus uniquement, jamais rabattue sur les flancs." },
+        { len: "Rentrer", use: "Une semaine de bois à l'intérieur : le bois tempéré brûle mieux." }
+      ]
+    },
+    faqTitle: "Rangement, portage et outillage",
+    faqs: [
+      { q: "Quel abri pour deux stères ?", a: "Comptez 3 m de linéaire sur 1,20 m de haut en bûches de 33 cm, soit notre abri acier 3 m ou deux modules de 1,50 m. Prévoyez 10 cm de garde au-dessus pour charger sans forcer." },
+      { q: "Hache, merlin ou coin éclateur ?", a: "La hache fend les bûches de moins de 25 cm de diamètre. Au-delà, le merlin de 3 kg passe mieux, et pour les nœuds ou les rondins d'un mètre, le coin éclateur frappé à la masse est la seule solution sûre." },
+      { q: "Les structures acier tiennent-elles dehors ?", a: "Oui, toutes nos structures sont en acier thermolaqué garanti 5 ans contre la corrosion perforante. Posez-les sur dalle ou gravier, pas dans la terre nue." },
+      { q: "Livrez-vous les abris montés ?", a: "Les abris arrivent en kit à plat, montage en 30 à 45 min à deux avec une clé de 13. Le montage sur place est possible pour 60 € au dépôt de Toulouse et de Muret." }
+    ],
+    subcats: [
+      { label: "Tout le matériel", meta: "10 références", filter: null, photo: W("bucher") },
+      { label: "Abris & bûchers", meta: "3 références", filter: { fam: ["Abri & rangement"] }, photo: "" },
+      { label: "Portage", meta: "3 références", filter: { fam: ["Portage"] }, photo: "" },
+      { label: "Fendage", meta: "3 références", filter: { fam: ["Fendage"] }, photo: "" },
+      { label: "Protection", meta: "1 référence", filter: { fam: ["Protection"] }, photo: "" }
+    ],
+    facets: [
+      { key: "fam", label: "FAMILLE", type: "list", radius: "5px", options: ["Abri & rangement", "Portage", "Fendage", "Protection"] },
+      { key: "mat", label: "MATIÈRE", type: "pills", options: ["Acier", "Bois", "Toile", "Cuir"] },
+      { key: "price", label: "PRIX MAX", type: "range", min: 15, max: 900, step: 5, suffix: " €" },
+      { key: "usage", label: "USAGE", type: "list", radius: "999px", options: ["Intérieur", "Extérieur", "Les deux"] },
+      { key: "dispo", label: "DISPONIBILITÉ", type: "list", radius: "5px", options: [
+        { label: "En stock au dépôt", test: p => p.stock >= 40 },
+        { label: "En promotion", test: p => p.old > 0 }
+      ] }
+    ],
+    products: [
+      { id: "r1", fam: "Abri & rangement", mat: "Acier", usage: "Extérieur", name: "Abri bûcher acier — 3 m", desc: "Toit incliné, ouvert sur les flancs pour ventiler. Contient 2 stères de 33 cm.", price: 749, old: 819, unit: "l'abri en kit", badge: "−9 %", tone: "orange", rating: 4.8, reviews: 87, stock: 34, tags: ["2 stères", "Acier thermolaqué", "Garanti 5 ans"], photo: "" },
+      { id: "r2", fam: "Abri & rangement", mat: "Acier", usage: "Extérieur", name: "Module range-bûches — 1,50 m", desc: "Module empilable et juxtaposable : on commence par un, on complète l'hiver suivant.", price: 289, old: 0, unit: "le module", badge: "Modulaire", tone: "green", rating: 4.7, reviews: 62, stock: 58, tags: ["1 stère", "Empilable", "Montage 30 min"], photo: "" },
+      { id: "r3", fam: "Abri & rangement", mat: "Acier", usage: "Intérieur", name: "Range-bûches d'intérieur — 70 cm", desc: "Pour la semaine de bois près du poêle. Acier noir mat, fond plein anti-poussière.", price: 129, old: 0, unit: "la pièce", badge: "Près du poêle", tone: "green", rating: 4.6, reviews: 104, stock: 71, tags: ["≈ 30 bûches", "Noir mat", "Fond plein"], photo: "" },
+      { id: "r4", fam: "Portage", mat: "Toile", usage: "Les deux", name: "Sac de portage toile — 4 bûches", desc: "Toile de coton huilé et poignées cuir, se plie à plat derrière la porte.", price: 49, old: 0, unit: "le sac", badge: "Fait en France", tone: "green", rating: 4.8, reviews: 133, stock: 82, tags: ["Coton huilé", "Poignées cuir", "4 bûches"], photo: "" },
+      { id: "r5", fam: "Portage", mat: "Acier", usage: "Les deux", name: "Chariot à bûches — roues gonflables", desc: "Deux stères par voyage sur gravier ou pelouse, bascule pour vider près du poêle.", price: 219, old: 245, unit: "le chariot", badge: "−11 %", tone: "orange", rating: 4.7, reviews: 71, stock: 44, tags: ["Roues gonflables", "Charge 150 kg", "Bascule"], photo: "" },
+      { id: "r6", fam: "Portage", mat: "Cuir", usage: "Intérieur", name: "Panier bûches cuir & acier", desc: "Anses cuir pleine fleur cousues main, structure acier. Vieillit bien, ne se déforme pas.", price: 139, old: 0, unit: "le panier", badge: "Cuir pleine fleur", tone: "dark", rating: 4.9, reviews: 46, stock: 29, tags: ["Cuir pleine fleur", "Cousu main", "Stock limité"], photo: "" },
+      { id: "r7", fam: "Fendage", mat: "Acier", usage: "Extérieur", name: "Hache fendeuse 1,6 kg — manche hickory", desc: "Taillant forgé et manche hickory : la hache d'appoint pour refendre le petit bois.", price: 89, old: 0, unit: "la hache", badge: "Aiguisage à vie", tone: "green", rating: 4.8, reviews: 118, stock: 63, tags: ["1,6 kg", "Manche hickory", "Étui cuir"], photo: "" },
+      { id: "r8", fam: "Fendage", mat: "Acier", usage: "Extérieur", name: "Merlin de fendage 3 kg", desc: "Pour les grosses sections et les rondins d'un mètre. Manche long, frappe à deux mains.", price: 119, old: 0, unit: "le merlin", badge: "Grosses bûches", tone: "green", rating: 4.7, reviews: 84, stock: 47, tags: ["3 kg", "Manche 80 cm", "Acier forgé"], photo: "" },
+      { id: "r9", fam: "Fendage", mat: "Acier", usage: "Extérieur", name: "Coin éclateur torsadé — 1,4 kg", desc: "Le seul recours sur un nœud : torsadé pour ouvrir la fibre au lieu de rester coincé.", price: 34, old: 39, unit: "le coin", badge: "−13 %", tone: "orange", rating: 4.6, reviews: 52, stock: 68, tags: ["1,4 kg", "Torsadé", "Nœuds & rondins"], photo: "" },
+      { id: "r10", fam: "Protection", mat: "Toile", usage: "Extérieur", name: "Bâche à bois respirante — 3 × 1,5 m", desc: "Toile microperforée : arrête la pluie, laisse sortir l'humidité. Œillets tous les 50 cm.", price: 59, old: 0, unit: "la bâche", badge: "Respirante", tone: "green", rating: 4.5, reviews: 93, stock: 76, tags: ["3 × 1,5 m", "Microperforée", "Œillets laiton"], photo: "" }
+    ]
+  }
+};
+
+const TONES = {
+  dark: { bg: "#23291F", color: "#F4F7EC" },
+  green: { bg: "#DCE5CE", color: "#33512F" },
+  orange: { bg: "#C05621", color: "#FFF3EA" }
+};
+const SLUGS = ["bois", "densifiees", "allumage", "rangement"];
+const LABEL_TO_SLUG = { "Bois de chauffage": "bois", "Bûches densifiées": "densifiees", "Allumage": "allumage", "Rangement & outils": "rangement" };
+
+class Component extends DCLogic {
+  state = { slug: null, sel: {}, price: null, sort: "Populaires", view: "Grille", cart: 0, faq: 0 };
+
+  cat() {
+    return CATEGORIES[this.state.slug || LABEL_TO_SLUG[this.props.category] || "bois"];
+  }
+  slug() { return this.state.slug || LABEL_TO_SLUG[this.props.category] || "bois"; }
+  priceMax() {
+    const rf = this.cat().facets.find(f => f.type === "range");
+    return this.state.price === null ? rf.max : this.state.price;
+  }
+  eur(n) { return n.toFixed(2).replace(".", ",") + " €"; }
+  stars(r) { const f = Math.round(r); return "★★★★★".slice(0, f) + "☆☆☆☆☆".slice(0, 5 - f); }
+  go(slug) { return () => this.setState({ slug, sel: {}, price: null, sort: "Populaires", faq: 0 }); }
+  toggle(key, label) {
+    this.setState(s => {
+      const cur = s.sel[key] || [];
+      const next = cur.includes(label) ? cur.filter(v => v !== label) : [...cur, label];
+      return { sel: { ...s.sel, [key]: next } };
+    });
+  }
+  reset() { return () => this.setState({ sel: {}, price: null }); }
+
+  optMatch(facet, opt, p) {
+    if (opt.test) return opt.test(p);
+    const v = p[facet.key];
+    return Array.isArray(v) ? v.includes(opt.label) : v === opt.label;
+  }
+
+  renderVals() {
+    const cat = this.cat(), st = this.state;
+    const cols = this.props.columns ?? 3;
+    const compact = (this.props.density ?? "Confortable") === "Compacte";
+    const rangeFacet = cat.facets.find(f => f.type === "range");
+    const priceMax = this.priceMax();
+
+    const norm = f => (f.options || []).map(o => typeof o === "string" ? { label: o } : o);
+
+    const matches = p => cat.facets.every(f => {
+      if (f.type === "range") return p.noPriceFilter || p.price <= priceMax;
+      const sel = st.sel[f.key] || [];
+      if (!sel.length) return true;
+      return norm(f).filter(o => sel.includes(o.label)).some(o => this.optMatch(f, o, p));
+    });
+
+    const list = cat.products.filter(matches);
+    if (st.sort === "Prix ↑") list.sort((a, b) => a.price - b.price);
+    if (st.sort === "Prix ↓") list.sort((a, b) => b.price - a.price);
+    if (st.sort === "Mieux notés") list.sort((a, b) => b.rating - a.rating);
+
+    const listView = st.view === "Liste";
+    const maxStock = Math.max(...cat.products.map(p => p.stock));
+
+    const products = list.map(p => ({
+      id: p.id, key: p.id,
+      name: p.name, desc: p.desc, unit: p.unit, badge: p.badge,
+      cat: [p.ess || p.fam || p.usage, p.len || p.cond || p.mat].filter(Boolean).join(" · "),
+      price: this.eur(p.price),
+      oldPrice: p.old ? this.eur(p.old) : "",
+      badgeBg: TONES[p.tone].bg, badgeColor: TONES[p.tone].color,
+      stars: this.stars(p.rating), reviews: p.reviews + " avis",
+      stockPct: Math.round(p.stock / maxStock * 100) + "%",
+      stockColor: p.stock < 30 ? "#C05621" : "#6E8F4E",
+      stockLabel: p.stock < 30 ? "Stock limité — " + Math.round(p.stock / 2) + " " + cat.stockNoun : "Disponible, livré sous 5 jours",
+      tags: compact ? p.tags.slice(0, 2) : p.tags,
+      slotId: "cat-" + this.slug() + "-" + p.id,
+      photo: p.photo || "",
+      shot: "Photo — " + p.name.toLowerCase(),
+      cardCols: listView ? "260px 1fr" : "1fr",
+      cardGap: listView ? "22px" : "16px",
+      imgRatio: listView ? "1.35" : "1.06",
+      add: () => this.setState(s => ({ cart: s.cart + 1 }))
+    }));
+
+    const facets = cat.facets.map(f => {
+      if (f.type === "range") return {
+        label: f.label, isList: false, isPills: false, isRange: true, options: [],
+        min: f.min, max: f.max, step: f.step, value: priceMax,
+        valueLabel: priceMax >= f.max ? "sans limite" : priceMax + f.suffix,
+        onRange: e => this.setState({ price: Number(e.target.value) })
+      };
+      const sel = st.sel[f.key] || [];
+      const options = norm(f).map(o => {
+        const on = sel.includes(o.label);
+        const count = cat.products.filter(p => this.optMatch(f, o, p)).length;
+        return {
+          label: o.label, count: f.type === "list" ? count : "",
+          mark: on ? "✓" : "",
+          radius: f.radius || "5px",
+          fill: on ? "#33512F" : "transparent",
+          fill2: on ? "#33512F" : "#FFFFFF",
+          box: on ? "#33512F" : "rgba(35,41,31,.22)",
+          color: on ? "#23291F" : "#4E5647",
+          pillColor: on ? "#F4F7EC" : "#55604F",
+          onClick: () => this.toggle(f.key, o.label)
+        };
+      });
+      return { label: f.label, valueLabel: "", isList: f.type === "list", isPills: f.type === "pills", isRange: false, options };
+    });
+
+    const tags = [];
+    Object.keys(st.sel).forEach(k => (st.sel[k] || []).forEach(v => tags.push({ label: v, remove: () => this.toggle(k, v) })));
+    if (priceMax < rangeFacet.max) tags.push({ label: "≤ " + priceMax + rangeFacet.suffix, remove: () => this.setState({ price: null }) });
+
+    const faqs = cat.faqs.map((f, i) => {
+      const on = st.faq === i;
+      return { q: f.q, a: f.a, sign: on ? "−" : "+", max: on ? "340px" : "0px", pad: on ? "26px" : "0px", toggle: () => this.setState({ faq: on ? -1 : i }) };
+    });
+
+    return {
+      cards: products,
+      crumb: cat.crumb,
+      eyebrow: cat.eyebrow(cat.products.length),
+      title: cat.title, intro: cat.intro,
+      score: cat.score, scoreNote: cat.scoreNote,
+      promise: cat.promise, promiseHighlight: cat.promiseHighlight,
+      stockTicker: cat.ticker,
+      helpEyebrow: cat.help.eyebrow, helpText: cat.help.text, helpCta: cat.help.cta,
+      guideEyebrow: cat.guide.eyebrow, guideTitle: cat.guide.title, guideText: cat.guide.text, guideCta: cat.guide.cta,
+      guide: cat.guide.rows,
+      faqTitle: cat.faqTitle, faqs,
+      navCats: SLUGS.map(s => ({
+        label: CATEGORIES[s].label,
+        color: s === this.slug() ? "#3E5C33" : "#23291F",
+        underline: s === this.slug() ? "#6E8F4E" : "transparent",
+        onClick: this.go(s)
+      })),
+      footerCats: SLUGS.map(s => ({ label: CATEGORIES[s].label, onClick: this.go(s) })),
+      subcats: cat.subcats.map((s, i) => {
+        const on = s.filter
+          ? Object.keys(s.filter).every(k => (st.sel[k] || []).length === s.filter[k].length && s.filter[k].every(v => (st.sel[k] || []).includes(v)))
+          : Object.keys(st.sel).every(k => !(st.sel[k] || []).length);
+        return {
+          label: s.label, meta: s.meta,
+          slotId: "sub-" + this.slug() + "-" + i,
+          photo: s.photo || "",
+          slotHint: "Photo " + s.label.toLowerCase(),
+          bg: on ? "#EEF2E4" : "#FFFFFF",
+          border: on ? "#6E8F4E" : "rgba(35,41,31,.09)",
+          color: on ? "#33512F" : "#23291F",
+          onClick: () => this.setState({ sel: s.filter ? { ...s.filter } : {} })
+        };
+      }),
+      facets, activeTags: tags,
+      resetFilters: this.reset(),
+      sorts: ["Populaires", "Prix ↑", "Prix ↓", "Mieux notés"].map(label => {
+        const on = label === st.sort;
+        return { label, bg: on ? "#FFFFFF" : "transparent", color: on ? "#23291F" : "#6B7263", onClick: () => this.setState({ sort: label }) };
+      }),
+      views: ["Grille", "Liste"].map(label => {
+        const on = label === st.view;
+        return { icon: label === "Grille" ? "▦" : "▤", bg: on ? "#23291F" : "#FFFFFF", color: on ? "#F4F7EC" : "#8A9180", border: on ? "#23291F" : "rgba(35,41,31,.14)", onClick: () => this.setState({ view: label }) };
+      }),
+      gridCols: listView ? "1fr" : "repeat(" + cols + ", 1fr)",
+      resultCount: products.length + (products.length > 1 ? " références" : " référence"),
+      noResult: products.length === 0,
+      pageInfo: "Affichage 1–" + products.length + " sur " + cat.products.length + " références",
+      cartCount: st.cart
+    };
+  }
+}
+</script>
+</body>
+</html>

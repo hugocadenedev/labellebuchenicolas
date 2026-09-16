@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; background: #FBFAF5; font-family: "Newsreader", Georgia, serif; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  a:hover { color: #3E5C33; }
+  input, button, select { font-family: inherit; }
+  @keyframes riseIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  ::selection { background: #DCE5CE; color: #23291F; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #CFD8C2; border-radius: 999px; }
+</style>
+<script src="./image-slot.js"></script>
+</helmet>
+
+<div style="background: #FBFAF5; color: #23291F; min-height: 100vh; overflow-x: hidden;">
+
+  <div style="background: #EEF2E4; color: #3E5C33; font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .06em; display: flex; justify-content: center; gap: 44px; padding: 11px 32px; flex-wrap: wrap;">
+    <span>Livraison Occitanie sous 5 jours ouvrés</span>
+    <span style="color: #C05621;">Dépôts Toulouse &amp; Muret — Lun. au Ven. 8h30–18h30</span>
+    <span>Paiement en 3× sans frais</span>
+  </div>
+
+  <header style="position: sticky; top: 0; z-index: 40; background: rgba(251,250,245,.9); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(35,41,31,.08);">
+    <div style="max-width: 1400px; margin: 0 auto; padding: 18px 32px; display: flex; align-items: center; gap: 36px;">
+      <a href="#" style="display: flex; align-items: center; flex-shrink: 0;">
+        <img src="logo-la-belle-buche.png" alt="La Belle Bûche — bois de chauffage au stère" style="height: 72px; width: auto; display: block;">
+      </a>
+      <div style="flex: 1; display: flex; align-items: center; gap: 12px; background: #FFFFFF; border: 1px solid rgba(35,41,31,.1); border-radius: 999px; padding: 13px 22px; max-width: 430px; box-shadow: 0 1px 2px rgba(35,41,31,.04);">
+        <span style="font-family: 'DM Mono', monospace; font-size: 13px; color: #8A9180;">⌕</span>
+        <input placeholder="Chêne, charme, 33 cm, stère…" style="border: 0; outline: 0; background: transparent; font-family: 'Newsreader', serif; font-size: 15px; width: 100%; color: #23291F;">
+        <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .06em; color: #A8AE9C; border: 1px solid rgba(35,41,31,.12); border-radius: 6px; padding: 2px 6px;">⌘K</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 24px; margin-left: auto; font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .05em;">
+        <div style="display: grid; gap: 3px; text-align: right; line-height: 1.3;">
+          <span style="color: #23291F;">06 30 46 09 35</span>
+          <span style="color: #8A9180;">Rappel gratuit sous 2 h</span>
+        </div>
+        <a href="La Belle Buche - Espace Client.dc.html" style="display: flex; align-items: center; gap: 8px;">
+          <span style="width: 30px; height: 30px; border-radius: 999px; background: #EEF2E4; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: #3E5C33;">◦</span>
+          Compte
+        </a>
+        <button onClick="{{ openCart }}" style="font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .05em; background: #33512F; color: #F4F7EC; border: 0; border-radius: 999px; padding: 12px 16px 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px;" style-hover="background: #23291F;">
+          Panier <span style="background: #C05621; color: #fff; border-radius: 999px; min-width: 21px; height: 21px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px;">{{ cartCount }}</span>
+        </button>
+      </div>
+    </div>
+    <nav style="max-width: 1400px; margin: 0 auto; padding: 0 32px 16px; display: flex; align-items: center; gap: 30px; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: .03em; flex-wrap: wrap;">
+      <a href="#catalogue">Chêne</a>
+      <a href="#catalogue">Charme &amp; hêtre</a>
+      <a href="#catalogue">Frêne</a>
+      <a href="#catalogue">Mélange feuillus</a>
+      <a href="#catalogue">Bûches 1 m</a>
+      <a href="#catalogue">Bois étuvé</a>
+      <a href="#catalogue">Lots de 5 stères</a>
+      <span style="width: 1px; height: 14px; background: rgba(35,41,31,.14);"></span>
+      <a href="#comparateur">Comparateur d'essences</a>
+      <a href="#services">Nos services</a>
+      <a href="#histoire">Notre histoire</a>
+      <span style="margin-left: auto; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 400; letter-spacing: .06em; color: #C05621; display: flex; align-items: center; gap: 8px;">
+        <span style="width: 6px; height: 6px; border-radius: 999px; background: #C05621; display: inline-block;"></span>
+        1 240 stères de chêne sec en parc
+      </span>
+    </nav>
+  </header>
+
+  <section style="position: relative; overflow: hidden; background: #FBFAF5;">
+    <div style="position: absolute; inset: 0; background: radial-gradient(760px 420px at 88% -5%, rgba(192,86,33,.10), transparent 68%); pointer-events: none;"></div>
+    <div style="max-width: 1400px; margin: 0 auto; padding: 84px 32px 72px; display: grid; grid-template-columns: 1.02fr .98fr; gap: 76px; align-items: center; position: relative;">
+      <div style="animation: riseIn .7s ease both;">
+        <div style="display: inline-flex; align-items: center; gap: 10px; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #3E5C33; background: #EEF2E4; border-radius: 999px; padding: 8px 16px; margin-bottom: 26px;">
+          <span style="width: 5px; height: 5px; border-radius: 999px; background: #6E8F4E;"></span>
+          Bûcherons-négociants depuis 1919
+        </div>
+        <h1 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: clamp(46px, 5.2vw, 78px); line-height: .94; letter-spacing: -.038em; margin: 0 0 24px; color: #23291F;">De quel bois<br>vous chauffez-<wbr>vous&nbsp;?</h1>
+        <p style="font-size: 20px; line-height: 1.55; color: #4E5647; max-width: 47ch; margin: 0 0 32px; text-wrap: pretty;">Du bois de chauffage vendu au stère, et rien d'autre. Chêne, charme, hêtre et frêne issus de forêts gérées à moins de 100 km, fendus, séchés deux ans, livrés et rangés par nos équipes.</p>
+
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 34px;">
+          <a href="#catalogue" style="background: #33512F; color: #F4F7EC; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: .05em; padding: 17px 30px; border-radius: 999px; box-shadow: 0 14px 30px -18px rgba(51,81,47,.9);" style-hover="background: #23291F; color: #F4F7EC;">Commander mes stères</a>
+          <a href="#simulateur" style="border: 1px solid rgba(35,41,31,.18); font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 14px; letter-spacing: .05em; padding: 17px 28px; border-radius: 999px; background: #FFFFFF;" style-hover="border-color: #6E8F4E; color: #3E5C33;">Combien de stères me faut-il ? →</a>
+        </div>
+
+        <div style="background: #FFFFFF; border: 1px solid rgba(35,41,31,.09); border-radius: 24px; padding: 22px 24px; box-shadow: 0 20px 44px -34px rgba(35,41,31,.5);">
+          <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .07em; color: #8A9180; margin-bottom: 13px;">Vérifier ma zone de livraison</div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <input value="{{ postcode }}" onChange="{{ onPostcode }}" placeholder="Code postal" maxlength="5" style="background: #FBFAF5; border: 1px solid rgba(35,41,31,.14); color: #23291F; font-family: 'DM Mono', monospace; font-size: 14px; letter-spacing: .06em; padding: 13px 16px; width: 148px; border-radius: 999px; outline: 0;">
+            <button onClick="{{ checkPostcode }}" style="background: #23291F; color: #FBFAF5; border: 0; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .06em; padding: 14px 24px; border-radius: 999px; cursor: pointer;" style-hover="background: #33512F;">Vérifier</button>
+            <span style="font-family: 'DM Mono', monospace; font-size: 12px; color: {{ postcodeColor }};">{{ postcodeMsg }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="animation: riseIn .9s ease both; display: grid; gap: 18px;">
+        <div style="position: relative; aspect-ratio: 4/3.1; border-radius: 28px; overflow: hidden; background: #E4E9D9;">
+          <image-slot id="bq-hero" shape="rect" src="photos/wood/livraison.jpg" placeholder="Photo — camion benne déchargeant des bûches, fin de journée"></image-slot>
+          <div style="position: absolute; top: 20px; left: 20px; pointer-events: none; background: rgba(251,250,245,.94); border-radius: 16px; padding: 12px 16px; display: grid; gap: 4px;">
+            <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .07em; color: #8A9180;">Livraison en cours</span>
+            <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px;">Muret → Auterive · 4 stères</span>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px;">
+          <div style="background: #EEF2E4; border-radius: 22px; padding: 22px 24px;">
+            <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 32px; letter-spacing: -.03em; color: #33512F;">4,8<span style="font-size: 16px; color: #8A9180;">/5</span></div>
+            <div style="font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .05em; color: #6B7263; margin-top: 6px;">1 284 avis clients vérifiés</div>
+          </div>
+          <div style="background: #F5EFE2; border-radius: 22px; padding: 22px 24px;">
+            <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 32px; letter-spacing: -.03em; color: #8A5A2B;">9 400<span style="font-size: 16px; color: #A08258;"> st</span></div>
+            <div style="font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .05em; color: #7A6A55; margin-top: 6px;">stères livrés chaque année</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="border-top: 1px solid rgba(35,41,31,.08); border-bottom: 1px solid rgba(35,41,31,.08); overflow: hidden; background: #FFFFFF;">
+      <div style="max-width: 1400px; margin: 0 auto; padding: 20px 32px; display: flex; align-items: center; justify-content: space-between; gap: 32px; flex-wrap: wrap; font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .06em; color: #6B7263;">
+        <span>NF Bois de chauffage</span><span>France Bois Bûche</span><span>PEFC 10-31-1487</span><span>Bois de France</span><span>Gestion durable ONF</span><span style="color: #C05621;">Humidité mesurée à la livraison</span>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1400px; margin: 0 auto; padding: 84px 32px 0;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 24px; margin-bottom: 36px; flex-wrap: wrap;">
+      <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 28px; letter-spacing: -.025em; margin: 0;">Nos bois de chauffage</h2>
+      <span style="font-family: 'DM Mono', monospace; font-size: 11.5px; color: #8A9180;">7 familles · tout est vendu au stère</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 22px;">
+      <sc-for list="{{ families }}" as="f" hint-placeholder-count="7">
+        <a href="#catalogue" style="display: grid; gap: 14px; align-content: start; justify-items: center; text-align: center;" style-hover="color: #3E5C33;">
+          <div style="position: relative; width: 100%; aspect-ratio: 1; border-radius: 999px; overflow: hidden; background: #E4E9D9; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 14px;">
+            <image-slot id="{{ f.slotId }}" shape="circle" src="{{ f.photo }}" placeholder="{{ f.label }}" style="position: absolute; inset: 0;"></image-slot>
+            <span style="position: relative; pointer-events: none; font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .06em; background: rgba(251,250,245,.9); border-radius: 999px; padding: 4px 10px; color: #6B7263;">{{ f.from }}</span>
+          </div>
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .02em;">{{ f.label }}</span>
+          <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; color: #A8AE9C; margin-top: -8px;">{{ f.count }}</span>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="max-width: 1400px; margin: 0 auto; padding: 84px 32px 0;">
+    <div style="background: #F5EFE2; border-radius: 34px; padding: 44px 46px; display: grid; grid-template-columns: .82fr 1.18fr; gap: 64px; align-items: center;">
+      <div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #A8501B; margin-bottom: 14px;">Le b.a.-ba</div>
+        <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 30px; line-height: 1.08; letter-spacing: -.03em; margin: 0 0 14px; color: #3B2A17;">Un stère, ce n'est pas un mètre cube de bûches</h2>
+        <p style="margin: 0; font-size: 17px; line-height: 1.6; color: #6B5842; max-width: 42ch; text-wrap: pretty;">Le stère se mesure en bûches d'un mètre empilées. Plus les bûches sont courtes, plus elles s'imbriquent : le volume apparent baisse, la quantité de bois reste identique. Nos prix sont toujours donnés pour un stère réel.</p>
+      </div>
+      <div style="display: grid; gap: 14px;">
+        <div style="display: grid; grid-template-columns: 78px 1fr 96px; gap: 20px; align-items: center;">
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px; color: #3B2A17;">1 m</span>
+          <span style="height: 26px; border-radius: 8px; background: #8A5A2B; width: 100%;"></span>
+          <span style="font-family: 'DM Mono', monospace; font-size: 11.5px; color: #6B5842; text-align: right;">1,00 m³</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 78px 1fr 96px; gap: 20px; align-items: center;">
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px; color: #3B2A17;">50 cm</span>
+          <span style="height: 26px; border-radius: 8px; background: #A87141; width: 80%;"></span>
+          <span style="font-family: 'DM Mono', monospace; font-size: 11.5px; color: #6B5842; text-align: right;">0,80 m³</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 78px 1fr 96px; gap: 20px; align-items: center;">
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px; color: #3B2A17;">33 cm</span>
+          <span style="height: 26px; border-radius: 8px; background: #C08B57; width: 70%;"></span>
+          <span style="font-family: 'DM Mono', monospace; font-size: 11.5px; color: #6B5842; text-align: right;">0,70 m³</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 78px 1fr 96px; gap: 20px; align-items: center;">
+          <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px; color: #3B2A17;">25 cm</span>
+          <span style="height: 26px; border-radius: 8px; background: #D6A97C; width: 65%;"></span>
+          <span style="font-family: 'DM Mono', monospace; font-size: 11.5px; color: #6B5842; text-align: right;">0,65 m³</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="catalogue" style="max-width: 1400px; margin: 0 auto; padding: 96px 32px 0;">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; flex-wrap: wrap; margin-bottom: 30px;">
+      <div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #C05621; margin-bottom: 12px;">Prix au stère, livraison comprise en Haute-Garonne</div>
+        <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: clamp(32px, 3.2vw, 46px); letter-spacing: -.032em; margin: 0;">La boutique</h2>
+      </div>
+      <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+        <span style="font-family: 'DM Mono', monospace; font-size: 11px; color: #8A9180;">{{ resultCount }}</span>
+        <div style="display: flex; gap: 4px; background: #EEF2E4; border-radius: 999px; padding: 4px;">
+          <sc-for list="{{ sorts }}" as="s" hint-placeholder-count="3">
+            <button onClick="{{ s.onClick }}" style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .05em; padding: 9px 15px; border-radius: 999px; cursor: pointer; border: 0; background: {{ s.bg }}; color: {{ s.color }};">{{ s.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 34px; padding-bottom: 26px; border-bottom: 1px solid rgba(35,41,31,.09);">
+      <sc-for list="{{ chips }}" as="chip" hint-placeholder-count="8">
+        <button onClick="{{ chip.onClick }}" style="font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .05em; padding: 11px 17px; border-radius: 999px; cursor: pointer; border: 1px solid {{ chip.border }}; background: {{ chip.bg }}; color: {{ chip.color }}; transition: background .2s ease, color .2s ease, border-color .2s ease;">{{ chip.label }}</button>
+      </sc-for>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;">
+      <sc-for list="{{ products }}" as="p" hint-placeholder-count="8">
+        <article style="background: #FFFFFF; border: 1px solid rgba(35,41,31,.08); border-radius: 26px; padding: 20px; display: grid; gap: 16px; align-content: start; box-shadow: 0 1px 2px rgba(35,41,31,.03); transition: border-color .25s ease, box-shadow .3s ease, transform .3s ease;" style-hover="border-color: rgba(110,143,78,.5); box-shadow: 0 30px 54px -34px rgba(35,41,31,.5); transform: translateY(-3px);">
+          <div style="position: relative; aspect-ratio: 1.06; border-radius: 18px; background: #E4E9D9; overflow: hidden;">
+            <image-slot id="{{ p.slotId }}" shape="rect" src="{{ p.photo }}" placeholder="{{ p.shot }}"></image-slot>
+            <span style="position: absolute; left: 11px; top: 11px; pointer-events: none; font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .07em; background: {{ p.badgeBg }}; color: {{ p.badgeColor }}; padding: 6px 12px; border-radius: 999px;">{{ p.badge }}</span>
+            <button onClick="{{ p.add }}" style="position: absolute; right: 11px; top: 11px; width: 34px; height: 34px; border-radius: 999px; border: 0; background: rgba(251,250,245,.94); color: #23291F; font-size: 17px; cursor: pointer; line-height: 1;" style-hover="background: #33512F; color: #F4F7EC;">+</button>
+          </div>
+
+          <div style="display: grid; gap: 7px;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span style="font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .05em; color: #8A9180;">{{ p.cat }}</span>
+              <span style="font-family: 'DM Mono', monospace; font-size: 10px; color: #C05621;">{{ p.stars }}</span>
+              <span style="font-family: 'DM Mono', monospace; font-size: 10px; color: #A8AE9C;">{{ p.reviews }}</span>
+            </div>
+            <h3 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16.5px; letter-spacing: -.012em; margin: 0; line-height: 1.25;">{{ p.name }}</h3>
+            <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #55604F; text-wrap: pretty;">{{ p.desc }}</p>
+          </div>
+
+          <sc-if value="{{ detailed }}" hint-placeholder-val="{{ true }}">
+            <div style="display: grid; gap: 7px; background: #F7F8F1; border-radius: 14px; padding: 12px 14px;">
+              <sc-for list="{{ p.specs }}" as="sp" hint-placeholder-count="3">
+                <div style="display: flex; justify-content: space-between; gap: 12px; font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .03em;">
+                  <span style="color: #8A9180;">{{ sp.k }}</span>
+                  <span style="color: #3E5C33;">{{ sp.v }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <div style="display: grid; gap: 7px;">
+            <div style="height: 4px; border-radius: 999px; background: #E7EADF; overflow: hidden;">
+              <div style="height: 100%; width: {{ p.stockPct }}; background: {{ p.stockColor }}; border-radius: 999px;"></div>
+            </div>
+            <span style="font-family: 'DM Mono', monospace; font-size: 10px; color: {{ p.stockColor }};">{{ p.stockLabel }}</span>
+          </div>
+
+          <div style="display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;">
+            <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 25px; letter-spacing: -.025em; white-space: nowrap;">{{ p.price }}</span>
+            <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; color: #A8AE9C; text-decoration: line-through;">{{ p.oldPrice }}</span>
+            <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; color: #8A9180; margin-left: auto;">{{ p.unit }}</span>
+          </div>
+
+          <button onClick="{{ p.add }}" style="width: 100%; background: #EEF2E4; color: #33512F; border: 0; border-radius: 999px; padding: 14px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .06em; cursor: pointer; transition: background .2s ease, color .2s ease;" style-hover="background: #33512F; color: #F4F7EC;">Ajouter au panier</button>
+        </article>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="comparateur" style="max-width: 1400px; margin: 0 auto; padding: 100px 32px 0;">
+    <div style="background: #FFFFFF; border: 1px solid rgba(35,41,31,.08); border-radius: 34px; padding: 46px 46px 38px; box-shadow: 0 30px 60px -50px rgba(35,41,31,.7);">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; flex-wrap: wrap; margin-bottom: 34px;">
+        <div>
+          <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #C05621; margin-bottom: 12px;">Aide au choix</div>
+          <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 34px; letter-spacing: -.03em; margin: 0;">Quelle essence pour votre foyer&nbsp;?</h2>
+        </div>
+        <span style="font-family: 'DM Mono', monospace; font-size: 11px; color: #8A9180; max-width: 34ch; line-height: 1.6;">Valeurs moyennes constatées sur nos lots 2025-2026, bois fendu 33 cm à humidité mesurée. <span style="color: #33512F;">✦ meilleure valeur de la colonne.</span></span>
+      </div>
+      <div style="display: grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap: 0; font-family: 'DM Mono', monospace; font-size: 11.5px;">
+        <sc-for list="{{ compareHead }}" as="h" hint-placeholder-count="5">
+          <div style="padding: 14px 16px; border-bottom: 1px solid rgba(35,41,31,.12); letter-spacing: .06em; color: #8A9180;">{{ h }}</div>
+        </sc-for>
+        <sc-for list="{{ compareCells }}" as="c" hint-placeholder-count="25">
+          <div style="padding: 16px; border-bottom: 1px solid rgba(35,41,31,.07); background: {{ c.bg }}; font-family: {{ c.font }}; font-size: {{ c.size }}; font-weight: {{ c.weight }}; color: {{ c.color }};">{{ c.v }}</div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section id="simulateur" style="max-width: 1400px; margin: 0 auto; padding: 100px 32px 0;">
+    <sc-if value="{{ showSimulator }}" hint-placeholder-val="{{ true }}">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-radius: 34px; overflow: hidden; border: 1px solid rgba(35,41,31,.08);">
+        <div style="background: #EEF2E4; padding: 52px 50px;">
+          <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #C05621; margin-bottom: 14px;">Simulateur</div>
+          <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 34px; letter-spacing: -.03em; margin: 0 0 12px;">Combien de stères pour cet hiver&nbsp;?</h2>
+          <p style="font-size: 17px; line-height: 1.6; color: #4E5647; margin: 0 0 34px; max-width: 44ch;">Réglez la surface à chauffer et l'isolation : nous estimons le nombre de stères de chêne sec et le budget de la saison.</p>
+
+          <div style="display: grid; gap: 26px;">
+            <div>
+              <div style="display: flex; justify-content: space-between; font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .05em; color: #6B7263; margin-bottom: 12px;">
+                <span>Surface chauffée au bois</span><span style="color: #33512F;">{{ areaLabel }}</span>
+              </div>
+              <input type="range" min="40" max="260" step="5" value="{{ area }}" onChange="{{ onArea }}" style="width: 100%; accent-color: #33512F;">
+            </div>
+            <div>
+              <div style="font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .05em; color: #6B7263; margin-bottom: 12px;">Isolation du logement</div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <sc-for list="{{ insulations }}" as="i" hint-placeholder-count="3">
+                  <button onClick="{{ i.onClick }}" style="font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .05em; padding: 12px 18px; border-radius: 999px; cursor: pointer; border: 1px solid {{ i.border }}; background: {{ i.bg }}; color: {{ i.color }};">{{ i.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <div style="font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .05em; color: #6B7263; margin-bottom: 12px;">Appareil</div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <sc-for list="{{ devices }}" as="d" hint-placeholder-count="3">
+                  <button onClick="{{ d.onClick }}" style="font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .05em; padding: 12px 18px; border-radius: 999px; cursor: pointer; border: 1px solid {{ d.border }}; background: {{ d.bg }}; color: {{ d.color }};">{{ d.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background: #23291F; color: #F4F7EC; padding: 52px 50px; display: grid; align-content: center; gap: 26px;">
+          <div>
+            <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #A8AE9C; margin-bottom: 12px;">Besoin estimé pour la saison</div>
+            <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 58px; line-height: 1; letter-spacing: -.04em;">{{ simSteres }}</div>
+          </div>
+          <div style="height: 1px; background: rgba(244,247,236,.16);"></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 28px;">
+            <div>
+              <div style="font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .06em; color: #A8AE9C; margin-bottom: 8px;">Budget saison</div>
+              <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 30px; letter-spacing: -.03em;">{{ simCost }}</div>
+            </div>
+            <div>
+              <div style="font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .06em; color: #A8AE9C; margin-bottom: 8px;">Mensualisé sur 11 mois</div>
+              <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 30px; letter-spacing: -.03em; color: #A3C47E;">{{ simMonthly }}</div>
+            </div>
+          </div>
+          <p style="margin: 0; font-family: 'DM Mono', monospace; font-size: 10.5px; line-height: 1.7; color: #8A9180;">Estimation indicative, base chêne sec 33 cm à 119 € le stère livré. Un conseiller affine avec vous au téléphone.</p>
+          <a href="#" style="background: #A3C47E; color: #23291F; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .06em; padding: 16px 26px; border-radius: 999px; width: max-content;" style-hover="background: #F4F7EC; color: #23291F;">Recevoir un devis précis</a>
+        </div>
+      </div>
+    </sc-if>
+  </section>
+
+  <section style="max-width: 1400px; margin: 0 auto; padding: 100px 32px 0;">
+    <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #C05621; margin-bottom: 14px;">Livraison</div>
+    <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: clamp(28px, 3vw, 40px); letter-spacing: -.03em; margin: 0 0 44px;">De la commande au bois rangé</h2>
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 26px;">
+      <sc-for list="{{ steps }}" as="st" hint-placeholder-count="4">
+        <div style="display: grid; gap: 14px; align-content: start; padding-top: 22px; border-top: 2px solid {{ st.line }};">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .08em; color: #C05621;">{{ st.n }}</span>
+            <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .05em; color: #A8AE9C;">{{ st.when }}</span>
+          </div>
+          <h3 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 19px; letter-spacing: -.015em; margin: 0;">{{ st.title }}</h3>
+          <p style="margin: 0; font-size: 16px; line-height: 1.55; color: #55604F; text-wrap: pretty;">{{ st.body }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="histoire" style="max-width: 1400px; margin: 0 auto; padding: 104px 32px 0; display: grid; grid-template-columns: .88fr 1.12fr; gap: 84px; align-items: center;">
+    <div style="display: grid; gap: 16px;">
+      <div style="position: relative; aspect-ratio: 5/5.4; border-radius: 26px; overflow: hidden; background: #E4E9D9;">
+        <image-slot id="bq-parc" shape="rect" src="photos/wood/parc.jpg" placeholder="Photo — parc à bois, piles de stères sous auvent, équipe"></image-slot>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .05em; color: #6B7263; text-align: center;">
+        <span style="background: #F5EFE2; border-radius: 14px; padding: 12px 6px;">Coupe hiver</span>
+        <span style="background: #EEF2E4; border-radius: 14px; padding: 12px 6px;">Fendu au printemps</span>
+        <span style="background: #33512F; color: #F4F7EC; border-radius: 14px; padding: 12px 6px;">Séché 24 mois</span>
+      </div>
+    </div>
+    <div>
+      <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #C05621; margin-bottom: 18px;">Notre histoire</div>
+      <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: clamp(30px, 3.1vw, 44px); line-height: 1.03; letter-spacing: -.032em; margin: 0 0 24px;">Marchands de bois<br>depuis quatre générations</h2>
+      <p style="font-size: 19px; line-height: 1.62; color: #4E5647; max-width: 58ch; margin: 0 0 18px; text-wrap: pretty;">Depuis 1919, la même chose : du bois de chauffage, coupé l'hiver dans des forêts gérées durablement du Comminges et du Volvestre, fendu au printemps, séché deux étés sous auvent avant d'être vendu au stère.</p>
+      <p style="font-size: 19px; line-height: 1.62; color: #4E5647; max-width: 58ch; margin: 0 0 32px; text-wrap: pretty;">Chaque livraison est réalisée par nos propres chauffeurs, avec un humidimètre dans la poche. Pas de sous-traitance, pas d'approximation : un rendez-vous, une heure, un tas rangé.</p>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; padding: 26px 0; border-top: 1px solid rgba(35,41,31,.1); border-bottom: 1px solid rgba(35,41,31,.1); margin-bottom: 30px;">
+        <div>
+          <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 28px; letter-spacing: -.03em; color: #33512F;">107</div>
+          <div style="font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .05em; color: #8A9180; margin-top: 6px;">ans de métier</div>
+        </div>
+        <div>
+          <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 28px; letter-spacing: -.03em; color: #33512F;">100 km</div>
+          <div style="font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .05em; color: #8A9180; margin-top: 6px;">rayon d'approvisionnement</div>
+        </div>
+        <div>
+          <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 28px; letter-spacing: -.03em; color: #33512F;">9</div>
+          <div style="font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .05em; color: #8A9180; margin-top: 6px;">chauffeurs salariés</div>
+        </div>
+      </div>
+      <a href="#" style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .06em; border-bottom: 2px solid #6E8F4E; padding-bottom: 4px;">Lire notre histoire</a>
+    </div>
+  </section>
+
+  <section id="services" style="background: #F1F4E9; margin-top: 104px;">
+    <div style="max-width: 1400px; margin: 0 auto; padding: 100px 32px;">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; flex-wrap: wrap; margin-bottom: 48px;">
+        <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: clamp(30px, 3.1vw, 44px); letter-spacing: -.032em; margin: 0;">Nos prestations complémentaires</h2>
+        <a href="#" style="font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .07em; color: #3E5C33;">Toutes nos prestations →</a>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px;">
+        <sc-for list="{{ services }}" as="sv" hint-placeholder-count="3">
+          <article style="background: #FFFFFF; border-radius: 28px; padding: 38px; box-shadow: 0 24px 48px -40px rgba(35,41,31,.7); display: grid; gap: 14px; align-content: start;">
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <span style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .07em; color: #C05621;">{{ sv.n }}</span>
+              <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; color: #A8AE9C;">{{ sv.price }}</span>
+            </div>
+            <h3 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 21px; letter-spacing: -.015em; margin: 0;">{{ sv.title }}</h3>
+            <p style="margin: 0; font-size: 16.5px; line-height: 1.55; color: #55604F; text-wrap: pretty;">{{ sv.body }}</p>
+            <a href="#" style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .06em; color: #3E5C33; margin-top: 6px;">En savoir plus →</a>
+          </article>
+        </sc-for>
+      </div>
+      <div style="margin-top: 26px; background: #33512F; color: #F4F7EC; padding: 44px 46px; border-radius: 28px; display: grid; grid-template-columns: 1.4fr auto; gap: 40px; align-items: center;">
+        <div>
+          <h3 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 27px; letter-spacing: -.025em; margin: 0 0 10px;">Groupement d'achats</h3>
+          <p style="margin: 0; font-size: 18px; line-height: 1.55; color: #CFDCBE; max-width: 62ch;">Un camion plein, une commune : rassemblez vos voisins, commandez 20 stères ensemble et faites baisser le prix jusqu'à 8 %.</p>
+        </div>
+        <a href="#" style="background: #A3C47E; color: #23291F; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .06em; padding: 17px 28px; border-radius: 999px; white-space: nowrap;" style-hover="background: #F4F7EC; color: #23291F;">Je crée un groupe</a>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1400px; margin: 0 auto; padding: 100px 32px 0;">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 44px;">
+      <div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #C05621; margin-bottom: 14px;">Avis vérifiés</div>
+        <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: clamp(28px, 3vw, 40px); letter-spacing: -.032em; margin: 0;">Ils se chauffent chez nous</h2>
+      </div>
+      <span style="font-family: 'DM Mono', monospace; font-size: 11.5px; color: #8A9180;">4,8/5 sur 1 284 avis · collectés après livraison</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px;">
+      <sc-for list="{{ reviews }}" as="r" hint-placeholder-count="3">
+        <figure style="margin: 0; background: #FFFFFF; border: 1px solid rgba(35,41,31,.08); border-radius: 26px; padding: 32px; display: grid; gap: 16px; align-content: start;">
+          <span style="font-family: 'DM Mono', monospace; font-size: 12px; color: #C05621; letter-spacing: .1em;">{{ r.stars }}</span>
+          <blockquote style="margin: 0; font-size: 18.5px; line-height: 1.55; color: #2F3629; text-wrap: pretty;">{{ r.text }}</blockquote>
+          <figcaption style="display: flex; align-items: center; gap: 12px; margin-top: 4px;">
+            <span style="width: 34px; height: 34px; border-radius: 999px; background: #E4E9D9;"></span>
+            <span style="display: grid; gap: 2px;">
+              <span style="font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 13.5px;">{{ r.who }}</span>
+              <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; color: #A8AE9C;">{{ r.meta }}</span>
+            </span>
+          </figcaption>
+        </figure>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="max-width: 1400px; margin: 0 auto; padding: 100px 32px 0; display: grid; grid-template-columns: .8fr 1.2fr; gap: 72px; align-items: start;">
+    <div>
+      <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #C05621; margin-bottom: 16px;">Questions fréquentes</div>
+      <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: clamp(28px, 3vw, 40px); line-height: 1.05; letter-spacing: -.032em; margin: 0 0 22px;">Tout ce qu'on nous demande avant de commander</h2>
+      <p style="font-size: 17px; line-height: 1.6; color: #55604F; margin: 0 0 22px;">Une question qui n'y figure pas ? Nos conseillers répondent au téléphone du lundi au vendredi.</p>
+      <a href="#" style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .06em; border-bottom: 2px solid #6E8F4E; padding-bottom: 4px;">06 30 46 09 35</a>
+    </div>
+    <div style="display: grid;">
+      <sc-for list="{{ faqs }}" as="q" hint-placeholder-count="5">
+        <div style="border-top: 1px solid rgba(35,41,31,.1);">
+          <button onClick="{{ q.toggle }}" style="width: 100%; background: transparent; border: 0; cursor: pointer; text-align: left; padding: 24px 0; display: flex; align-items: center; justify-content: space-between; gap: 20px; font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: -.01em; color: #23291F;">
+            {{ q.q }}
+            <span style="font-family: 'DM Mono', monospace; font-size: 16px; color: #6E8F4E; flex-shrink: 0;">{{ q.sign }}</span>
+          </button>
+          <p style="margin: 0; padding: 0 0 {{ q.pad }}; max-height: {{ q.max }}; overflow: hidden; font-size: 17px; line-height: 1.6; color: #55604F; max-width: 62ch; transition: max-height .3s ease, padding .3s ease; text-wrap: pretty;">{{ q.a }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="max-width: 1400px; margin: 0 auto; padding: 100px 32px 0;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 24px; margin-bottom: 44px; flex-wrap: wrap;">
+      <div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #C05621; margin-bottom: 14px;">Le carnet du parc à bois</div>
+        <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: clamp(28px, 3vw, 40px); letter-spacing: -.032em; margin: 0;">Actualités</h2>
+      </div>
+      <a href="#" style="font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .07em;">Toutes les actualités →</a>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px;">
+      <sc-for list="{{ posts }}" as="a" hint-placeholder-count="3">
+        <a href="#" style="display: grid; gap: 16px; align-content: start;">
+          <div style="position: relative; aspect-ratio: 16/10; border-radius: 20px; overflow: hidden; background: #E4E9D9;">
+            <image-slot id="{{ a.slotId }}" shape="rect" src="{{ a.photo }}" placeholder="{{ a.hint }}"></image-slot>
+          </div>
+          <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .05em; color: #8A9180;">{{ a.meta }}</span>
+          <h3 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 19px; line-height: 1.28; letter-spacing: -.015em; margin: 0;">{{ a.title }}</h3>
+          <p style="margin: 0; font-size: 16px; line-height: 1.55; color: #55604F;">{{ a.body }}</p>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="margin-top: 100px; background: #EEF2E4;">
+    <div style="max-width: 1400px; margin: 0 auto; padding: 84px 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 84px; align-items: center;">
+      <div>
+        <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 32px; letter-spacing: -.03em; margin: 0 0 12px;">Votre fidélité fait des étincelles</h2>
+        <p style="margin: 0 0 26px; font-size: 18px; line-height: 1.55; color: #4E5647; max-width: 48ch;">Un point par euro dépensé, converti en bons d'achat dès 500 points. Cumul automatique sur votre compte client.</p>
+        <a href="#" style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .06em; border-bottom: 2px solid #6E8F4E; padding-bottom: 4px;">Découvrir le programme</a>
+      </div>
+      <div style="background: #FFFFFF; border-radius: 26px; padding: 34px 34px 30px;">
+        <div style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; color: #C05621; margin-bottom: 14px;">Newsletter</div>
+        <p style="margin: 0 0 22px; font-size: 17.5px; line-height: 1.55; color: #4E5647;">Un mail par mois pour réchauffer votre curiosité : prix du stère, conseils de stockage, dates de coupe.</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <input placeholder="prenom@email.fr" style="flex: 1; min-width: 200px; background: #FBFAF5; border: 1px solid rgba(35,41,31,.14); color: #23291F; font-family: 'Newsreader', serif; font-size: 16px; padding: 14px 18px; border-radius: 999px; outline: 0;">
+          <button style="background: #33512F; color: #F4F7EC; border: 0; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .06em; padding: 14px 26px; border-radius: 999px; cursor: pointer;" style-hover="background: #23291F;">Je m'inscris</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="background: #23291F; color: #9AA391;">
+    <div style="max-width: 1400px; margin: 0 auto; padding: 80px 32px 30px; display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 48px;">
+      <div>
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 25px; letter-spacing: -.03em; color: #F4F7EC; margin-bottom: 14px;">La Belle Bûche</div>
+        <div style="font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .08em; color: #C05621; margin-bottom: 16px;">Bois de chauffage vendu au stère</div>
+        <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.55; max-width: 40ch;">Bûcherons-négociants dans le Sud-Ouest. Du bois coupé près de chez vous, séché deux ans, livré et rangé.</p>
+        <div style="display: flex; gap: 16px; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .07em;">
+          <a href="#">Facebook</a><a href="#">YouTube</a><a href="#">LinkedIn</a>
+        </div>
+      </div>
+      <div style="display: grid; gap: 11px; align-content: start; font-size: 16px;">
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .05em; color: #F4F7EC; margin-bottom: 6px;">Dépôt de Toulouse</div>
+        <span>06 30 46 09 35</span>
+        <span>14 chemin des Charbonniers<br>31200 Toulouse</span>
+        <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; color: #6E7A63;">Enlèvement au stère sous 2 h</span>
+      </div>
+      <div style="display: grid; gap: 11px; align-content: start; font-size: 16px;">
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .05em; color: #F4F7EC; margin-bottom: 6px;">Parc à bois de Muret</div>
+        <span>05 61 76 70 78</span>
+        <span>ZA de Joffrery, av. des Pins<br>31600 Muret</span>
+        <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; color: #6E7A63;">Chargement remorque sur place</span>
+      </div>
+      <div style="display: grid; gap: 11px; align-content: start; font-size: 16px;">
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; letter-spacing: .05em; color: #F4F7EC; margin-bottom: 6px;">Informations</div>
+        <a href="#">Livraison</a><a href="#">Qu'est-ce qu'un stère ?</a><a href="#">Programme de fidélité</a><a href="#">CGV — CGU</a><a href="#">Mentions légales</a>
+      </div>
+    </div>
+    <div style="max-width: 1400px; margin: 0 auto; padding: 22px 32px 40px; border-top: 1px solid rgba(244,247,236,.1); font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .07em; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+      <span>© 2026 La Belle Bûche — Maquette</span>
+      <span>Paiement CB · Virement · 3× sans frais</span>
+    </div>
+  </footer>
+
+  <div onClick="{{ closeCart }}" style="position: fixed; inset: 0; background: rgba(35,41,31,.45); z-index: 60; opacity: {{ overlayOpacity }}; pointer-events: {{ overlayEvents }}; transition: opacity .3s ease;"></div>
+  <aside style="position: fixed; top: 0; right: 0; bottom: 0; width: 430px; max-width: 92vw; background: #FBFAF5; z-index: 61; box-shadow: -20px 0 60px rgba(35,41,31,.25); display: flex; flex-direction: column; transform: {{ drawerTransform }}; transition: transform .38s cubic-bezier(.4,0,.2,1);">
+    <div style="padding: 24px 26px 18px; border-bottom: 1px solid rgba(35,41,31,.1); display: flex; align-items: center; justify-content: space-between;">
+      <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -.015em;">Votre panier</span>
+      <button onClick="{{ closeCart }}" style="background: transparent; border: 0; font-family: 'DM Mono', monospace; font-size: 11.5px; letter-spacing: .07em; cursor: pointer; color: #8A9180;" style-hover="color: #33512F;">Fermer ✕</button>
+    </div>
+    <div style="padding: 14px 26px; background: #EEF2E4; display: grid; gap: 8px;">
+      <div style="height: 4px; border-radius: 999px; background: #DCE2D0; overflow: hidden;">
+        <div style="height: 100%; width: {{ freeShipPct }}; background: #6E8F4E; border-radius: 999px; transition: width .3s ease;"></div>
+      </div>
+      <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; color: #3E5C33;">{{ shippingNote }}</span>
+    </div>
+    <div style="flex: 1; overflow-y: auto; padding: 8px 26px;">
+      <sc-if value="{{ cartEmpty }}" hint-placeholder-val="{{ true }}">
+        <p style="font-size: 17px; line-height: 1.55; color: #55604F; padding: 28px 0;">Votre panier est vide. Comptez 4 à 6 stères pour une saison dans une maison correctement isolée.</p>
+      </sc-if>
+      <sc-for list="{{ cartLines }}" as="line" hint-placeholder-count="0">
+        <div style="display: grid; grid-template-columns: 60px 1fr auto; gap: 14px; align-items: start; padding: 20px 0; border-bottom: 1px solid rgba(35,41,31,.08);">
+          <div style="position: relative; width: 100%; aspect-ratio: 1; border-radius: 999px; overflow: hidden; background: #E4E9D9;">
+            <image-slot id="{{ line.slotId }}" shape="circle" src="{{ line.photo }}" placeholder=""></image-slot>
+          </div>
+          <div style="display: grid; gap: 8px;">
+            <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14.5px; line-height: 1.3;">{{ line.name }}</span>
+            <span style="font-family: 'DM Mono', monospace; font-size: 10.5px; color: #8A9180;">{{ line.unit }}</span>
+            <div style="display: flex; align-items: center; gap: 12px; border: 1px solid rgba(35,41,31,.14); border-radius: 999px; width: max-content; padding: 4px 12px;">
+              <button onClick="{{ line.dec }}" style="background: transparent; border: 0; cursor: pointer; font-size: 15px; color: #55604F;">−</button>
+              <span style="font-family: 'DM Mono', monospace; font-size: 12.5px; min-width: 16px; text-align: center;">{{ line.qty }}</span>
+              <button onClick="{{ line.inc }}" style="background: transparent; border: 0; cursor: pointer; font-size: 15px; color: #55604F;">+</button>
+            </div>
+          </div>
+          <span style="display: grid; gap: 10px; justify-items: end;">
+            <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px;">{{ line.total }}</span>
+            <button onClick="{{ line.remove }}" style="background: transparent; border: 0; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .06em; color: #A8AE9C; padding: 0;" style-hover="color: #C05621;">Retirer</button>
+          </span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="padding: 20px 26px 26px; border-top: 1px solid rgba(35,41,31,.1); display: grid; gap: 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;">
+        <span style="font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .05em; color: #8A9180;">{{ totalLabel }}</span>
+        <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 26px; letter-spacing: -.025em;">{{ cartTotal }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .04em; color: #8A9180;">
+        <span>Livraison estimée</span>
+        <span style="color: #3E5C33;">{{ deliveryDate }}</span>
+      </div>
+      <a href="La Belle Buche - Panier.dc.html" style="width: 100%; background: #33512F; color: #F4F7EC; border: 0; border-radius: 999px; padding: 17px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .06em; cursor: pointer; display: block; text-align: center;" style-hover="background: #23291F; color: #F4F7EC;">Passer commande</a>
+      <a href="La Belle Buche - Panier.dc.html" style="text-align: center; font-family: 'DM Mono', monospace; font-size: 10.5px; letter-spacing: .06em; color: #3E5C33;">Voir le panier en détail →</a>
+      <span style="font-family: 'DM Mono', monospace; font-size: 10px; color: #A8AE9C; text-align: center;">Paiement sécurisé · 3× sans frais dès 300 €</span>
+    </div>
+  </aside>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;priceMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;TTC&quot;,&quot;options&quot;:[&quot;TTC&quot;,&quot;HT&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Boutique&quot;},&quot;cardDetail&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Détaillée&quot;,&quot;options&quot;:[&quot;Détaillée&quot;,&quot;Compacte&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Boutique&quot;},&quot;showSimulator&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Sections&quot;}}">
+const CATALOG = [
+  { id: 1, cat: "Chêne", name: "Chêne 33 cm — 1 stère", desc: "Le classique : longue flambée, belles braises, vitre propre. Séché 24 mois sous auvent.", price: 119, old: 129, unit: "le stère livré", badge: "Best-seller", tone: "dark", shot: "[ stère de chêne 33 cm ]", rating: 4.9, reviews: 412, stock: 92,
+    specs: [{ k: "Humidité mesurée", v: "17 %" }, { k: "Longueur", v: "33 cm" }, { k: "Séchage", v: "24 mois" }] },
+  { id: 2, cat: "Chêne", name: "Chêne 50 cm — 1 stère", desc: "Pour les grands foyers ouverts et les inserts profonds. Moins de découpe, meilleur prix.", price: 99, old: 0, unit: "le stère livré", badge: "Économique", tone: "green", shot: "[ bûches 50 cm ]", rating: 4.7, reviews: 118, stock: 74,
+    specs: [{ k: "Humidité mesurée", v: "18 %" }, { k: "Longueur", v: "50 cm" }, { k: "Séchage", v: "24 mois" }] },
+  { id: 3, cat: "Charme & hêtre", name: "Charme & hêtre 33 cm — 1 stère", desc: "Bois dense, chaleur vive et régulière. Le meilleur rendement de notre parc.", price: 129, old: 0, unit: "le stère livré", badge: "Haut rendement", tone: "green", shot: "[ stère de charme ]", rating: 4.9, reviews: 236, stock: 58,
+    specs: [{ k: "Humidité mesurée", v: "16 %" }, { k: "Longueur", v: "33 cm" }, { k: "Densité", v: "très élevée" }] },
+  { id: 4, cat: "Frêne", name: "Frêne 33 cm — 1 stère", desc: "Prend feu facilement, peu de fumée, idéal en mi-saison et pour les poêles à bois.", price: 109, old: 0, unit: "le stère livré", badge: "Mi-saison", tone: "green", shot: "[ stère de frêne ]", rating: 4.6, reviews: 94, stock: 46,
+    specs: [{ k: "Humidité mesurée", v: "17 %" }, { k: "Longueur", v: "33 cm" }, { k: "Allumage", v: "très facile" }] },
+  { id: 5, cat: "Mélange feuillus", name: "Mélange feuillus 25 cm — 1 stère", desc: "Chêne, charme, hêtre et frêne mélangés. Format court pour poêles compacts.", price: 105, old: 112, unit: "le stère livré", badge: "−6 %", tone: "orange", shot: "[ mélange 25 cm ]", rating: 4.7, reviews: 143, stock: 81,
+    specs: [{ k: "Humidité mesurée", v: "18 %" }, { k: "Longueur", v: "25 cm" }, { k: "Essences", v: "4 feuillus durs" }] },
+  { id: 6, cat: "Bûches 1 m", name: "Chêne 1 m à refendre — 1 stère", desc: "Bois de deux ans en rondins d'un mètre, à recouper vous-même. Le stère le moins cher.", price: 69, old: 0, unit: "le stère livré", badge: "À recouper", tone: "dark", shot: "[ rondins 1 m ]", rating: 4.5, reviews: 61, stock: 88,
+    specs: [{ k: "Humidité mesurée", v: "20 %" }, { k: "Longueur", v: "1 m" }, { k: "Séchage", v: "24 mois" }] },
+  { id: 7, cat: "Bois étuvé", name: "Chêne étuvé 33 cm — 1 stère", desc: "Passé en étuve à 12 % d'humidité : prêt à brûler dès la livraison, rendement maximal.", price: 149, old: 0, unit: "le stère livré", badge: "12 % H₂O", tone: "orange", shot: "[ chêne étuvé ]", rating: 4.8, reviews: 187, stock: 22,
+    specs: [{ k: "Humidité mesurée", v: "12 %" }, { k: "Longueur", v: "33 cm" }, { k: "Prêt à brûler", v: "immédiat" }] },
+  { id: 8, cat: "Lots de 5 stères", name: "Lot saison — 5 stères chêne 33 cm", desc: "La saison complète d'une maison bien isolée, livrée en une fois. Remise de 8 %.", price: 547, old: 595, unit: "le lot de 5 stères", badge: "−8 %", tone: "orange", shot: "[ 5 stères livrés ]", rating: 4.9, reviews: 76, stock: 35,
+    specs: [{ k: "Quantité", v: "5 stères" }, { k: "Prix au stère", v: "109,40 €" }, { k: "Livraison", v: "camion benne" }] }
+];
+
+const CATS = ["Tout", "Chêne", "Charme & hêtre", "Frêne", "Mélange feuillus", "Bûches 1 m", "Bois étuvé", "Lots de 5 stères"];
+
+const FAMILIES = [
+  { label: "Chêne", count: "33, 50 cm et 1 m", from: "dès 69 €/st" },
+  { label: "Charme & hêtre", count: "33 cm", from: "dès 129 €/st" },
+  { label: "Frêne", count: "33 cm", from: "dès 109 €/st" },
+  { label: "Mélange feuillus", count: "25 et 33 cm", from: "dès 105 €/st" },
+  { label: "Bûches 1 m", count: "à refendre", from: "dès 69 €/st" },
+  { label: "Bois étuvé", count: "12 % d'humidité", from: "dès 149 €/st" },
+  { label: "Lots de 5 stères", count: "remise 8 %", from: "dès 547 €" }
+];
+
+const COMPARE = [
+  ["Chêne", "1 900 kWh/stère", "17 %", "119 €/st", "Insert, foyer fermé"],
+  ["Charme & hêtre", "2 050 kWh/stère", "16 %", "129 €/st", "Poêle, insert"],
+  ["Frêne", "1 800 kWh/stère", "17 %", "109 €/st", "Poêle, mi-saison"],
+  ["Mélange feuillus", "1 850 kWh/stère", "18 %", "105 €/st", "Tous appareils"],
+  ["Chêne étuvé", "2 100 kWh/stère", "12 %", "149 €/st", "Poêle récent, chaudière"]
+];
+
+const STEPS = [
+  { n: "01", when: "Jour J", title: "Commande au stère", body: "Essence, longueur, nombre de stères, dépôt et créneau. Paiement CB, virement ou 3× sans frais.", line: "#33512F" },
+  { n: "02", when: "J+1", title: "Appel de préparation", body: "Un chauffeur vous appelle : accès, largeur de portail, pente de l'allée, endroit exact du déchargement.", line: "#6E8F4E" },
+  { n: "03", when: "J+2 à J+5", title: "Livraison créneau 2 h", body: "Camion benne ou plateau grue selon l'accès. SMS au départ du parc à bois, suivi jusqu'à chez vous.", line: "#C05621" },
+  { n: "04", when: "Sur place", title: "Contrôle & rangement", body: "Humidité mesurée devant vous, stères vérifiés, bois rangé au bûcher si vous avez pris l'option.", line: "#A08258" }
+];
+
+const SERVICES = [
+  { n: "01", price: "39 € / stère", title: "Rangement au bûcher", body: "Bûche par bûche, empilées là où le camion ne va pas : cave, grange, sous-sol, fond de jardin." },
+  { n: "02", price: "sans frais", title: "Mensualisation", body: "Votre budget bois lissé sur 11 prélèvements, le 12ᵉ mois servant à la régularisation de la saison." },
+  { n: "03", price: "dès 25 € / stère", title: "Recoupe à la longueur", body: "Vos rondins d'un mètre recoupés en 33 ou 25 cm et refendus au calibre de votre appareil." }
+];
+
+const REVIEWS = [
+  { stars: "★★★★★", text: "Quatre stères de chêne déchargés au fond du jardin à la brouette parce que le camion ne passait pas. Personne n'avait accepté avant eux.", who: "Marie-Hélène D.", meta: "Auterive (31) · 4 stères chêne" },
+  { stars: "★★★★★", text: "Humidité contrôlée devant moi à 16 %. Le bois prend en une allumette et la vitre reste propre toute la soirée.", who: "Julien R.", meta: "Muret (31) · 3 stères charme" },
+  { stars: "★★★★☆", text: "Les rondins d'un mètre à refendre sont imbattables si on a le temps et une fendeuse. Le stère est honnête, bien empilé.", who: "Christophe B.", meta: "Villefranche (31) · 6 stères" }
+];
+
+const FAQS = [
+  { q: "Un stère, ça représente quoi exactement ?", a: "Un stère correspond à un mètre cube de bûches d'un mètre empilées. En 50 cm il occupe environ 0,8 m³, en 33 cm environ 0,7 m³ et en 25 cm environ 0,65 m³ : le volume apparent baisse mais la quantité de bois reste la même." },
+  { q: "Combien de stères pour une saison ?", a: "Comptez 4 à 6 stères pour chauffer 100 m² correctement isolés en appoint principal, jusqu'à 10 stères dans une maison ancienne mal isolée. Notre simulateur affine selon votre surface et votre appareil." },
+  { q: "Votre bois est-il assez sec ?", a: "Tous nos bois sont séchés 24 mois sous auvent et livrés entre 16 et 20 % d'humidité, mesurée à l'humidimètre devant vous. Le bois étuvé descend à 12 %." },
+  { q: "Livrez-vous en dehors de la Haute-Garonne ?", a: "Oui : Gers, Tarn, Tarn-et-Garonne, Ariège, Aude, Hautes-Pyrénées et Lot-et-Garonne. Livraison offerte dès 4 stères en Haute-Garonne." },
+  { q: "Comment stocker mes stères ?", a: "À l'abri de la pluie mais à l'air libre, surélevés sur des palettes, empilés en laissant circuler l'air. Un bois déjà sec se conserve ainsi plusieurs saisons sans reprendre l'humidité." }
+];
+
+const POSTS = [
+  { meta: "12 août · Livraison", title: "6 stères déchargés dans une ruelle de 2,40 m à Rieux-Volvestre", body: "Camion benne impossible, plateau grue et deux heures de brouette : le récit d'une livraison hors normes." },
+  { meta: "05 août · Conseils", title: "Chêne ou charme : lequel chauffe vraiment le mieux ?", body: "Densité, durée de flambée, braises, prix au kWh — la comparaison chiffrée sur nos lots de l'année." },
+  { meta: "22 juil. · Prix", title: "Où va le prix du stère pour la saison 2026-2027 ?", body: "Notre point de marché, sans langue de bois, pour commander au bon moment." }
+];
+
+const PHOTO = {
+  1: "photos/wood/chene-33.jpg", 2: "photos/wood/chene-50.jpg", 3: "photos/wood/charme-33.jpg",
+  4: "photos/wood/frene-33.jpg", 5: "photos/wood/melange-25.jpg", 6: "photos/wood/chene-1m.jpg",
+  7: "photos/wood/etuve-33.jpg", 8: "photos/wood/lot5.jpg"
+};
+const FAM_PHOTOS = ["chene-33", "charme-33", "frene-33", "melange-33", "chene-1m", "etuve-33", "lot5"].map(n => "photos/wood/" + n + ".jpg");
+const POST_PHOTOS = ["livraison", "charme-etuve", "bucher"].map(n => "photos/wood/" + n + ".jpg");
+
+class Component extends DCLogic {
+  state = { cat: "Tout", sort: "Populaires", cart: {}, open: false, postcode: "", msg: "", msgOk: null, area: 110, insu: "Correcte", device: "Insert", faq: 0 };
+
+  eur(n) { return n.toFixed(2).replace(".", ",") + " €"; }
+  stars(r) { const f = Math.round(r); return "★★★★★".slice(0, f) + "☆☆☆☆☆".slice(0, 5 - f); }
+
+  add = (id) => this.setState(s => ({ cart: { ...s.cart, [id]: (s.cart[id] || 0) + 1 }, open: true }));
+  bump = (id, d) => this.setState(s => {
+    const q = (s.cart[id] || 0) + d, next = { ...s.cart };
+    if (q <= 0) delete next[id]; else next[id] = q;
+    return { cart: next };
+  });
+
+  renderVals() {
+    const htMode = (this.props.priceMode ?? "TTC") === "HT";
+    const detailed = (this.props.cardDetail ?? "Détaillée") === "Détaillée";
+    const price = (n) => htMode ? n / 1.2 : n;
+
+    const cat = this.state.cat;
+    let list = cat === "Tout" ? CATALOG.slice() : CATALOG.filter(p => p.cat === cat);
+    if (this.state.sort === "Prix ↑") list.sort((a, b) => a.price - b.price);
+    if (this.state.sort === "Mieux notés") list.sort((a, b) => b.rating - a.rating);
+
+    const tones = {
+      dark: { bg: "#23291F", color: "#F4F7EC" },
+      green: { bg: "#DCE5CE", color: "#33512F" },
+      orange: { bg: "#C05621", color: "#FFF3EA" }
+    };
+
+    const products = list.map(p => ({
+      ...p,
+      slotId: "bq-prod-" + p.id,
+      photo: PHOTO[p.id],
+      shot: "Photo — " + p.name.toLowerCase(),
+      price: this.eur(price(p.price)),
+      oldPrice: p.old ? this.eur(price(p.old)) : "",
+      badgeBg: tones[p.tone].bg,
+      badgeColor: tones[p.tone].color,
+      stars: this.stars(p.rating),
+      reviews: p.reviews + " avis",
+      stockPct: p.stock + "%",
+      stockColor: p.stock < 30 ? "#C05621" : "#6E8F4E",
+      stockLabel: p.stock < 30 ? "Stock limité — " + Math.round(p.stock / 2) + " stères en parc" : "En parc, livré sous 5 jours",
+      add: () => this.add(p.id)
+    }));
+
+    const chips = CATS.map(label => {
+      const on = label === cat;
+      return {
+        label, bg: on ? "#33512F" : "#FFFFFF", color: on ? "#F4F7EC" : "#55604F",
+        border: on ? "#33512F" : "rgba(35,41,31,.12)",
+        onClick: () => this.setState({ cat: label })
+      };
+    });
+
+    const sorts = ["Populaires", "Prix ↑", "Mieux notés"].map(label => {
+      const on = label === this.state.sort;
+      return { label, bg: on ? "#FFFFFF" : "transparent", color: on ? "#23291F" : "#6B7263", onClick: () => this.setState({ sort: label }) };
+    });
+
+    const BEST = { 1: 4, 2: 4, 3: 3 };
+    const compareCells = [];
+    COMPARE.forEach((row, ri) => row.forEach((v, ci) => {
+      const best = BEST[ci] === ri;
+      compareCells.push({
+        v: best ? v + "  ✦" : v,
+        bg: best ? "#EEF2E4" : (ri % 2 ? "#FBFAF5" : "transparent"),
+        font: ci === 0 ? "'Outfit', sans-serif" : "'DM Mono', monospace",
+        size: ci === 0 ? "14.5px" : "11.5px",
+        weight: (ci === 0 || best) ? "600" : "400",
+        color: best ? "#33512F" : (ci === 3 ? "#C05621" : (ci === 0 ? "#23291F" : "#55604F"))
+      });
+    }));
+
+    const factor = { "Passoire": 130, "Correcte": 95, "Récente / RT2012": 62 }[this.state.insu];
+    const yieldPct = { "Foyer ouvert": 0.15, "Insert": 0.7, "Poêle récent": 0.8 }[this.state.device];
+    const kwh = this.state.area * factor;
+    const steres = kwh / (1900 * yieldPct);
+    const cost = steres * 119;
+
+    const pills = (values, key) => values.map(label => {
+      const on = this.state[key] === label;
+      return { label, bg: on ? "#33512F" : "#FFFFFF", color: on ? "#F4F7EC" : "#55604F", border: on ? "#33512F" : "rgba(35,41,31,.12)", onClick: () => this.setState({ [key]: label }) };
+    });
+
+    const faqs = FAQS.map((f, i) => {
+      const on = this.state.faq === i;
+      return { q: f.q, a: f.a, sign: on ? "−" : "+", max: on ? "340px" : "0px", pad: on ? "26px" : "0px", toggle: () => this.setState({ faq: on ? -1 : i }) };
+    });
+
+    const ids = Object.keys(this.state.cart);
+    const cartLines = ids.map(id => {
+      const p = CATALOG.find(x => x.id === Number(id)), qty = this.state.cart[id];
+      return {
+        name: p.name, unit: p.unit, qty, slotId: "bq-prod-" + p.id, photo: PHOTO[p.id], total: this.eur(price(p.price) * qty),
+        inc: () => this.bump(p.id, 1), dec: () => this.bump(p.id, -1),
+        remove: () => this.setState(s => { const n = { ...s.cart }; delete n[p.id]; return { cart: n }; })
+      };
+    });
+    const d = new Date(); d.setDate(d.getDate() + 5);
+    const deliveryDate = d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+    const count = ids.reduce((a, id) => a + this.state.cart[id], 0);
+    const total = ids.reduce((a, id) => a + price(CATALOG.find(x => x.id === Number(id)).price) * this.state.cart[id], 0);
+    const seuil = htMode ? 400 / 1.2 : 400;
+
+    return {
+      products, chips, sorts, cartLines, faqs, compareCells,
+      insulations: pills(["Passoire", "Correcte", "Récente / RT2012"], "insu"),
+      devices: pills(["Foyer ouvert", "Insert", "Poêle récent"], "device"),
+      families: FAMILIES.map((f, i) => ({ ...f, slotId: "bq-fam-" + (i + 1), photo: FAM_PHOTOS[i] })),
+      steps: STEPS, services: SERVICES, reviews: REVIEWS,
+      posts: POSTS.map((p, i) => ({ ...p, slotId: "bq-post-" + (i + 1), photo: POST_PHOTOS[i], hint: "Photo article " + (i + 1) })),
+      compareHead: ["Essence", "Énergie par stère", "Humidité", "Prix au stère", "Appareil conseillé"],
+      detailed,
+      showSimulator: this.props.showSimulator ?? true,
+      resultCount: products.length + (products.length > 1 ? " produits" : " produit"),
+      cartCount: count,
+      cartEmpty: ids.length === 0,
+      cartTotal: this.eur(total),
+      totalLabel: htMode ? "Total HT" : "Total TTC",
+      deliveryDate,
+      freeShipPct: Math.min(100, (total / seuil) * 100) + "%",
+      shippingNote: total >= seuil ? "Livraison offerte — c'est acquis." : "Plus que " + this.eur(seuil - total) + " pour la livraison offerte.",
+      area: this.state.area,
+      areaLabel: this.state.area + " m²",
+      onArea: (e) => this.setState({ area: Number(e.target.value) }),
+      simSteres: steres.toFixed(1).replace(".", ",") + " stères",
+      simCost: Math.round(cost) + " €",
+      simMonthly: Math.round(cost / 11) + " €/mois",
+      openCart: () => this.setState({ open: true }),
+      closeCart: () => this.setState({ open: false }),
+      drawerTransform: this.state.open ? "translateX(0)" : "translateX(105%)",
+      overlayOpacity: this.state.open ? 1 : 0,
+      overlayEvents: this.state.open ? "auto" : "none",
+      postcode: this.state.postcode,
+      postcodeMsg: this.state.msg,
+      postcodeColor: this.state.msgOk === false ? "#C05621" : "#3E5C33",
+      onPostcode: (e) => this.setState({ postcode: e.target.value, msg: "" }),
+      checkPostcode: () => {
+        const cp = this.state.postcode.trim();
+        if (!/^\d{5}$/.test(cp)) return this.setState({ msg: "Code postal à 5 chiffres", msgOk: false });
+        const zone = ["31", "32", "81", "82", "09", "11", "65", "47"].includes(cp.slice(0, 2));
+        this.setState({ msg: zone ? "✓ Livré sous 5 jours ouvrés" : "Hors zone — écrivez-nous", msgOk: zone });
+      }
+    };
+  }
+}
+
+</script>
+</body>
+</html>
