@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { getDbPool, withTransaction } from "./db.js";
+import { appConfig } from "./config.js";
 
 function sanitizeStoreStrings(value) {
   if (Array.isArray(value)) {
@@ -103,6 +104,14 @@ function normalizeEmail(value) {
   return normalizeText(value).toLowerCase();
 }
 
+function normalizeAnnouncementText(value, fallback = "") {
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+
+  return typeof value === "string" ? value.trim() : fallback;
+}
+
 function roundCurrency(value) {
   return Math.round(Number(value || 0) * 100) / 100;
 }
@@ -133,12 +142,26 @@ function getProductPriceForLength(product, selectedLength = "") {
 
 function normalizeSettings(input = {}) {
   const productOptions = input?.productOptions || {};
+  const announcementBar = input?.announcementBar || {};
+  const heroProof = input?.heroProof || {};
   return {
     productOptions: {
       lengths: normalizeOptionList(productOptions.lengths, defaultProductOptionSettings.lengths),
       dryingDurations: normalizeOptionList(productOptions.dryingDurations, defaultProductOptionSettings.dryingDurations)
     },
-    deliverySlots: normalizeOptionList(input?.deliverySlots, [])
+    deliverySlots: normalizeOptionList(input?.deliverySlots, []),
+    announcementBar: {
+      primaryText: normalizeAnnouncementText(announcementBar.primaryText, "Tarifs TTC · TVA 10 %"),
+      secondaryText: normalizeAnnouncementText(announcementBar.secondaryText, "Livraison jusqu'a 30 km : 44,00 EUR TTC"),
+      tertiaryText: normalizeAnnouncementText(announcementBar.tertiaryText, "Au-dela de 60 km : sur devis"),
+      backgroundColor: normalizeText(announcementBar.backgroundColor) || "#5B321D",
+      textColor: normalizeText(announcementBar.textColor) || "#FBF6EE"
+    },
+    heroProof: {
+      primaryText: normalizeAnnouncementText(heroProof.primaryText, "Tarifs TTC avec TVA 10 %"),
+      secondaryText: normalizeAnnouncementText(heroProof.secondaryText, "Livraison offerte des 5 steres dans 30 km"),
+      tertiaryText: normalizeAnnouncementText(heroProof.tertiaryText, "Offre 4 steres achetes = le 5e offert")
+    }
   };
 }
 
@@ -571,10 +594,6 @@ function assignProductToCategory(data, categoryId, product) {
 
   category.productIds = uniqueValues([...(category.productIds || []), product.id]);
   category.essences = uniqueValues([...(category.essences || []), product.essence]);
-
-  if (!category.coverProductId) {
-    category.coverProductId = product.id;
-  }
 }
 
 function removeProductFromCategories(data, productId) {
@@ -583,7 +602,7 @@ function removeProductFromCategories(data, productId) {
     category.productIds = nextProductIds;
 
     if (category.coverProductId === productId) {
-      category.coverProductId = nextProductIds[0] || "";
+      category.coverProductId = "";
     }
   });
 }
@@ -646,6 +665,39 @@ function toIsoString(value) {
   if (!value) return "";
   const date = value instanceof Date ? value : new Date(value);
   return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+}
+
+function toAdminSession(row) {
+  const firstName = row.first_name || "";
+  const lastName = row.last_name || "";
+  const name = [firstName, lastName].filter(Boolean).join(" ").trim() || row.email;
+  return {
+    id: String(row.id),
+    email: row.email,
+    firstName,
+    lastName,
+    name,
+    role: row.role || "editor"
+  };
+}
+
+async function ensureAdminSeeded(connection) {
+  const [rows] = await connection.query("SELECT id FROM admins ORDER BY id ASC LIMIT 1");
+  if (rows.length > 0) {
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(appConfig.admin.bootstrapPassword, 10);
+  await connection.query(
+    `INSERT INTO admins (first_name, last_name, email, password_hash, role, is_active)
+     VALUES (?, ?, ?, ?, 'super_admin', 1)`,
+    [
+      appConfig.admin.bootstrapFirstName,
+      appConfig.admin.bootstrapLastName,
+      appConfig.admin.bootstrapEmail,
+      passwordHash
+    ]
+  );
 }
 
 async function getSettingMap(connection) {
@@ -1001,7 +1053,7 @@ export async function replaceAllDataFromSnapshot(snapshot) {
     await connection.query("DELETE FROM app_settings");
 
     await connection.query(
-      "INSERT INTO app_settings (setting_key, value_json) VALUES (?, CAST(? AS JSON)), (?, CAST(? AS JSON)), (?, CAST(? AS JSON))",
+      "INSERT INTO app_settings (setting_key, value_json) VALUES (?, ?), (?, ?), (?, ?)",
       [
         "profile", toJson(normalized.profile || defaultProfile),
         "product_options", toJson(normalized.settings || { productOptions: defaultProductOptionSettings }),
@@ -1013,7 +1065,7 @@ export async function replaceAllDataFromSnapshot(snapshot) {
       await connection.query(
         `INSERT INTO categories
           (external_id, name, label, slug, kicker, heading, description, short_description, cover_product_external_id, essences_json)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON))`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           category.id,
           category.label || category.slug || category.id,
@@ -1038,7 +1090,7 @@ export async function replaceAllDataFromSnapshot(snapshot) {
       await connection.query(
         `INSERT INTO products
           (external_id, template_product_external_id, name, slug, sku, cat_label, essence_name, family_name, legacy_category_slug, short_description, description, unit_label, badge, badge_tone, rating_label, reviews_label, default_length, available_lengths_json, length_prices_json, default_drying, available_drying_durations_json, humidity_label, origin_label, calorific_value_label, image_key, image_url, gallery_keys_json, gallery_urls_json, specs_json, tabs_json, old_price, status, product_type)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), CAST(? AS JSON), ?, CAST(? AS JSON), ?, ?, ?, ?, ?, CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           product.id,
           product.templateProductId || null,
@@ -1133,7 +1185,7 @@ export async function replaceAllDataFromSnapshot(snapshot) {
       await connection.query(
         `INSERT INTO customers
           (external_id, first_name, last_name, display_name, initials, email, phone, city, password_hash, member_since, orders_count, lifetime_amount, advisor_name, season_history_json, next_delivery_slots_json, access_note)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), CAST(? AS JSON), ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           customerInput.id,
           name.firstName,
@@ -1202,7 +1254,7 @@ export async function replaceAllDataFromSnapshot(snapshot) {
       await connection.query(
         `INSERT INTO orders
           (external_id, order_number, customer_id, status, status_label, payment_status, fulfillment_status, fulfillment_label, customer_name, customer_email, customer_phone, channel, slot_label, payment_method_label, payment_reference, delivery_truck, subtotal_amount, shipping_amount, tax_amount, total_amount, logistics_note, internal_note_title, internal_note, timeline_json, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), ?, ?)` ,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)` ,
         [
           orderInput.id,
           orderInput.id,
@@ -1553,6 +1605,31 @@ export async function authenticateCustomer(input) {
     session: toCustomerSession(customer),
     account: buildAccountView(data, customer.id)
   };
+}
+
+export async function authenticateAdmin(input) {
+  const email = normalizeEmail(input.email);
+  const password = String(input.password || "");
+  if (!email || !password) {
+    throw httpError(400, "Email et mot de passe admin requis.");
+  }
+
+  const connection = getDbPool();
+  await ensureAdminSeeded(connection);
+  const [rows] = await connection.query(
+    `SELECT id, first_name, last_name, email, password_hash, role, is_active
+     FROM admins
+     WHERE email = ?
+     LIMIT 1`,
+    [email]
+  );
+  const admin = rows[0];
+  if (!admin || !admin.is_active || !(await bcrypt.compare(password, admin.password_hash || ""))) {
+    throw httpError(401, "Identifiants admin invalides.");
+  }
+
+  await connection.query("UPDATE admins SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?", [admin.id]);
+  return toAdminSession(admin);
 }
 
 export async function getCustomerAccount(customerId) {

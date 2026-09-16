@@ -51,8 +51,8 @@ npm run preview
 
 Le backend supporte maintenant deux modes de persistance:
 
-- `DATA_BACKEND=json`: mode local historique sur `server/data/store.json`
-- `DATA_BACKEND=mysql`: mode SQL sur MySQL ou MariaDB
+- `DATA_BACKEND=mysql`: mode SQL attendu pour la vraie base MySQL ou MariaDB
+- `DATA_BACKEND=json`: fallback local historique sur `server/data/store.json`
 
 Initialiser la configuration locale:
 
@@ -63,7 +63,6 @@ copy .env.example .env
 Puis renseigner au minimum:
 
 ```env
-DATA_BACKEND=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_USER=root

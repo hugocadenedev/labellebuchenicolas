@@ -7,8 +7,15 @@ function readInt(value, fallback) {
 
 export const appConfig = {
   port: readInt(process.env.PORT, 3001),
-  dataBackend: (process.env.DATA_BACKEND || "json").trim().toLowerCase(),
+  dataBackend: (process.env.DATA_BACKEND || "mysql").trim().toLowerCase(),
   appUrl: (process.env.APP_URL || "").trim(),
+  admin: {
+    sessionSecret: (process.env.ADMIN_SESSION_SECRET || process.env.DB_PASSWORD || "labellebuche-admin-dev-secret").trim(),
+    bootstrapEmail: (process.env.ADMIN_EMAIL || "admin@labellebuche.local").trim().toLowerCase(),
+    bootstrapPassword: (process.env.ADMIN_PASSWORD || "labellebuche-admin").trim(),
+    bootstrapFirstName: (process.env.ADMIN_FIRST_NAME || "Remi").trim(),
+    bootstrapLastName: (process.env.ADMIN_LAST_NAME || "Lacaze").trim()
+  },
   mysql: {
     host: process.env.DB_HOST || "127.0.0.1",
     port: readInt(process.env.DB_PORT, 3306),

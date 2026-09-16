@@ -3,9 +3,11 @@ import express from "express";
 import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
+import { createAdminSessionToken, requireAdminSession } from "./adminAuth.js";
 import { createStripeCheckoutSession, confirmStripeCheckoutSession, handleStripeWebhook } from "./stripe.js";
 import { appConfig } from "./config.js";
 import {
+  authenticateAdmin,
   authenticateCustomer,
   createCustomerAccount,
   createOrder,
@@ -67,6 +69,19 @@ app.post("/api/customers/login", async (req, res, next) => {
   }
 });
 
+app.post("/api/admin/login", async (req, res, next) => {
+  try {
+    const admin = await authenticateAdmin(req.body || {});
+    res.json({ token: createAdminSessionToken(admin), admin });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/admin/session", requireAdminSession, (req, res) => {
+  res.json({ admin: req.admin });
+});
+
 app.get("/api/customers/:id/account", async (req, res, next) => {
   try {
     res.json(await getCustomerAccount(req.params.id));
@@ -85,6 +100,8 @@ app.post("/api/orders", async (req, res, next) => {
 
 app.post("/api/payments/stripe/checkout-session", createStripeCheckoutSession);
 app.post("/api/payments/stripe/session/:sessionId/confirm", confirmStripeCheckoutSession);
+
+app.use("/api/admin", requireAdminSession);
 
 app.get("/api/admin/bootstrap", async (_req, res, next) => {
   try {

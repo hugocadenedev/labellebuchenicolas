@@ -67,19 +67,34 @@ const productMediaOptions = Object.entries(productMediaLibrary).map(([key, media
 const adminSessionKey = "lbb-admin-session";
 const customerSessionKey = "lbb-customer-session";
 const stripeCheckoutKey = "lbb-stripe-checkout";
-const adminCredentials = {
-  email: "admin@labellebuche.local",
-  password: "labellebuche-admin",
-  label: "Acces local"
-};
 
 const defaultProductOptionSettings = {
   productOptions: {
     lengths: ["25 cm", "33 cm", "50 cm", "2 m"],
     dryingDurations: ["Seche 18 mois", "Seche 2 ans", "Seche 2 ans et demi"]
   },
-  deliverySlots: []
+  deliverySlots: [],
+  announcementBar: {
+    primaryText: "Tarifs TTC · TVA 10 %",
+    secondaryText: "Livraison jusqu'a 30 km : 44,00 EUR TTC",
+    tertiaryText: "Au-dela de 60 km : sur devis",
+    backgroundColor: "#5B321D",
+    textColor: "#FBF6EE"
+  },
+  heroProof: {
+    primaryText: "Tarifs TTC avec TVA 10 %",
+    secondaryText: "Livraison offerte des 5 steres dans 30 km",
+    tertiaryText: "Offre 4 steres achetes = le 5e offert"
+  }
 };
+
+function normalizeAnnouncementText(value, fallback = "") {
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+
+  return typeof value === "string" ? value.trim() : fallback;
+}
 
 function readAdminSession() {
   if (typeof window === "undefined") return null;
@@ -396,13 +411,31 @@ function normalizeProductOptionSettings(settings) {
   const lengths = uniqueByValue(Array.isArray(productOptions.lengths) ? productOptions.lengths : []);
   const dryingDurations = uniqueByValue(Array.isArray(productOptions.dryingDurations) ? productOptions.dryingDurations : []);
   const deliverySlots = uniqueByValue(Array.isArray(settings?.deliverySlots) ? settings.deliverySlots : []);
+  const announcementBar = settings?.announcementBar || {};
+  const heroProof = settings?.heroProof || {};
 
   return {
     productOptions: {
       lengths: lengths.length > 0 ? lengths : [...defaultProductOptionSettings.productOptions.lengths],
       dryingDurations: dryingDurations.length > 0 ? dryingDurations : [...defaultProductOptionSettings.productOptions.dryingDurations]
     },
-    deliverySlots
+    deliverySlots,
+    announcementBar: {
+      primaryText: normalizeAnnouncementText(announcementBar.primaryText, defaultProductOptionSettings.announcementBar.primaryText),
+      secondaryText: normalizeAnnouncementText(announcementBar.secondaryText, defaultProductOptionSettings.announcementBar.secondaryText),
+      tertiaryText: normalizeAnnouncementText(announcementBar.tertiaryText, defaultProductOptionSettings.announcementBar.tertiaryText),
+      backgroundColor: typeof announcementBar.backgroundColor === "string" && announcementBar.backgroundColor.trim()
+        ? announcementBar.backgroundColor.trim()
+        : defaultProductOptionSettings.announcementBar.backgroundColor,
+      textColor: typeof announcementBar.textColor === "string" && announcementBar.textColor.trim()
+        ? announcementBar.textColor.trim()
+        : defaultProductOptionSettings.announcementBar.textColor
+    },
+    heroProof: {
+      primaryText: normalizeAnnouncementText(heroProof.primaryText, defaultProductOptionSettings.heroProof.primaryText),
+      secondaryText: normalizeAnnouncementText(heroProof.secondaryText, defaultProductOptionSettings.heroProof.secondaryText),
+      tertiaryText: normalizeAnnouncementText(heroProof.tertiaryText, defaultProductOptionSettings.heroProof.tertiaryText)
+    }
   };
 }
 
@@ -683,7 +716,7 @@ function getCategoryForProduct(categories, productId) {
 }
 
 function getCategoryCoverImage(category, allProducts) {
-  return allProducts.find((product) => product.id === category.coverProductId)?.image || getCategoryProducts(allProducts, category)[0]?.image || brand.woodYardImage;
+  return allProducts.find((product) => product.id === category.coverProductId)?.image || "";
 }
 
 function formatPrice(value) {
@@ -801,15 +834,20 @@ function buildOrderTimeline(order) {
 }
 
 async function apiRequest(path, options = {}) {
+  const adminSession = path.startsWith("/api/admin") ? readAdminSession() : null;
   const response = await fetch(path, {
     headers: {
       "Content-Type": "application/json",
+      ...(adminSession?.token ? { Authorization: `Bearer ${adminSession.token}` } : {}),
       ...(options.headers || {})
     },
     ...options
   });
 
   if (!response.ok) {
+    if (response.status === 401 && path.startsWith("/api/admin")) {
+      clearAdminSession();
+    }
     const payload = await response.json().catch(() => ({}));
     throw new Error(payload.message || "API request failed");
   }
@@ -1092,10 +1130,10 @@ function StorefrontApp() {
 
   return (
     <div className="lbb-app">
-      <AnnouncementBar />
+      <AnnouncementBar settings={siteSettings} />
       <SiteHeader cartCount={cartCount} categories={storefrontCategories} onOpenCart={() => setCartDrawerOpen(true)} account={activeAccount} />
       <Routes>
-        <Route path="/" element={<HomePage addToCart={addToCart} cartCount={cartCount} categories={storefrontCategories} siteProducts={storefrontProducts} defaultCategoryPath={defaultCategoryPath} siteStatus={siteStatus} />} />
+        <Route path="/" element={<HomePage addToCart={addToCart} cartCount={cartCount} categories={storefrontCategories} settings={siteSettings} siteProducts={storefrontProducts} defaultCategoryPath={defaultCategoryPath} siteStatus={siteStatus} />} />
         <Route path="/boutique" element={<CatalogPage addToCart={addToCart} categories={storefrontCategories} siteProducts={storefrontProducts} defaultCategoryPath={defaultCategoryPath} siteStatus={siteStatus} />} />
         <Route path="/categorie" element={<Navigate to={defaultCategoryPath} replace />} />
         <Route path="/categorie/:slug" element={<CategoryPage addToCart={addToCart} categories={storefrontCategories} siteProducts={storefrontProducts} defaultCategoryPath={defaultCategoryPath} siteStatus={siteStatus} />} />
@@ -1125,12 +1163,20 @@ function AdminApp() {
   );
 }
 
-function AnnouncementBar() {
+function AnnouncementBar({ settings }) {
+  const announcementBar = normalizeProductOptionSettings(settings).announcementBar;
+  const promoItems = [announcementBar.primaryText, announcementBar.secondaryText, announcementBar.tertiaryText].filter(Boolean);
+
   return (
-    <div className="lbb-announcement-bar" style={{ background: "#5B321D", color: "#FBF6EE", ...mono, fontSize: 11.5, letterSpacing: ".06em", display: "flex", justifyContent: "center", gap: 44, padding: "11px 32px", flexWrap: "wrap" }}>
-      <span>Tarifs TTC · TVA 10 %</span>
-      <span style={{ color: "#F5D9C6" }}>Livraison jusqu'à 30 km : 44,00 € TTC</span>
-      <span>Au-delà de 60 km : sur devis</span>
+    <div className="lbb-announcement-bar" style={{ background: announcementBar.backgroundColor, color: announcementBar.textColor, ...mono, fontSize: 11.5, letterSpacing: ".06em", padding: "11px 32px" }}>
+      <div className="lbb-announcement-bar-track">
+        <div className="lbb-announcement-bar-group">
+          {promoItems.map((item) => <span key={item} className="lbb-announcement-bar-item">{item}</span>)}
+        </div>
+        <div className="lbb-announcement-bar-group" aria-hidden="true">
+          {promoItems.map((item, index) => <span key={`${item}-${index}`} className="lbb-announcement-bar-item">{item}</span>)}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1400,10 +1446,11 @@ function CartDrawer({ cartItems, setQuantity, isOpen, onClose, defaultCategoryPa
   );
 }
 
-function HomePage({ addToCart, categories, siteProducts, defaultCategoryPath, siteStatus, showOnlyCatalogue = false }) {
+function HomePage({ addToCart, categories, settings, siteProducts, defaultCategoryPath, siteStatus, showOnlyCatalogue = false }) {
   const [chip, setChip] = useState("Tous");
   const [sort, setSort] = useState("popular");
   const [openFaq, setOpenFaq] = useState(0);
+  const heroProof = normalizeProductOptionSettings(settings).heroProof;
 
   const visibleProducts = useMemo(() => {
     const base = siteProducts;
@@ -1439,9 +1486,7 @@ function HomePage({ addToCart, categories, siteProducts, defaultCategoryPath, si
                   <a href="#catalogue" className="lbb-btn lbb-btn-secondary lbb-hero-secondary-btn">Voir les offres</a>
                 </div>
                 <div className="lbb-hero-proof" style={{ ...mono }}>
-                  <span>Tarifs TTC avec TVA 10 %</span>
-                  <span>Livraison offerte dès 5 stères dans 30 km</span>
-                  <span>Offre 4 stères achetés = le 5e offert</span>
+                  {[heroProof.primaryText, heroProof.secondaryText, heroProof.tertiaryText].filter(Boolean).map((item) => <span key={item}>{item}</span>)}
                 </div>
               </div>
             </div>
@@ -1450,13 +1495,14 @@ function HomePage({ addToCart, categories, siteProducts, defaultCategoryPath, si
           <section style={{ ...pageShell, paddingTop: 84 }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 24, marginBottom: 36, flexWrap: "wrap" }}>
               <h2 style={{ ...sans, fontWeight: 700, fontSize: 28, letterSpacing: "-.025em", margin: 0 }}>Nos produits de chauffage</h2>
-              <span style={{ ...mono, fontSize: 11.5, color: "#8A9180" }}>{categories.length} familles · {siteStatus === "ready" ? "pilotées par le back office" : "bois et allumage prêts à commander"}</span>
             </div>
             <div className="lbb-family-grid">
               {categories.map((category) => (
-                <Link key={category.id} to={getCategoryHref(category.slug)} style={{ display: "grid", gap: 14, alignContent: "start", justifyItems: "center", textAlign: "center", color: "inherit" }}>
-                  <div style={{ position: "relative", width: "100%", aspectRatio: 1, borderRadius: 999, overflow: "hidden", background: "#EADACB", display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 14 }}>
-                    <img src={getCategoryCoverImage(category, siteProducts)} alt={category.label} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                <Link key={category.id} to={getCategoryHref(category.slug)} className="lbb-family-card" style={{ display: "grid", gap: 14, alignContent: "start", justifyItems: "center", textAlign: "center", color: "inherit" }}>
+                  <div className="lbb-family-card-media" style={{ position: "relative", width: "100%", aspectRatio: 1, borderRadius: 999, overflow: "hidden", background: "#EADACB", display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 14 }}>
+                    {getCategoryCoverImage(category, siteProducts)
+                      ? <img src={getCategoryCoverImage(category, siteProducts)} alt={category.label} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                      : null}
                     <span style={{ position: "relative", ...mono, fontSize: 9.5, letterSpacing: ".06em", background: "rgba(251,250,245,.9)", borderRadius: 999, padding: "4px 10px", color: "#6B7263" }}>{category.from}</span>
                   </div>
                   <span style={{ ...sans, fontWeight: 600, fontSize: 13, letterSpacing: ".02em" }}>{category.label}</span>
@@ -1560,7 +1606,7 @@ function HomePage({ addToCart, categories, siteProducts, defaultCategoryPath, si
               <div style={{ display: "grid", gap: 18, alignContent: "center" }}>
                 <div style={{ ...mono, fontSize: 11, letterSpacing: ".08em", color: "#C05621" }}>Notre histoire</div>
                 <h2 style={{ ...sans, fontWeight: 700, fontSize: 34, letterSpacing: "-.03em", margin: 0 }}>Une maison de bois locale, pas un catalogue générique.</h2>
-                <p style={{ fontSize: 17.5, lineHeight: 1.6, color: "#4E5647", margin: 0 }}>Le design Claude racontait déjà une entreprise enracinée dans le Sud-Ouest. Cette version reprend cette narration avec plus de structure web et des pages réellement navigables.</p>
+                <p style={{ fontSize: 17.5, lineHeight: 1.6, color: "#4E5647", margin: 0 }}>Depuis Montgaillard-Lauragais, La Belle Buche prepare et livre un bois de chauffage pense pour les besoins reels des foyers du secteur, avec un service simple, clair et local.</p>
                 <div className="lbb-stat-grid">
                   {["TVA 10 %", "31290", "> 60 km sur devis"].map((item, index) => (
                     <div key={item} style={{ background: index === 1 ? "#F3E5D8" : "#FFFFFF", border: "1px solid rgba(35,41,31,.08)", borderRadius: 22, padding: 20 }}>
@@ -1824,7 +1870,11 @@ function CategoryPage({ addToCart, categories, siteProducts, defaultCategoryPath
         <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 6 }}>
           {categories.map((category) => (
             <Link key={category.id} to={getCategoryHref(category.slug)} style={{ flex: "0 0 auto", width: 178, display: "grid", gap: 10, background: "#FFFFFF", border: `1px solid ${category.id === currentCategory.id ? "#5B321D" : "rgba(35,41,31,.08)"}`, borderRadius: 20, padding: 14, textAlign: "left", cursor: "pointer", color: "inherit" }}>
-              <div style={{ position: "relative", aspectRatio: 1.5, borderRadius: 13, overflow: "hidden", background: "#EADACB" }}><img src={getCategoryCoverImage(category, siteProducts)} alt={category.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>
+              <div style={{ position: "relative", aspectRatio: 1.5, borderRadius: 13, overflow: "hidden", background: "#EADACB" }}>
+                {getCategoryCoverImage(category, siteProducts)
+                  ? <img src={getCategoryCoverImage(category, siteProducts)} alt={category.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  : null}
+              </div>
               <span style={{ ...sans, fontWeight: 600, fontSize: 13.5, letterSpacing: ".01em", color: "#23291F" }}>{category.label}</span>
               <span style={{ ...mono, fontSize: 10, letterSpacing: ".04em", color: "#8A9180" }}>{category.count}</span>
             </Link>
@@ -2755,29 +2805,35 @@ function AccountPage({ account, accountStatus, onLogin, onRegister, onLogout }) 
 function AdminLoginPage() {
   const navigate = useNavigate();
   const session = readAdminSession();
-  const [email, setEmail] = useState(adminCredentials.email);
-  const [password, setPassword] = useState(adminCredentials.password);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (session) {
+  if (session?.token) {
     return <Navigate to="/admin" replace />;
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
-
-    if (email !== adminCredentials.email || password !== adminCredentials.password) {
-      setError("Identifiants invalides pour l'acces local.");
-      return;
+    setError("");
+    setIsSubmitting(true);
+    try {
+      const payload = await apiRequest("/api/admin/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password })
+      });
+      persistAdminSession({
+        ...payload.admin,
+        token: payload.token,
+        loginAt: new Date().toISOString()
+      });
+      navigate("/admin", { replace: true });
+    } catch (loginError) {
+      setError(loginError.message);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    persistAdminSession({
-      email,
-      role: "Super admin",
-      label: adminCredentials.label,
-      loginAt: new Date().toISOString()
-    });
-    navigate("/admin", { replace: true });
   }
 
   return (
@@ -2792,7 +2848,7 @@ function AdminLoginPage() {
           <div className="lbb-admin-auth-notes">
             <div>
               <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#8A9180" }}>ACCES</span>
-              <strong style={{ ...sans, fontSize: 16 }}>{adminCredentials.label}</strong>
+              <strong style={{ ...sans, fontSize: 16 }}>Authentification admin backend</strong>
             </div>
             <div>
               <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#8A9180" }}>SCOPE</span>
@@ -2800,7 +2856,7 @@ function AdminLoginPage() {
             </div>
             <div>
               <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#8A9180" }}>ENVIRONNEMENT</span>
-              <strong style={{ ...sans, fontSize: 16 }}>Local dev securise par session</strong>
+              <strong style={{ ...sans, fontSize: 16 }}>Session admin signee cote serveur</strong>
             </div>
           </div>
         </div>
@@ -2810,12 +2866,12 @@ function AdminLoginPage() {
             <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>IDENTIFICATION</span>
             <strong style={{ ...sans, fontWeight: 700, fontSize: 24, letterSpacing: "-.03em" }}>Connexion admin</strong>
           </div>
-          <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" className="lbb-admin-input" />
-          <input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mot de passe" type="password" className="lbb-admin-input" />
+          <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email admin" className="lbb-admin-input" autoComplete="username" />
+          <input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mot de passe" type="password" className="lbb-admin-input" autoComplete="current-password" />
           {error ? <div style={{ background: "#FCE7DF", color: "#A8501B", borderRadius: 16, padding: "12px 14px", ...mono, fontSize: 10.5 }}>{error}</div> : null}
-          <button type="submit" className="lbb-btn lbb-btn-primary" style={{ justifyContent: "center" }}>Entrer dans le back office</button>
+          <button type="submit" className="lbb-btn lbb-btn-primary" style={{ justifyContent: "center" }} disabled={isSubmitting}>{isSubmitting ? "Connexion..." : "Entrer dans le back office"}</button>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", ...mono, fontSize: 10.5, color: "#8A9180" }}>
-            <span>Session locale persistante</span>
+            <span>Session admin persistante dans le navigateur</span>
             <Link to="/" style={{ color: "#5B321D" }}>Retour au site</Link>
           </div>
         </form>
@@ -2877,7 +2933,7 @@ function createCategoryDraft(productOptions) {
     heading: "",
     description: "",
     shortDescription: "",
-    coverProductId: productOptions[0]?.id || "",
+    coverProductId: "",
     essences: [],
     productIds: []
   };
@@ -2937,7 +2993,7 @@ function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  if (!session) {
+  if (!session?.token) {
     return <Navigate to="/admin/login" replace />;
   }
 
@@ -2949,6 +3005,10 @@ function AdminPage() {
       setAdminState(data);
       return true;
     } catch (loadError) {
+      if (loadError.message.toLowerCase().includes("session admin invalide") || loadError.message.toLowerCase().includes("expiree")) {
+        clearAdminSession();
+        navigate("/admin/login", { replace: true });
+      }
       setError(loadError.message);
       return false;
     } finally {
@@ -3566,11 +3626,11 @@ function AdminProductsIndex({ products: adminProducts, categories, onStockUpdate
 
 function AdminCategoryCreatePage({ products: productOptions, onCreateCategory }) {
   const [draft, setDraft] = useState(() => createCategoryDraft(productOptions));
-
-  useEffect(() => {
-    if (draft.coverProductId || !productOptions.length) return;
-    setDraft((current) => ({ ...current, coverProductId: productOptions[0].id }));
-  }, [draft.coverProductId, productOptions]);
+  const selectedProducts = useMemo(
+    () => productOptions.filter((product) => draft.productIds.includes(product.id)),
+    [draft.productIds, productOptions]
+  );
+  const imageCandidates = selectedProducts.filter((product) => product.image);
 
   function updateDraft(field, value) {
     setDraft((current) => {
@@ -3593,21 +3653,20 @@ function AdminCategoryCreatePage({ products: productOptions, onCreateCategory })
       return {
         ...current,
         productIds,
-        coverProductId: productIds[0] || current.coverProductId
+        coverProductId: current.coverProductId && productIds.includes(current.coverProductId) ? current.coverProductId : ""
       };
     });
   }
 
   async function submitDraft(event) {
     event.preventDefault();
-    const selectedProducts = productOptions.filter((product) => draft.productIds.includes(product.id));
     await onCreateCategory({
       ...draft,
       id: draft.id || `cat_${slugify(draft.label)}`,
       slug: draft.slug || slugify(draft.label),
       heading: draft.heading || draft.label,
       shortDescription: draft.shortDescription || `${selectedProducts.length} produit(s) relies`,
-      coverProductId: selectedProducts[0]?.id || draft.coverProductId,
+      coverProductId: draft.coverProductId,
       essences: uniqueByValue(selectedProducts.map((product) => product.family || product.essence).filter(Boolean)),
       productIds: draft.productIds
     });
@@ -3635,6 +3694,23 @@ function AdminCategoryCreatePage({ products: productOptions, onCreateCategory })
               {productOptions.map((product) => {
                 const active = draft.productIds.includes(product.id);
                 return <button key={product.id} type="button" onClick={() => toggleProduct(product.id)} style={{ border: active ? "1px solid rgba(91,50,29,.45)" : "1px solid rgba(35,41,31,.09)", background: active ? "#F3E5D8" : "#FFFFFF", borderRadius: 18, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, cursor: "pointer", textAlign: "left" }}><span style={{ display: "flex", alignItems: "center", gap: 12 }}>{product.image ? <img src={product.image} alt={product.name} style={{ width: 42, height: 42, borderRadius: 12, objectFit: "cover", background: "#F3EEE4" }} /> : <span style={{ width: 42, height: 42, borderRadius: 12, border: "1px dashed rgba(35,41,31,.18)", background: "#FBFAF5", display: "grid", placeItems: "center", ...mono, fontSize: 9, color: "#8A9180" }}>PHOTO</span>}<span style={{ display: "grid", gap: 3 }}><strong style={{ ...sans, fontSize: 15, color: "#2C241D" }}>{product.name}</strong><span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>{formatPrice(product.price)} · {product.id}</span></span></span><AdminPill tone={active ? "success" : "neutral"}>{active ? "Relie" : "Selectionner"}</AdminPill></button>;
+              })}
+            </div>
+          </div>
+          <div style={{ display: "grid", gap: 12 }}>
+            <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>VISUEL DE CATEGORIE</span>
+            <div style={{ display: "grid", gap: 10 }}>
+              <button type="button" onClick={() => updateDraft("coverProductId", "")} style={{ border: draft.coverProductId ? "1px solid rgba(35,41,31,.09)" : "1px solid rgba(91,50,29,.45)", background: draft.coverProductId ? "#FFFFFF" : "#F3E5D8", borderRadius: 18, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, cursor: "pointer", textAlign: "left" }}>
+                <span style={{ display: "grid", gap: 3 }}>
+                  <strong style={{ ...sans, fontSize: 15, color: "#2C241D" }}>Aucun visuel</strong>
+                  <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>La categorie restera sans image tant qu'aucun visuel n'est choisi.</span>
+                </span>
+                <AdminPill tone={draft.coverProductId ? "neutral" : "success"}>{draft.coverProductId ? "Choisir" : "Actif"}</AdminPill>
+              </button>
+              {imageCandidates.length === 0 ? <div style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>Selectionne un produit avec une vraie image pour l'utiliser comme visuel de categorie.</div> : null}
+              {imageCandidates.map((product) => {
+                const active = draft.coverProductId === product.id;
+                return <button key={product.id} type="button" onClick={() => updateDraft("coverProductId", product.id)} style={{ border: active ? "1px solid rgba(91,50,29,.45)" : "1px solid rgba(35,41,31,.09)", background: active ? "#F3E5D8" : "#FFFFFF", borderRadius: 18, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, cursor: "pointer", textAlign: "left" }}><span style={{ display: "flex", alignItems: "center", gap: 12 }}><img src={product.image} alt={product.name} style={{ width: 52, height: 52, borderRadius: 14, objectFit: "cover", background: "#F3EEE4" }} /><span style={{ display: "grid", gap: 3 }}><strong style={{ ...sans, fontSize: 15, color: "#2C241D" }}>{product.name}</strong><span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>{product.id}</span></span></span><AdminPill tone={active ? "success" : "neutral"}>{active ? "Actif" : "Choisir"}</AdminPill></button>;
               })}
             </div>
           </div>
@@ -3732,6 +3808,38 @@ function AdminOrders({ orders, onOrderUpdate, onOrderFulfillmentUpdate }) {
             </div>
           ))}
         </div>
+          <div style={{ display: "grid", gap: 12 }}>
+            <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>VISUEL DE CATEGORIE</span>
+            <div style={{ display: "grid", gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => updateDraft("coverProductId", "")}
+                style={{
+                  border: draft.coverProductId ? "1px solid rgba(35,41,31,.09)" : "1px solid rgba(91,50,29,.45)",
+                  background: draft.coverProductId ? "#FFFFFF" : "#F3E5D8",
+                  borderRadius: 18,
+                  padding: "14px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 14,
+                  cursor: "pointer",
+                  textAlign: "left"
+                }}
+              >
+                <span style={{ display: "grid", gap: 3 }}>
+                  <strong style={{ ...sans, fontSize: 15, color: "#2C241D" }}>Aucun visuel</strong>
+                  <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>La categorie affichera un placeholder neutre tant qu'aucune image n'est choisie.</span>
+                </span>
+                <AdminPill tone={draft.coverProductId ? "neutral" : "success"}>{draft.coverProductId ? "Choisir" : "Actif"}</AdminPill>
+              </button>
+              {imageCandidates.length === 0 ? <div style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>Selectionne d'abord un produit avec une vraie image pour l'utiliser comme visuel de categorie.</div> : null}
+              {imageCandidates.map((product) => {
+                const active = draft.coverProductId === product.id;
+                return <button key={product.id} type="button" onClick={() => updateDraft("coverProductId", product.id)} style={{ border: active ? "1px solid rgba(91,50,29,.45)" : "1px solid rgba(35,41,31,.09)", background: active ? "#F3E5D8" : "#FFFFFF", borderRadius: 18, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, cursor: "pointer", textAlign: "left" }}><span style={{ display: "flex", alignItems: "center", gap: 12 }}><img src={product.image} alt={product.name} style={{ width: 52, height: 52, borderRadius: 14, objectFit: "cover", background: "#F3EEE4" }} /><span style={{ display: "grid", gap: 3 }}><strong style={{ ...sans, fontSize: 15, color: "#2C241D" }}>{product.name}</strong><span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>{product.id}</span></span></span><AdminPill tone={active ? "success" : "neutral"}>{active ? "Actif" : "Choisir"}</AdminPill></button>;
+              })}
+            </div>
+          </div>
       </div>
     </div>
   );
@@ -3958,6 +4066,14 @@ function AdminSettings({ session, profile, settings, categories, products, custo
   const [lengths, setLengths] = useState(productSettings.productOptions.lengths);
   const [dryingDurations, setDryingDurations] = useState(productSettings.productOptions.dryingDurations);
   const [deliverySlots, setDeliverySlots] = useState(productSettings.deliverySlots);
+  const [announcementPrimaryText, setAnnouncementPrimaryText] = useState(productSettings.announcementBar.primaryText);
+  const [announcementSecondaryText, setAnnouncementSecondaryText] = useState(productSettings.announcementBar.secondaryText);
+  const [announcementTertiaryText, setAnnouncementTertiaryText] = useState(productSettings.announcementBar.tertiaryText);
+  const [announcementBackgroundColor, setAnnouncementBackgroundColor] = useState(productSettings.announcementBar.backgroundColor);
+  const [announcementTextColor, setAnnouncementTextColor] = useState(productSettings.announcementBar.textColor);
+  const [heroProofPrimaryText, setHeroProofPrimaryText] = useState(productSettings.heroProof.primaryText);
+  const [heroProofSecondaryText, setHeroProofSecondaryText] = useState(productSettings.heroProof.secondaryText);
+  const [heroProofTertiaryText, setHeroProofTertiaryText] = useState(productSettings.heroProof.tertiaryText);
   const [lengthDraft, setLengthDraft] = useState("");
   const [dryingDraft, setDryingDraft] = useState("");
   const [deliverySlotDraft, setDeliverySlotDraft] = useState("");
@@ -3968,6 +4084,14 @@ function AdminSettings({ session, profile, settings, categories, products, custo
     setLengths(productSettings.productOptions.lengths);
     setDryingDurations(productSettings.productOptions.dryingDurations);
     setDeliverySlots(productSettings.deliverySlots);
+    setAnnouncementPrimaryText(productSettings.announcementBar.primaryText);
+    setAnnouncementSecondaryText(productSettings.announcementBar.secondaryText);
+    setAnnouncementTertiaryText(productSettings.announcementBar.tertiaryText);
+    setAnnouncementBackgroundColor(productSettings.announcementBar.backgroundColor);
+    setAnnouncementTextColor(productSettings.announcementBar.textColor);
+    setHeroProofPrimaryText(productSettings.heroProof.primaryText);
+    setHeroProofSecondaryText(productSettings.heroProof.secondaryText);
+    setHeroProofTertiaryText(productSettings.heroProof.tertiaryText);
     setLengthDraft("");
     setDryingDraft("");
     setDeliverySlotDraft("");
@@ -3997,9 +4121,21 @@ function AdminSettings({ session, profile, settings, categories, products, custo
           lengths,
           dryingDurations
         },
-        deliverySlots
+        deliverySlots,
+        announcementBar: {
+          primaryText: announcementPrimaryText,
+          secondaryText: announcementSecondaryText,
+          tertiaryText: announcementTertiaryText,
+          backgroundColor: announcementBackgroundColor,
+          textColor: announcementTextColor
+        },
+        heroProof: {
+          primaryText: heroProofPrimaryText,
+          secondaryText: heroProofSecondaryText,
+          tertiaryText: heroProofTertiaryText
+        }
       });
-      setFeedback("Nom admin et paramètres enregistrés.");
+      setFeedback("Nom admin, bandeaux et textes accueil enregistrés.");
     } catch (updateError) {
       setFeedback(updateError.message);
     }
@@ -4011,7 +4147,7 @@ function AdminSettings({ session, profile, settings, categories, products, custo
       <div className="lbb-admin-summary-grid">
         <div className="lbb-admin-surface" style={{ display: "grid", gap: 18 }}>
           <div style={{ display: "grid", gap: 6 }}><span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#8A9180" }}>SESSION</span><strong style={{ ...sans, fontWeight: 700, fontSize: 24, letterSpacing: "-.03em" }}>{session.email}</strong></div>
-          <div style={{ display: "grid", gap: 12 }}><div className="lbb-admin-setting-row"><span>Role</span><strong>{session.role}</strong></div><div className="lbb-admin-setting-row"><span>Connexion</span><strong>{new Date(session.loginAt).toLocaleString("fr-FR")}</strong></div><div className="lbb-admin-setting-row"><span>Mode</span><strong>Session locale de developpement</strong></div></div>
+          <div style={{ display: "grid", gap: 12 }}><div className="lbb-admin-setting-row"><span>Role</span><strong>{session.role}</strong></div><div className="lbb-admin-setting-row"><span>Connexion</span><strong>{new Date(session.loginAt).toLocaleString("fr-FR")}</strong></div><div className="lbb-admin-setting-row"><span>Mode</span><strong>Authentification backend</strong></div></div>
           <button type="button" className="lbb-btn lbb-btn-primary" onClick={onLogout}>Fermer la session</button>
         </div>
         <div className="lbb-admin-surface lbb-admin-surface-soft" style={{ display: "grid", gap: 16 }}>
@@ -4061,6 +4197,70 @@ function AdminSettings({ session, profile, settings, categories, products, custo
           onRemove={(value) => removeOption(setDeliverySlots, value, true)}
           presetOptions={[]}
         />
+        <div style={{ display: "grid", gap: 6 }}>
+          <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#8A9180" }}>BANDEAU PROMOTIONNEL</span>
+          <strong style={{ ...sans, fontWeight: 700, fontSize: 24, letterSpacing: "-.03em", color: "#2C241D" }}>Sur-header du site public</strong>
+        </div>
+        <div className="lbb-two-col" style={{ alignItems: "start", gap: 16 }}>
+          <label style={{ display: "grid", gap: 8 }}>
+            <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>MESSAGE 1</span>
+            <input value={announcementPrimaryText} onChange={(event) => setAnnouncementPrimaryText(event.target.value)} className="lbb-admin-input" placeholder="Ex: Tarifs TTC · TVA 10 %" />
+          </label>
+          <label style={{ display: "grid", gap: 8 }}>
+            <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>MESSAGE 2</span>
+            <input value={announcementSecondaryText} onChange={(event) => setAnnouncementSecondaryText(event.target.value)} className="lbb-admin-input" placeholder="Ex: Livraison jusqu'a 30 km : 44,00 EUR TTC" />
+          </label>
+        </div>
+        <label style={{ display: "grid", gap: 8 }}>
+          <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>MESSAGE 3</span>
+          <input value={announcementTertiaryText} onChange={(event) => setAnnouncementTertiaryText(event.target.value)} className="lbb-admin-input" placeholder="Ex: Au-dela de 60 km : sur devis" />
+        </label>
+        <div className="lbb-two-col" style={{ alignItems: "start", gap: 16 }}>
+          <label style={{ display: "grid", gap: 8 }}>
+            <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>COULEUR DU FOND</span>
+            <div style={{ display: "grid", gridTemplateColumns: "68px 1fr", gap: 10, alignItems: "center" }}>
+              <input value={announcementBackgroundColor} onChange={(event) => setAnnouncementBackgroundColor(event.target.value)} type="color" className="lbb-admin-input" style={{ padding: 6, minHeight: 48 }} />
+              <input value={announcementBackgroundColor} onChange={(event) => setAnnouncementBackgroundColor(event.target.value)} className="lbb-admin-input" placeholder="#5B321D" />
+            </div>
+          </label>
+          <label style={{ display: "grid", gap: 8 }}>
+            <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>COULEUR DU TEXTE</span>
+            <div style={{ display: "grid", gridTemplateColumns: "68px 1fr", gap: 10, alignItems: "center" }}>
+              <input value={announcementTextColor} onChange={(event) => setAnnouncementTextColor(event.target.value)} type="color" className="lbb-admin-input" style={{ padding: 6, minHeight: 48 }} />
+              <input value={announcementTextColor} onChange={(event) => setAnnouncementTextColor(event.target.value)} className="lbb-admin-input" placeholder="#FBF6EE" />
+            </div>
+          </label>
+        </div>
+        <div style={{ display: "grid", gap: 10, background: "#F5EFE2", borderRadius: 22, padding: 18, border: "1px solid rgba(120,111,99,.12)" }}>
+          <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#8A9180" }}>APERÇU</span>
+          <div style={{ background: announcementBackgroundColor, color: announcementTextColor, ...mono, fontSize: 11.5, letterSpacing: ".06em", display: "flex", justifyContent: "center", gap: 24, padding: "11px 18px", flexWrap: "wrap", borderRadius: 14 }}>
+            {[announcementPrimaryText, announcementSecondaryText, announcementTertiaryText].filter(Boolean).map((item) => <span key={item}>{item}</span>)}
+          </div>
+        </div>
+        <div style={{ display: "grid", gap: 6 }}>
+          <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#8A9180" }}>TEXTES ACCUEIL</span>
+          <strong style={{ ...sans, fontWeight: 700, fontSize: 24, letterSpacing: "-.03em", color: "#2C241D" }}>Mentions sous les boutons du hero</strong>
+        </div>
+        <div className="lbb-two-col" style={{ alignItems: "start", gap: 16 }}>
+          <label style={{ display: "grid", gap: 8 }}>
+            <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>LIGNE 1</span>
+            <input value={heroProofPrimaryText} onChange={(event) => setHeroProofPrimaryText(event.target.value)} className="lbb-admin-input" placeholder="Ex: Tarifs TTC avec TVA 10 %" />
+          </label>
+          <label style={{ display: "grid", gap: 8 }}>
+            <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>LIGNE 2</span>
+            <input value={heroProofSecondaryText} onChange={(event) => setHeroProofSecondaryText(event.target.value)} className="lbb-admin-input" placeholder="Ex: Livraison offerte des 5 steres dans 30 km" />
+          </label>
+        </div>
+        <label style={{ display: "grid", gap: 8 }}>
+          <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>LIGNE 3</span>
+          <input value={heroProofTertiaryText} onChange={(event) => setHeroProofTertiaryText(event.target.value)} className="lbb-admin-input" placeholder="Ex: Offre 4 steres achetes = le 5e offert" />
+        </label>
+        <div style={{ display: "grid", gap: 10, background: "#F5EFE2", borderRadius: 22, padding: 18, border: "1px solid rgba(120,111,99,.12)" }}>
+          <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#8A9180" }}>APERÇU ACCUEIL</span>
+          <div className="lbb-hero-proof" style={{ ...mono, color: "#5B321D" }}>
+            {[heroProofPrimaryText, heroProofSecondaryText, heroProofTertiaryText].filter(Boolean).map((item) => <span key={item}>{item}</span>)}
+          </div>
+        </div>
         <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>Ajout et retrait valeur par valeur. Les produits bois reprennent ensuite ces choix dans le back-office et sur la fiche client.</span>
         {feedback ? <div style={{ background: "#FCE7DF", color: "#A8501B", borderRadius: 16, padding: "12px 14px", ...mono, fontSize: 10.5 }}>{feedback}</div> : null}
         <div><button type="submit" className="lbb-btn lbb-btn-primary">Enregistrer les paramètres</button></div>

@@ -1,17 +1,47 @@
 import { isMysqlBackendEnabled } from "./config.js";
 
-const backendPromise = isMysqlBackendEnabled()
+const mysqlBackendEnabled = isMysqlBackendEnabled();
+
+const backendPromise = mysqlBackendEnabled
   ? import("./sqlStore.js")
   : import("./store.js");
+
+let fallbackBackendPromise = null;
+
+function isLocalMysqlUnavailable(error) {
+  return mysqlBackendEnabled
+    && process.env.NODE_ENV !== "production"
+    && (error?.code === "ECONNREFUSED" || error?.code === "ENOTFOUND" || error?.code === "ETIMEDOUT");
+}
+
+function getFallbackBackend() {
+  if (!fallbackBackendPromise) {
+    fallbackBackendPromise = import("./store.js");
+  }
+
+  return fallbackBackendPromise;
+}
 
 function bindBackendMethod(methodName) {
   return async (...args) => {
     const backend = await backendPromise;
-    return backend[methodName](...args);
+
+    try {
+      return await backend[methodName](...args);
+    } catch (error) {
+      if (!isLocalMysqlUnavailable(error)) {
+        throw error;
+      }
+
+      console.warn(`[dataStore] MySQL indisponible en local, bascule sur le store JSON pour ${methodName}.`);
+      const fallbackBackend = await getFallbackBackend();
+      return fallbackBackend[methodName](...args);
+    }
   };
 }
 
 export const authenticateCustomer = bindBackendMethod("authenticateCustomer");
+export const authenticateAdmin = bindBackendMethod("authenticateAdmin");
 export const createCategory = bindBackendMethod("createCategory");
 export const createCustomerAccount = bindBackendMethod("createCustomerAccount");
 export const createOrder = bindBackendMethod("createOrder");

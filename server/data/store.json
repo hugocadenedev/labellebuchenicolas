@@ -4,15 +4,159 @@
     "role": "Manager depot",
     "initials": "AL"
   },
-  "categories": [],
-  "products": [],
+  "categories": [
+    {
+      "id": "cat_t",
+      "slug": "t",
+      "label": "test",
+      "kicker": "Essence seche disponible",
+      "heading": "t",
+      "description": "test",
+      "shortDescription": "0 produit(s) relies",
+      "coverProductId": "",
+      "essences": [],
+      "productIds": []
+    },
+    {
+      "id": "cat_services",
+      "slug": "services",
+      "label": "Services",
+      "kicker": "Compléments de livraison",
+      "heading": "Services à ajouter à votre commande",
+      "description": "Des prestations complémentaires proposées pendant la commande, comme le rangement du bois ou l'aide au déchargement.",
+      "shortDescription": "Prestations ajoutables au panier client.",
+      "coverProductId": "service-rangement-bois",
+      "essences": [
+        "Service"
+      ],
+      "productIds": [
+        "service-rangement-bois"
+      ]
+    }
+  ],
+  "products": [
+    {
+      "id": "service-rangement-bois",
+      "templateProductId": null,
+      "slug": "rangement-du-bois",
+      "name": "Rangement du bois",
+      "cat": "Service",
+      "essence": "Service",
+      "category": "services",
+      "categoryId": "cat_services",
+      "family": "Services",
+      "sku": "SERVICE-RANGEMENT",
+      "price": 39,
+      "oldPrice": 0,
+      "unit": "/ prestation TTC",
+      "badge": "Service utile",
+      "badgeTone": "warm",
+      "rating": "★★★★★",
+      "reviews": "0 avis",
+      "length": "Sur devis",
+      "drying": "Ajoutable à la tournée",
+      "availableLengths": [
+        "Sur devis"
+      ],
+      "lengthPrices": {
+        "Sur devis": 39
+      },
+      "availableDryingDurations": [
+        "Ajoutable à la tournée"
+      ],
+      "humidity": "Intervention locale",
+      "desc": "Mise en place du bois au bûcher ou dans votre zone de stockage lors de la livraison.",
+      "origin": "Équipe locale",
+      "calorificValue": "Service complémentaire",
+      "imageKey": "deliveryImage",
+      "imageUrl": "",
+      "galleryKeys": [],
+      "galleryUrls": [],
+      "specs": [
+        {
+          "k": "Prestation",
+          "v": "Rangement du bois livré"
+        },
+        {
+          "k": "Zone",
+          "v": "Autour du point de déchargement"
+        },
+        {
+          "k": "Tarif TTC",
+          "v": "39,00 €"
+        },
+        {
+          "k": "Organisation",
+          "v": "Ajoutée à la tournée confirmée"
+        }
+      ],
+      "tabs": {
+        "overview": {
+          "title": "Un service ajouté à votre livraison",
+          "paragraphs": [
+            "Le rangement du bois permet de préparer l'espace avant notre passage et de faire positionner le bois directement dans la zone prévue.",
+            "Cette prestation est proposée comme un complément simple, visible dans le panier et dans la commande finale."
+          ],
+          "points": [
+            "Ajoutable directement au panier.",
+            "Facturation claire sur la commande.",
+            "Planifiée sur le même créneau que la livraison."
+          ]
+        },
+        "livraison": {
+          "title": "Planification du service",
+          "paragraphs": [
+            "Le service suit le même créneau que la commande principale pour éviter les doubles déplacements.",
+            "L'équipe confirme si un accès ou une consigne spécifique est nécessaire avant le passage."
+          ],
+          "points": [
+            "Visible dans le tunnel de commande.",
+            "Ajoutable jusqu'à la validation finale.",
+            "Suivi avec le reste de la commande."
+          ]
+        }
+      },
+      "stockQty": 999,
+      "threshold": 0,
+      "status": "active"
+    }
+  ],
   "orders": [],
   "customers": [],
   "deliveries": [],
   "settings": {
     "productOptions": {
-      "lengths": ["25 cm", "33 cm", "50 cm", "2 m"],
-      "dryingDurations": ["Seche 18 mois", "Seche 2 ans", "Seche 2 ans et demi"]
+      "lengths": [
+        "25 cm",
+        "33 cm",
+        "50 cm",
+        "2 m"
+      ],
+      "dryingDurations": [
+        "Seche 18 mois",
+        "Seche 2 ans",
+        "Seche 2 ans et demi"
+      ]
+    },
+    "deliverySlots": [],
+    "announcementBar": {
+      "primaryText": "Tarifs TTC · TVA 10 %",
+      "secondaryText": "Livraison jusqu'a 30 km : 44,00 EUR TTC",
+      "tertiaryText": "Au-dela de 60 km : sur devis",
+      "backgroundColor": "#082112",
+      "textColor": "#FBF6EE"
     }
-  }
+  },
+  "admins": [
+    {
+      "id": "admin_001",
+      "email": "admin@labellebuche.local",
+      "firstName": "Remi",
+      "lastName": "Lacaze",
+      "role": "super_admin",
+      "isActive": true,
+      "passwordHash": "$2a$10$bn8BUnDPUcjjUYtMXIUr5.Gh3nBnMhknLxiSnd0KSJnTn39bIGz2O",
+      "lastLoginAt": "2026-09-16T16:03:15.921Z"
+    }
+  ]
 }

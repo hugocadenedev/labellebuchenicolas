@@ -1,6 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import bcrypt from "bcryptjs";
+import { appConfig } from "./config.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -106,6 +108,14 @@ function normalizeEmail(value) {
   return normalizeText(value).toLowerCase();
 }
 
+function normalizeAnnouncementText(value, fallback = "") {
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+
+  return typeof value === "string" ? value.trim() : fallback;
+}
+
 function roundCurrency(value) {
   return Math.round(Number(value || 0) * 100) / 100;
 }
@@ -136,12 +146,26 @@ function getProductPriceForLength(product, selectedLength = "") {
 
 function normalizeSettings(input = {}) {
   const productOptions = input?.productOptions || {};
+  const announcementBar = input?.announcementBar || {};
+  const heroProof = input?.heroProof || {};
   return {
     productOptions: {
       lengths: normalizeOptionList(productOptions.lengths, defaultProductOptionSettings.lengths),
       dryingDurations: normalizeOptionList(productOptions.dryingDurations, defaultProductOptionSettings.dryingDurations)
     },
-    deliverySlots: normalizeOptionList(input?.deliverySlots, [])
+    deliverySlots: normalizeOptionList(input?.deliverySlots, []),
+    announcementBar: {
+      primaryText: normalizeAnnouncementText(announcementBar.primaryText, "Tarifs TTC · TVA 10 %"),
+      secondaryText: normalizeAnnouncementText(announcementBar.secondaryText, "Livraison jusqu'a 30 km : 44,00 EUR TTC"),
+      tertiaryText: normalizeAnnouncementText(announcementBar.tertiaryText, "Au-dela de 60 km : sur devis"),
+      backgroundColor: normalizeText(announcementBar.backgroundColor) || "#5B321D",
+      textColor: normalizeText(announcementBar.textColor) || "#FBF6EE"
+    },
+    heroProof: {
+      primaryText: normalizeAnnouncementText(heroProof.primaryText, "Tarifs TTC avec TVA 10 %"),
+      secondaryText: normalizeAnnouncementText(heroProof.secondaryText, "Livraison offerte des 5 steres dans 30 km"),
+      tertiaryText: normalizeAnnouncementText(heroProof.tertiaryText, "Offre 4 steres achetes = le 5e offert")
+    }
   };
 }
 
@@ -279,7 +303,46 @@ function normalizeStoreShape(data) {
   const nextData = ensureDefaultServices(data || {});
   return {
     ...nextData,
-    settings: normalizeSettings(nextData?.settings)
+    settings: normalizeSettings(nextData?.settings),
+    admins: Array.isArray(nextData?.admins) ? nextData.admins : []
+  };
+}
+
+function buildBootstrapAdmin() {
+  return {
+    id: "admin_001",
+    email: appConfig.admin.bootstrapEmail,
+    firstName: appConfig.admin.bootstrapFirstName,
+    lastName: appConfig.admin.bootstrapLastName,
+    role: "super_admin",
+    isActive: true,
+    passwordHash: null,
+    lastLoginAt: ""
+  };
+}
+
+async function ensureAdminSeeded(data) {
+  const admins = Array.isArray(data.admins) ? data.admins : [];
+  if (admins.length > 0) {
+    data.admins = admins;
+    return false;
+  }
+
+  const bootstrapAdmin = buildBootstrapAdmin();
+  bootstrapAdmin.passwordHash = await bcrypt.hash(appConfig.admin.bootstrapPassword, 10);
+  data.admins = [bootstrapAdmin];
+  return true;
+}
+
+function toAdminSession(admin) {
+  const fullName = [admin.firstName, admin.lastName].filter(Boolean).join(" ").trim();
+  return {
+    id: admin.id,
+    email: admin.email,
+    firstName: admin.firstName || "",
+    lastName: admin.lastName || "",
+    name: fullName || admin.email,
+    role: admin.role || "editor"
   };
 }
 
@@ -568,10 +631,6 @@ function assignProductToCategory(data, categoryId, product) {
 
   category.productIds = uniqueValues([...(category.productIds || []), product.id]);
   category.essences = uniqueValues([...(category.essences || []), product.essence]);
-
-  if (!category.coverProductId) {
-    category.coverProductId = product.id;
-  }
 }
 
 function removeProductFromCategories(data, productId) {
@@ -580,7 +639,7 @@ function removeProductFromCategories(data, productId) {
     category.productIds = nextProductIds;
 
     if (category.coverProductId === productId) {
-      category.coverProductId = nextProductIds[0] || "";
+      category.coverProductId = "";
     }
   });
 }
@@ -867,6 +926,25 @@ export async function authenticateCustomer(input) {
     session: toCustomerSession(customer),
     account: buildAccountView(data, customer.id)
   };
+}
+
+export async function authenticateAdmin(input) {
+  const data = await readStore();
+  const email = normalizeEmail(input.email);
+  const password = String(input.password || "");
+  const seeded = await ensureAdminSeeded(data);
+  if (seeded) {
+    await writeStore(data);
+  }
+
+  const admin = data.admins.find((item) => normalizeEmail(item.email) === email && item.isActive !== false);
+  if (!admin?.passwordHash || !(await bcrypt.compare(password, admin.passwordHash))) {
+    throw httpError(401, "Identifiants admin invalides.");
+  }
+
+  admin.lastLoginAt = new Date().toISOString();
+  await writeStore(data);
+  return toAdminSession(admin);
 }
 
 export async function getCustomerAccount(customerId) {

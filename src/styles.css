@@ -111,6 +111,41 @@ img {
 
 .lbb-announcement-bar {
   text-align: center;
+  overflow: hidden;
+}
+
+.lbb-announcement-bar-track {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+  flex-wrap: nowrap;
+}
+
+.lbb-announcement-bar-group {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 44px;
+  flex-wrap: wrap;
+}
+
+.lbb-announcement-bar-group:last-child {
+  display: none;
+}
+
+.lbb-announcement-bar-item {
+  flex: 0 0 auto;
+}
+
+@keyframes lbbAnnouncementTicker {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .lbb-btn {
@@ -271,6 +306,7 @@ img {
   color: rgba(251, 250, 245, 0.9);
   font-size: 12px;
   letter-spacing: 0.02em;
+  align-items: center;
 }
 
 .hero-grid {
@@ -281,6 +317,14 @@ img {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 22px;
+}
+
+.lbb-family-card {
+  min-width: 0;
+}
+
+.lbb-family-card-media {
+  max-width: 100%;
 }
 
 .lbb-catalog-grid {
@@ -1093,10 +1137,38 @@ img {
 
 @media (max-width: 720px) {
   .lbb-announcement-bar {
-    gap: 10px !important;
     padding: 10px 16px !important;
     font-size: 10px !important;
     line-height: 1.5;
+    white-space: nowrap;
+  }
+
+  .lbb-announcement-bar-track {
+    width: max-content;
+    min-width: 100%;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    animation: lbbAnnouncementTicker 16s linear infinite;
+  }
+
+  .lbb-announcement-bar-group {
+    gap: 28px;
+    flex-wrap: nowrap;
+  }
+
+  .lbb-announcement-bar-group:last-child {
+    display: flex;
+  }
+
+  .lbb-announcement-bar-item::after {
+    content: "•";
+    margin-left: 28px;
+    opacity: 0.6;
+  }
+
+  .lbb-announcement-bar-item:last-child::after {
+    content: "";
+    margin-left: 0;
   }
 
   .lbb-btn {
@@ -1282,6 +1354,16 @@ img {
 
   .lbb-hero-proof {
     font-size: 11px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    max-width: 100%;
+  }
+
+  .lbb-hero-proof span {
+    display: block;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .brand-logo-footer {
@@ -1304,6 +1386,21 @@ img {
   .lbb-mini-features,
   .lbb-cta-grid {
     grid-template-columns: 1fr !important;
+  }
+
+  .lbb-family-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 18px;
+    justify-items: center;
+  }
+
+  .lbb-family-card {
+    width: 100%;
+    max-width: 172px;
+  }
+
+  .lbb-family-card-media {
+    width: min(100%, 172px) !important;
   }
 
   .lbb-two-col,
