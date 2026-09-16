@@ -1,8 +1,6 @@
-CREATE DATABASE IF NOT EXISTS la_belle_buche
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE la_belle_buche;
+-- Import this schema into the target database selected by your MySQL client.
+-- Do not hardcode CREATE DATABASE / USE here, because shared hosts often
+-- restrict users to a single pre-provisioned database name.
 
 CREATE TABLE IF NOT EXISTS app_settings (
   setting_key VARCHAR(100) NOT NULL,
