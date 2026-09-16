@@ -1,24 +1,31 @@
 import { isMysqlBackendEnabled } from "./config.js";
 
-const backend = isMysqlBackendEnabled()
-  ? await import("./sqlStore.js")
-  : await import("./store.js");
+const backendPromise = isMysqlBackendEnabled()
+  ? import("./sqlStore.js")
+  : import("./store.js");
 
-export const authenticateCustomer = backend.authenticateCustomer;
-export const createCategory = backend.createCategory;
-export const createCustomerAccount = backend.createCustomerAccount;
-export const createOrder = backend.createOrder;
-export const createProduct = backend.createProduct;
-export const deleteProduct = backend.deleteProduct;
-export const getBootstrap = backend.getBootstrap;
-export const getCustomerAccount = backend.getCustomerAccount;
-export const getSiteBootstrap = backend.getSiteBootstrap;
-export const listCategories = backend.listCategories;
-export const listCustomers = backend.listCustomers;
-export const listOrders = backend.listOrders;
-export const listProducts = backend.listProducts;
-export const updateCategory = backend.updateCategory;
-export const updateOrder = backend.updateOrder;
-export const updateProduct = backend.updateProduct;
-export const updateProductStock = backend.updateProductStock;
-export const updateSettings = backend.updateSettings;
+function bindBackendMethod(methodName) {
+  return async (...args) => {
+    const backend = await backendPromise;
+    return backend[methodName](...args);
+  };
+}
+
+export const authenticateCustomer = bindBackendMethod("authenticateCustomer");
+export const createCategory = bindBackendMethod("createCategory");
+export const createCustomerAccount = bindBackendMethod("createCustomerAccount");
+export const createOrder = bindBackendMethod("createOrder");
+export const createProduct = bindBackendMethod("createProduct");
+export const deleteProduct = bindBackendMethod("deleteProduct");
+export const getBootstrap = bindBackendMethod("getBootstrap");
+export const getCustomerAccount = bindBackendMethod("getCustomerAccount");
+export const getSiteBootstrap = bindBackendMethod("getSiteBootstrap");
+export const listCategories = bindBackendMethod("listCategories");
+export const listCustomers = bindBackendMethod("listCustomers");
+export const listOrders = bindBackendMethod("listOrders");
+export const listProducts = bindBackendMethod("listProducts");
+export const updateCategory = bindBackendMethod("updateCategory");
+export const updateOrder = bindBackendMethod("updateOrder");
+export const updateProduct = bindBackendMethod("updateProduct");
+export const updateProductStock = bindBackendMethod("updateProductStock");
+export const updateSettings = bindBackendMethod("updateSettings");
