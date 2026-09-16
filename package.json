@@ -12,7 +12,7 @@
     "db:import": "node db/import-json.js",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "node server/app.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

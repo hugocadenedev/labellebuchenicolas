@@ -1,5 +1,7 @@
 import cors from "cors";
 import express from "express";
+import path from "node:path";
+import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createStripeCheckoutSession, confirmStripeCheckoutSession, handleStripeWebhook } from "./stripe.js";
 import { appConfig } from "./config.js";
@@ -27,6 +29,11 @@ import {
 const app = express();
 const port = appConfig.port;
 const jsonBodyLimit = "15mb";
+const serverDir = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(serverDir, "..");
+const distDir = path.join(projectRoot, "dist");
+const distIndexFile = path.join(distDir, "index.html");
+const hasFrontendBuild = fs.existsSync(distIndexFile);
 
 app.use(cors());
 app.post("/api/payments/stripe/webhook", express.raw({ type: "application/json" }), handleStripeWebhook);
@@ -212,6 +219,18 @@ app.get("/api/admin/customers", async (_req, res, next) => {
     next(error);
   }
 });
+
+if (hasFrontendBuild) {
+  app.use(express.static(distDir));
+
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api")) {
+      return next();
+    }
+
+    return res.sendFile(distIndexFile);
+  });
+}
 
 app.use((error, _req, res, _next) => {
   if (error.type === "entity.too.large" || error.status === 413) {
