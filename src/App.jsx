@@ -679,7 +679,7 @@ function materializeStorefrontProduct(baseProducts, apiProduct) {
     availableDryingDurations,
     lengthPricesHt,
     lengthPrices: convertPriceMapHtToTtc(lengthPricesHt),
-    humidity: apiProduct.humidity || baseProduct?.humidity || "",
+    humidity: apiProduct.humidity || "",
     desc: apiProduct.desc || baseProduct?.desc || "",
     image,
     gallery: isService ? [] : resolveGallerySources({
