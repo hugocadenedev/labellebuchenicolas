@@ -899,6 +899,11 @@ function buildOrderRequest(draft, customerId, cartItems, shippingAmount) {
 function App() {
   const location = useLocation();
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.querySelector(".lbb-admin-main")?.scrollTo(0, 0);
+  }, [location.pathname]);
+
   if (location.pathname.startsWith("/admin")) {
     return <AdminApp />;
   }
