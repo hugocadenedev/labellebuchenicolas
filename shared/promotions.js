@@ -6,14 +6,20 @@ function roundToCents(value) {
 
 export function normalizeVolumeDiscounts(values) {
   return (Array.isArray(values) ? values : [])
-    .map((rule) => ({
-      id: String(rule?.id || "").trim() || `vol_${Math.random().toString(36).slice(2, 9)}`,
-      label: typeof rule?.label === "string" ? rule.label.trim() : "",
-      categorySlug: typeof rule?.categorySlug === "string" ? rule.categorySlug.trim() : "",
-      buyQuantity: Math.max(0, Math.round(Number(rule?.buyQuantity) || 0)),
-      freeQuantity: Math.max(0, Math.round(Number(rule?.freeQuantity) || 0)),
-      active: rule?.active !== false
-    }))
+    .map((rule) => {
+      const rawSlugs = Array.isArray(rule?.categorySlugs)
+        ? rule.categorySlugs
+        : (typeof rule?.categorySlug === "string" ? [rule.categorySlug] : []);
+      const categorySlugs = [...new Set(rawSlugs.map((slug) => String(slug || "").trim()).filter(Boolean))];
+      return {
+        id: String(rule?.id || "").trim() || `vol_${Math.random().toString(36).slice(2, 9)}`,
+        label: typeof rule?.label === "string" ? rule.label.trim() : "",
+        categorySlugs,
+        buyQuantity: Math.max(0, Math.round(Number(rule?.buyQuantity) || 0)),
+        freeQuantity: Math.max(0, Math.round(Number(rule?.freeQuantity) || 0)),
+        active: rule?.active !== false
+      };
+    })
     .filter((rule) => rule.buyQuantity > 0 && rule.freeQuantity > 0);
 }
 
@@ -36,7 +42,7 @@ export function computeVolumeDiscount(cartItems = [], rules = []) {
   let amount = 0;
 
   activeRules.forEach((rule) => {
-    const matching = cartItems.filter((item) => !rule.categorySlug || item.category === rule.categorySlug);
+    const matching = cartItems.filter((item) => rule.categorySlugs.length === 0 || rule.categorySlugs.includes(item.category));
     const totalQuantity = matching.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
     const bundleSize = rule.buyQuantity + rule.freeQuantity;
     if (totalQuantity < bundleSize) return;
@@ -70,7 +76,7 @@ export function applyAutomaticGifts(cartItems = [], rules = []) {
   const giftLines = [];
 
   activeRules.forEach((rule) => {
-    const matching = cartItems.filter((item) => !item.isGift && (!rule.categorySlug || item.category === rule.categorySlug));
+    const matching = cartItems.filter((item) => !item.isGift && (rule.categorySlugs.length === 0 || rule.categorySlugs.includes(item.category)));
     const paidQuantity = matching.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
     if (paidQuantity < rule.buyQuantity) return;
 

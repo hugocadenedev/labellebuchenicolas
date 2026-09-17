@@ -548,7 +548,6 @@ function buildProductTabs(input) {
         `Stock pilote en back office avec un seuil d'alerte a ${Number(input.threshold || 0)} unites.`
       ],
       points: [
-        "Confirmation de creneau par SMS.",
         "Mise a jour immediate des stocks admin.",
         "Produit publiable directement sur le storefront."
       ]

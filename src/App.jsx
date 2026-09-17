@@ -374,13 +374,13 @@ function stripDeliveredWording(value) {
   return typeof value === "string" ? value.replace(/\s*livr[ée]e?s?\b/gi, "").trim() : "";
 }
 
-function buildProductSpecsFromDraft(product, baseProduct) {
+function buildProductSpecsFromDraft(product) {
   if (Array.isArray(product.specs) && product.specs.length > 0) {
     return product.specs;
   }
 
-  return baseProduct?.specs || [
-    { k: "Essence", v: product.essence || product.family || "Feuillus" },
+  return [
+    product.essence ? { k: "Essence", v: product.essence } : null,
     product.origin ? { k: "Origine", v: product.origin } : null,
     product.length ? { k: "Longueur", v: product.length } : null,
     product.humidity ? { k: "Humidite", v: product.humidity } : null,
@@ -590,24 +590,26 @@ function readFileAsDataUrl(file) {
   });
 }
 
-function buildProductTabsFromDraft(product, baseProduct) {
+function buildProductTabsFromDraft(product) {
   if (product.tabs?.overview && product.tabs?.livraison) {
     return product.tabs;
   }
 
-  if (baseProduct?.tabs && !product.desc) {
-    return baseProduct.tabs;
+  const overviewParagraphs = [
+    product.desc || `${product.name} est pret pour une chauffe reguliere et une utilisation simple au quotidien.`
+  ];
+  if (product.length || product.drying) {
+    overviewParagraphs.push(
+      `${product.essence || product.family || "Ce lot"} propose${product.length ? ` une coupe ${product.length}` : ""}${product.drying ? ` avec un lot ${product.drying.toLowerCase()}` : ""}.`
+    );
   }
 
   return {
     overview: {
       title: `Pourquoi choisir ${product.name}`,
-      paragraphs: [
-        product.desc || baseProduct?.desc || `${product.name} est pret pour une chauffe reguliere et une utilisation simple au quotidien.`,
-        `${product.essence || product.family || "Ce lot"} propose une coupe ${product.length || baseProduct?.length || "33 cm"} avec un lot ${(product.drying || baseProduct?.drying || "seche 18 mois").toLowerCase()}.`
-      ],
+      paragraphs: overviewParagraphs,
       points: [
-        product.humidity || baseProduct?.humidity ? `${product.humidity || baseProduct?.humidity}.` : null,
+        product.humidity ? `${product.humidity}.` : null,
         product.origin ? `${product.origin}.` : null,
         `Reference ${product.sku || product.id}.`
       ].filter(Boolean)
@@ -619,7 +621,6 @@ function buildProductTabsFromDraft(product, baseProduct) {
         `Stock actualise depuis le back office avec ${product.stockQty ?? 0} unites disponibles.`
       ],
       points: [
-        "Confirmation de creneau par SMS.",
         "Suivi stock immediate.",
         "Publication storefront des creation admin."
       ]
@@ -688,8 +689,8 @@ function materializeStorefrontProduct(baseProducts, apiProduct) {
       imageUrl: apiProduct.imageUrl,
       fallback: canInheritMedia ? (baseProduct?.gallery || [baseProduct?.image].filter(Boolean)) : []
     }),
-    specs: buildProductSpecsFromDraft(apiProduct, baseProduct),
-    tabs: buildProductTabsFromDraft(apiProduct, baseProduct),
+    specs: buildProductSpecsFromDraft(apiProduct),
+    tabs: buildProductTabsFromDraft(apiProduct),
     stockPct: apiProduct.stockPct ?? baseProduct?.stockPct ?? 0,
     stockLabel: apiProduct.stockLabel || baseProduct?.stockLabel || "",
     isLowStock: apiProduct.isLowStock ?? false,
@@ -4206,9 +4207,13 @@ function AdminOptionListEditor({ title, items, draftValue, setDraftValue, onAdd,
 
 function AdminVolumeDiscountEditor({ categories, rules, onAdd, onRemove }) {
   const [label, setLabel] = useState("");
-  const [categorySlug, setCategorySlug] = useState("");
+  const [categorySlugs, setCategorySlugs] = useState([]);
   const [buyQuantity, setBuyQuantity] = useState("4");
   const [freeQuantity, setFreeQuantity] = useState("1");
+
+  function toggleCategory(slug) {
+    setCategorySlugs((current) => (current.includes(slug) ? current.filter((value) => value !== slug) : [...current, slug]));
+  }
 
   function handleAdd() {
     const buy = Math.round(Number(buyQuantity));
@@ -4216,12 +4221,20 @@ function AdminVolumeDiscountEditor({ categories, rules, onAdd, onRemove }) {
     if (!Number.isFinite(buy) || buy <= 0 || !Number.isFinite(free) || free <= 0) return;
     onAdd({
       label: label.trim() || `${buy} achetés = ${free} offert(s)`,
-      categorySlug,
+      categorySlugs,
       buyQuantity: buy,
       freeQuantity: free,
       active: true
     });
     setLabel("");
+    setCategorySlugs([]);
+  }
+
+  function describeCategories(rule) {
+    if (!rule.categorySlugs?.length) return "Toutes catégories";
+    return rule.categorySlugs
+      .map((slug) => categories.find((category) => category.slug === slug)?.label || slug)
+      .join(", ");
   }
 
   return (
@@ -4234,7 +4247,7 @@ function AdminVolumeDiscountEditor({ categories, rules, onAdd, onRemove }) {
           <div key={rule.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: "#FBFAF5", border: "1px solid rgba(35,41,31,.08)", borderRadius: 16, padding: "12px 14px" }}>
             <span style={{ display: "grid", gap: 2 }}>
               <strong style={{ ...sans, fontWeight: 600, fontSize: 15, color: "#2C241D" }}>{rule.label}</strong>
-              <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>{categories.find((category) => category.slug === rule.categorySlug)?.label || "Toutes catégories"} · {rule.buyQuantity} achetés / {rule.freeQuantity} offert(s)</span>
+              <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>{describeCategories(rule)} · {rule.buyQuantity} achetés / {rule.freeQuantity} offert(s)</span>
             </span>
             <button type="button" className="lbb-btn lbb-btn-small lbb-btn-secondary" onClick={() => onRemove(rule.id)}>Retirer</button>
           </div>
@@ -4242,12 +4255,36 @@ function AdminVolumeDiscountEditor({ categories, rules, onAdd, onRemove }) {
       </div>
       <div className="lbb-two-col" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
         <input value={label} onChange={(event) => setLabel(event.target.value)} placeholder="Libellé (ex: 4 achetés = le 5e offert)" className="lbb-admin-input" />
-        <select value={categorySlug} onChange={(event) => setCategorySlug(event.target.value)} className="lbb-admin-select">
-          <option value="">Toutes catégories</option>
-          {categories.map((category) => <option key={category.id} value={category.slug}>{category.label}</option>)}
-        </select>
         <input value={buyQuantity} onChange={(event) => setBuyQuantity(event.target.value)} type="number" min="1" placeholder="Quantité achetée" className="lbb-admin-input" />
         <input value={freeQuantity} onChange={(event) => setFreeQuantity(event.target.value)} type="number" min="1" placeholder="Quantité offerte" className="lbb-admin-input" />
+      </div>
+      <div style={{ display: "grid", gap: 8 }}>
+        <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#8A9180" }}>CATÉGORIES CONCERNÉES (aucune sélection = toutes catégories)</span>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {categories.map((category) => {
+            const checked = categorySlugs.includes(category.slug);
+            return (
+              <label
+                key={category.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 13,
+                  color: "#2C241D",
+                  border: `1px solid ${checked ? "#2C241D" : "rgba(35,41,31,.15)"}`,
+                  background: checked ? "#2C241D0d" : "#FBFAF5",
+                  borderRadius: 999,
+                  padding: "6px 12px",
+                  cursor: "pointer"
+                }}
+              >
+                <input type="checkbox" checked={checked} onChange={() => toggleCategory(category.slug)} style={{ margin: 0 }} />
+                {category.label}
+              </label>
+            );
+          })}
+        </div>
       </div>
       <button type="button" className="lbb-btn lbb-btn-primary" style={{ width: "fit-content" }} onClick={handleAdd}>Ajouter la remise</button>
     </div>
