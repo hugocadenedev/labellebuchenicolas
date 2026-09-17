@@ -179,7 +179,7 @@ function normalizeSettings(input = {}) {
     },
     heroProof: {
       primaryText: normalizeAnnouncementText(heroProof.primaryText, "Tarifs TTC avec TVA 10 %"),
-      secondaryText: normalizeAnnouncementText(heroProof.secondaryText, "Livraison jusqu'a 30 km : 44,00 EUR TTC"),
+      secondaryText: normalizeAnnouncementText(heroProof.secondaryText, "Livraison offerte des 5 steres dans 30 km"),
       tertiaryText: normalizeAnnouncementText(heroProof.tertiaryText, "Offre 4 steres achetes = le 5e offert")
     }
   };
@@ -282,8 +282,9 @@ function ensureDefaultServices(data) {
   const hasCatalogContent = categories.length > 0 || products.length > 0;
   const hasServiceCategory = categories.some((category) => category?.slug === "services");
   const hasServiceProduct = products.some((product) => product?.id === "service-rangement-bois");
+  const serviceProductRemoved = Boolean(data.systemFlags?.serviceProductRemoved);
 
-  if (!hasCatalogContent) {
+  if (!hasCatalogContent || serviceProductRemoved) {
     return {
       ...data,
       categories,
@@ -872,6 +873,10 @@ export async function deleteProduct(id) {
     );
   });
 
+  if (removedProduct.id === "service-rangement-bois") {
+    data.systemFlags = { ...(data.systemFlags || {}), serviceProductRemoved: true };
+  }
+
   await writeStore(data);
   return makeProductView(removedProduct);
 }
@@ -1074,7 +1079,8 @@ export async function createOrder(input) {
   const billingAddress = input.billingSameAsDelivery === false
     ? normalizeAddress(input.billingAddress, customerName)
     : { ...deliveryAddress };
-  const shippingResult = computeShipping({ postcode: deliveryAddress.postcode });
+  const woodVolume = items.filter((item) => item.product.category === "bois-de-chauffage").reduce((sum, item) => sum + item.quantity, 0);
+  const shippingResult = computeShipping({ postcode: deliveryAddress.postcode, woodVolume });
   if (shippingResult.quoteRequired) {
     throw httpError(400, "Cette adresse est hors zone de livraison automatique. Contactez-nous pour établir un devis.");
   }

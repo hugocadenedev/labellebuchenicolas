@@ -161,7 +161,7 @@ export const products = [
       "Livraison jusqu'à 30 km: 44,00 € TTC. De 31 à 60 km: 66,00 € TTC.",
       "Rangement possible: 55,00 € TTC pour 1 stère, 165,00 € TTC pour 4 stères, 220,00 € TTC pour 6 stères."
     ],
-    deliveryPoints: ["Livraison jusqu'à 30 km: 44,00 € TTC.", "10 allume-feu offerts dès 2 stères.", "Au-delà de 60 km: sur devis."]
+    deliveryPoints: ["Livraison offerte dès 5 stères dans 30 km.", "10 allume-feu offerts dès 2 stères.", "Au-delà de 60 km: sur devis."]
   }),
   buildCatalogProduct({
     id: "chene-33",
@@ -195,7 +195,7 @@ export const products = [
       "La livraison locale reste facturée séparément selon la distance réelle.",
       "L'offre de lancement 4 stères achetés = le 5e offert s'applique jusqu'au 20/11/2026."
     ],
-    deliveryPoints: ["44,00 € TTC jusqu'à 30 km.", "66,00 € TTC de 31 à 60 km.", "Sur devis au-delà de 60 km."]
+    deliveryPoints: ["44,00 € TTC jusqu'à 30 km.", "66,00 € TTC de 31 à 60 km.", "Livraison offerte dès 5 stères dans 30 km."]
   }),
   buildCatalogProduct({
     id: "chene-50",
@@ -295,9 +295,9 @@ export const products = [
     deliveryTitle: "Même grille de services",
     deliveryParagraphs: [
       "Le hêtre suit la même tarification de livraison et de rangement que le chêne.",
-      "Les offres allume-feu restent valables selon les volumes commandés."
+      "Les offres allume-feu et livraison offerte restent valables selon les volumes commandés."
     ],
-    deliveryPoints: ["10 allume-feu offerts dès 2 stères.", "44,00 € TTC jusqu'à 30 km.", "Sur devis au-delà de 60 km."]
+    deliveryPoints: ["10 allume-feu offerts dès 2 stères.", "Livraison offerte dès 5 stères dans 30 km.", "Sur devis au-delà de 60 km."]
   }),
   buildCatalogProduct({
     id: "hetre-33",
@@ -397,9 +397,9 @@ export const products = [
     deliveryTitle: "Même service, autre essence",
     deliveryParagraphs: [
       "Le charme bénéficie des mêmes conditions de livraison et de rangement que les autres stères.",
-      "L'offre allume-feu s'applique aussi."
+      "L'offre allume-feu et la livraison offerte à partir de 5 stères dans 30 km s'appliquent aussi."
     ],
-    deliveryPoints: ["10 allume-feu offerts dès 2 stères.", "44,00 € TTC jusqu'à 30 km.", "Au-delà de 60 km: sur devis."]
+    deliveryPoints: ["10 allume-feu offerts dès 2 stères.", "Livraison offerte dans 30 km dès 5 stères.", "Au-delà de 60 km: sur devis."]
   }),
   buildCatalogProduct({
     id: "chataignier-50",
@@ -568,11 +568,11 @@ export const faqs = [
   },
   {
     q: "Quelle offre est en cours sur les gros volumes ?",
-    a: "L'offre de lancement en cours est: 4 stères achetés = le 5e offert. Elle est valable jusqu'au 20/11/2026."
+    a: "L'offre de lancement en cours est: 4 stères achetés = le 5e offert. Elle est valable jusqu'au 20/11/2026 et n'est pas cumulable avec la livraison offerte dès 5 stères dans 30 km."
   },
   {
     q: "Comment sont calculés les frais de livraison ?",
-    a: "Livraison jusqu'à 30 km : 44,00 € TTC (40,00 € HT). De 31 à 60 km : 66,00 € TTC (60,00 € HT). Au-delà de 60 km, le tarif est établi sur devis."
+    a: "Livraison jusqu'à 30 km : 44,00 € TTC (40,00 € HT), offerte dès 5 stères commandés. De 31 à 60 km : 66,00 € TTC (60,00 € HT), sans offre de gratuité. Au-delà de 60 km, le tarif est établi sur devis."
   },
   {
     q: "Comment fonctionne l'option palox consigne ?",

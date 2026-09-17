@@ -122,7 +122,8 @@ export async function createStripeCheckoutSession(req, res, next) {
     }
 
     const subtotal = items.reduce((sum, item) => sum + Number(item.unitPrice || 0) * Number(item.quantity || 0), 0);
-    const shippingResult = computeShipping({ postcode: deliveryAddress?.postcode });
+    const woodVolume = items.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+    const shippingResult = computeShipping({ postcode: deliveryAddress?.postcode, woodVolume });
     if (shippingResult.quoteRequired) {
       return res.status(400).json({ message: "Cette adresse est hors zone de livraison automatique. Contactez-nous pour établir un devis." });
     }

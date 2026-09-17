@@ -10,6 +10,9 @@ const ZONE_RULES = {
   far: { amount: null, label: "Hors zone (plus de 60 km) : livraison sur devis" }
 };
 
+// Offre livraison gratuite : uniquement en zone locale (<=30 km) a partir de 5 steres commandes.
+export const FREE_SHIPPING_MIN_STERES = 5;
+
 export function extractDepartment(postcode) {
   const digits = String(postcode || "").replace(/\D/g, "");
   return digits.length >= 2 ? digits.slice(0, 2) : "";
@@ -24,7 +27,7 @@ export function resolveDeliveryZone(postcode) {
 }
 
 // Sans code postal connu, on affiche une estimation locale par defaut (majorite des clients).
-export function computeShipping({ postcode }) {
+export function computeShipping({ postcode, woodVolume = 0 }) {
   const zone = resolveDeliveryZone(postcode);
   const rule = ZONE_RULES[zone === "unknown" ? "local" : zone];
 
@@ -32,5 +35,7 @@ export function computeShipping({ postcode }) {
     return { zone, amount: 0, quoteRequired: true, label: rule.label };
   }
 
-  return { zone, amount: rule.amount, quoteRequired: false, label: rule.label };
+  const freeShipping = zone !== "far" && (zone === "local" || zone === "unknown") && Number(woodVolume) >= FREE_SHIPPING_MIN_STERES;
+  const amount = freeShipping ? 0 : rule.amount;
+  return { zone, amount, quoteRequired: false, label: rule.label, freeShipping };
 }
