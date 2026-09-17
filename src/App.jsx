@@ -2415,13 +2415,18 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
                 <span>{woodVolume} stères — env. {woodVolume * 450} kg</span>
               </div>
               {cartItems.map((item) => (
-                <div key={item.lineId} className="lbb-cart-item" style={{ display: "flex", flexWrap: "wrap", gap: 24, padding: "26px 28px", borderBottom: "1px solid rgba(35,41,31,.07)", alignItems: "flex-start" }}>
-                  {!isServiceProduct(item) && item.image ? <div className="lbb-cart-item-media" style={{ flex: "0 0 132px", width: 132, aspectRatio: 1, borderRadius: 20, overflow: "hidden", background: "#EADACB" }}><img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div> : null}
-                  <div style={{ flex: "1 1 260px", minWidth: 0, display: "grid", gap: 10 }}>
-                    <div style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#C05621" }}>{item.id.toUpperCase()}</div>
-                    <Link to={`/produit/${item.slug}`} className="lbb-cart-item-title" style={{ ...sans, fontWeight: 700, fontSize: 22, letterSpacing: "-.024em", lineHeight: 1.15 }}>{item.name}</Link>
-                    {item.isGift ? <span style={{ ...mono, fontSize: 9.5, letterSpacing: ".05em", color: "#5C7752", background: "#E6EFE4", borderRadius: 999, padding: "6px 11px", width: "fit-content" }}>OFFERT · {item.giftLabel}</span> : null}
-                    <div style={{ fontSize: 16.5, lineHeight: 1.5, color: "#4E5647", maxWidth: "44ch" }}>{item.desc}</div>
+                <div key={item.lineId} className="lbb-cart-item" style={{ display: "flex", gap: 20, padding: "22px 28px", borderBottom: "1px solid rgba(35,41,31,.07)", alignItems: "flex-start" }}>
+                  {!isServiceProduct(item) && item.image ? <div className="lbb-cart-item-media" style={{ flex: "0 0 88px", width: 88, aspectRatio: 1, borderRadius: 16, overflow: "hidden", background: "#EADACB" }}><img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div> : null}
+                  <div style={{ flex: 1, minWidth: 0, display: "grid", gap: 8 }}>
+                    <div className="lbb-cart-item-topline" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14 }}>
+                      <div style={{ minWidth: 0, display: "grid", gap: 4 }}>
+                        <div className="lbb-cart-item-code" style={{ ...mono, fontSize: 9.5, letterSpacing: ".08em", color: "#C05621" }}>{item.id.toUpperCase()}</div>
+                        <Link to={`/produit/${item.slug}`} className="lbb-cart-item-title" style={{ ...sans, fontWeight: 700, fontSize: 18, letterSpacing: "-.02em", lineHeight: 1.2 }}>{item.name}</Link>
+                        {item.isGift ? <span style={{ ...mono, fontSize: 9.5, letterSpacing: ".05em", color: "#5C7752", background: "#E6EFE4", borderRadius: 999, padding: "6px 11px", width: "fit-content" }}>OFFERT · {item.giftLabel}</span> : null}
+                      </div>
+                      <span className="lbb-cart-item-total" style={{ ...sans, fontWeight: 700, fontSize: 19, letterSpacing: "-.02em", whiteSpace: "nowrap" }}>{formatPrice(item.price * item.quantity)}</span>
+                    </div>
+                    <div className="lbb-cart-item-desc" style={{ fontSize: 14.5, lineHeight: 1.5, color: "#4E5647" }}>{item.desc}</div>
                     {[item.selectedLength, item.selectedDrying].some(Boolean) ? (
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", ...mono, fontSize: 9.5, letterSpacing: ".05em" }}>
                         {item.selectedLength ? <span style={{ background: "#F3E5D8", color: "#5B321D", borderRadius: 999, padding: "6px 11px" }}>{item.selectedLength}</span> : null}
@@ -2429,23 +2434,18 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
                       </div>
                     ) : null}
                     {!item.isGift ? (
-                      <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", marginTop: 4, ...mono, fontSize: 10.5, letterSpacing: ".05em" }}>
+                      <div className="lbb-cart-item-footer" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginTop: 2, ...mono, fontSize: 10.5, letterSpacing: ".05em" }}>
                         <div style={{ display: "flex", alignItems: "center", border: "1px solid rgba(35,41,31,.14)", borderRadius: 999, overflow: "hidden" }}>
-                          <button type="button" onClick={() => setQuantity(item.lineId, item.quantity - 1)} style={{ border: 0, background: "transparent", cursor: "pointer", width: 38, height: 38, fontSize: 15, color: "#5B321D" }}>−</button>
-                          <span style={{ minWidth: 58, textAlign: "center", ...sans, fontWeight: 700, fontSize: 14, color: "#23291F" }}>{item.quantity}</span>
-                          <button type="button" onClick={() => setQuantity(item.lineId, item.quantity + 1)} style={{ border: 0, background: "transparent", cursor: "pointer", width: 38, height: 38, fontSize: 15, color: "#5B321D" }}>+</button>
+                          <button type="button" onClick={() => setQuantity(item.lineId, item.quantity - 1)} style={{ border: 0, background: "transparent", cursor: "pointer", width: 34, height: 34, fontSize: 15, color: "#5B321D" }}>−</button>
+                          <span style={{ minWidth: 30, textAlign: "center", ...sans, fontWeight: 700, fontSize: 13, color: "#23291F" }}>{item.quantity}</span>
+                          <button type="button" onClick={() => setQuantity(item.lineId, item.quantity + 1)} style={{ border: 0, background: "transparent", cursor: "pointer", width: 34, height: 34, fontSize: 15, color: "#5B321D" }}>+</button>
                         </div>
-                        <span style={{ color: "#8A9180" }}>{formatPrice(item.price)} / unité TTC</span>
-                        <button type="button" onClick={() => setQuantity(item.lineId, 0)} style={{ border: 0, background: "transparent", cursor: "pointer", ...mono, fontSize: 10.5, letterSpacing: ".06em", color: "#A8AE9C", padding: 0 }}>Retirer</button>
+                        <span className="lbb-cart-item-unit" style={{ color: "#8A9180" }}>{formatPrice(item.price)} / unité</span>
+                        <button type="button" onClick={() => setQuantity(item.lineId, 0)} style={{ border: 0, background: "transparent", cursor: "pointer", marginLeft: "auto", ...mono, fontSize: 10.5, letterSpacing: ".06em", color: "#A8AE9C", padding: 0 }}>Retirer</button>
                       </div>
                     ) : (
-                      <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".05em", color: "#8A9180", marginTop: 4 }}>{item.quantity} offert(s) automatiquement</span>
+                      <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".05em", color: "#8A9180", marginTop: 2 }}>{item.quantity} offert(s) automatiquement</span>
                     )}
-                  </div>
-                  <div className="lbb-cart-item-price" style={{ marginLeft: "auto", textAlign: "right", display: "grid", gap: 6, justifyItems: "end" }}>
-                    <span style={{ ...sans, fontWeight: 700, fontSize: 25, letterSpacing: "-.03em" }}>{formatPrice(item.price * item.quantity)}</span>
-                    <span style={{ ...mono, fontSize: 10, letterSpacing: ".05em", color: "#8A9180" }}>soit {formatPrice(item.price)} l'unité TTC</span>
-                    <span style={{ ...mono, fontSize: 9.5, letterSpacing: ".05em", color: "#5B321D", background: "#F3E5D8", borderRadius: 999, padding: "5px 10px", marginTop: 4 }}>{item.stockLabel}</span>
                   </div>
                 </div>
               ))}
