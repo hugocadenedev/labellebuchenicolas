@@ -18,6 +18,7 @@ import {
   products,
   reviews,
 } from "./catalog";
+import { computeShipping } from "../shared/deliveryZones.js";
 
 const tones = {
   dark: { background: "#23291F", color: "#F4F7EC" },
@@ -363,6 +364,11 @@ function slugify(value) {
     .replace(/(^-|-$)/g, "");
 }
 
+// Livraison n'est pas garantie par defaut, on retire toute mention "livre/livré" du libelle d'unite.
+function stripDeliveredWording(value) {
+  return typeof value === "string" ? value.replace(/\s*livr[ée]e?s?\b/gi, "").trim() : "";
+}
+
 function buildProductSpecsFromDraft(product, baseProduct) {
   if (Array.isArray(product.specs) && product.specs.length > 0) {
     return product.specs;
@@ -370,10 +376,10 @@ function buildProductSpecsFromDraft(product, baseProduct) {
 
   return baseProduct?.specs || [
     { k: "Essence", v: product.essence || product.family || "Feuillus" },
-    { k: "Origine", v: product.origin || "Sud-Ouest" },
+    product.origin ? { k: "Origine", v: product.origin } : null,
     product.length ? { k: "Longueur", v: product.length } : null,
-    { k: "Humidite", v: product.humidity || "16 %" },
-    { k: "Pouvoir calorifique", v: product.calorificValue || "1 800 kWh / stere" }
+    product.humidity ? { k: "Humidite", v: product.humidity } : null,
+    product.calorificValue ? { k: "Pouvoir calorifique", v: product.calorificValue } : null
   ].filter(Boolean);
 }
 
@@ -591,10 +597,10 @@ function buildProductTabsFromDraft(product, baseProduct) {
         `${product.essence || product.family || "Ce lot"} propose une coupe ${product.length || baseProduct?.length || "33 cm"} avec un lot ${(product.drying || baseProduct?.drying || "seche 18 mois").toLowerCase()}.`
       ],
       points: [
-        `${product.humidity || baseProduct?.humidity || "16 % humidite"}.`,
-        `${product.origin || "Origine Sud-Ouest"}.`,
+        product.humidity || baseProduct?.humidity ? `${product.humidity || baseProduct?.humidity}.` : null,
+        product.origin ? `${product.origin}.` : null,
         `Reference ${product.sku || product.id}.`
-      ]
+      ].filter(Boolean)
     },
     livraison: {
       title: "Livraison et disponibilite",
@@ -616,13 +622,11 @@ function getCategoryHref(slug) {
 }
 
 function materializeStorefrontProduct(baseProducts, apiProduct) {
+  // Ne rattacher un produit demo que si le lien est explicite: sinon les specs/badges/notes de ce demo produit fuiteraient sur un produit reel non lie.
   const baseProduct = baseProducts.find((product) => product.id === apiProduct.id)
-    || baseProducts.find((product) => product.id === apiProduct.templateProductId)
-    || baseProducts.find((product) => product.family === apiProduct.family)
-    || baseProducts.find((product) => product.category === apiProduct.category)
-    || baseProducts[0];
+    || baseProducts.find((product) => product.id === apiProduct.templateProductId);
   const isService = isServiceProduct(apiProduct);
-  const canInheritMedia = !isService && (apiProduct.id === baseProduct?.id || apiProduct.templateProductId === baseProduct?.id);
+  const canInheritMedia = !isService && Boolean(baseProduct);
   const image = resolveMediaSource({
     imageKey: apiProduct.imageKey,
     imageUrl: apiProduct.imageUrl,
@@ -653,7 +657,7 @@ function materializeStorefrontProduct(baseProducts, apiProduct) {
     price: convertHtToTtc(defaultPriceHt),
     oldPriceHt,
     oldPrice: oldPriceHt == null ? null : convertHtToTtc(oldPriceHt),
-    unit: apiProduct.unit || baseProduct?.unit || "/ stere livre",
+    unit: stripDeliveredWording(apiProduct.unit) || stripDeliveredWording(baseProduct?.unit) || "/ stere",
     badge: apiProduct.badge || baseProduct?.badge || "Nouveau",
     badgeTone: apiProduct.badgeTone || baseProduct?.badgeTone || "green",
     rating: apiProduct.rating || baseProduct?.rating || "★★★★★",
@@ -664,7 +668,7 @@ function materializeStorefrontProduct(baseProducts, apiProduct) {
     availableDryingDurations,
     lengthPricesHt,
     lengthPrices: convertPriceMapHtToTtc(lengthPricesHt),
-    humidity: apiProduct.humidity || baseProduct?.humidity || "16 % humidite",
+    humidity: apiProduct.humidity || baseProduct?.humidity || "",
     desc: apiProduct.desc || baseProduct?.desc || "",
     image,
     gallery: isService ? [] : resolveGallerySources({
@@ -719,6 +723,7 @@ function getCategoryForProduct(categories, productId) {
 }
 
 function getCategoryCoverImage(category, allProducts) {
+  if (category.imageUrl) return category.imageUrl;
   return allProducts.find((product) => product.id === category.coverProductId)?.image || "";
 }
 
@@ -2140,7 +2145,7 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
       : uniqueByValue(variantProducts.map((item) => item.length).filter(Boolean));
   const secondaryOptionTitle = isAccessory ? "USAGE" : "SÉCHAGE";
   const secondaryOptionChoices = isAccessory
-    ? [activeProduct.drying, activeProduct.humidity].filter((value, index, array) => array.indexOf(value) === index).slice(0, 2)
+    ? [activeProduct.drying, activeProduct.humidity].filter(Boolean).filter((value, index, array) => array.indexOf(value) === index).slice(0, 2)
     : hasProductLevelOptions
       ? uniqueByValue(activeProduct.availableDryingDurations || [activeProduct.drying])
       : uniqueByValue(variantProducts.filter((item) => item.length === length).map((item) => item.drying).filter(Boolean));
@@ -2174,7 +2179,9 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
             <img src={activeProduct.gallery[shotIndex]} alt={activeProduct.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             <div style={{ position: "absolute", top: 20, left: 20, right: 20, display: "flex", gap: 8, flexWrap: "wrap" }}>
               <span style={{ ...mono, fontSize: 10, letterSpacing: ".07em", background: badgeTone.background, color: badgeTone.color, padding: "7px 13px", borderRadius: 999 }}>{activeProduct.badge}</span>
-              <span style={{ ...mono, fontSize: 10, letterSpacing: ".07em", background: "rgba(251,250,245,.94)", color: "#5B321D", padding: "7px 13px", borderRadius: 999 }}>{activeProduct.humidity}</span>
+              {activeProduct.humidity ? (
+                <span style={{ ...mono, fontSize: 10, letterSpacing: ".07em", background: "rgba(251,250,245,.94)", color: "#5B321D", padding: "7px 13px", borderRadius: 999 }}>{activeProduct.humidity}</span>
+              ) : null}
             </div>
           </div>
           <div className="lbb-product-gallery-thumbs" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
@@ -2187,7 +2194,7 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
           {!isService ? (
             <div className="lbb-mini-features" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, ...mono, fontSize: 10.5, letterSpacing: ".04em", color: "#6B7263", textAlign: "center" }}>
               <span style={{ background: "#F5EFE2", borderRadius: 14, padding: "13px 6px" }}>{activeProduct.length}</span>
-              <span style={{ background: "#F3E5D8", color: "#5B321D", borderRadius: 14, padding: "13px 6px" }}>{activeProduct.origin || "Sud-Ouest"}</span>
+              <span style={{ background: "#F3E5D8", color: "#5B321D", borderRadius: 14, padding: "13px 6px" }}>{activeProduct.origin || ""}</span>
               <span style={{ background: "#5B321D", color: "#FBF6EE", borderRadius: 14, padding: "13px 6px" }}>{activeProduct.drying}</span>
             </div>
           ) : null}
@@ -2209,7 +2216,7 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
             <div style={{ display: "grid", gap: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
                 <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>{isService ? "QUANTITÉ DE PRESTATIONS" : isAccessory ? "QUANTITÉ" : "NOMBRE DE STÈRES"}</span>
-                <span style={{ ...mono, fontSize: 10.5, color: qty >= 5 ? "#5B321D" : "#C05621" }}>{isService ? "Service ajoutable avant validation de la commande" : isAccessory ? "Ajoutable à une livraison ou à un retrait dépôt" : qty >= 5 ? "Livraison offerte jusqu'à 30 km" : qty >= 2 ? "10 allume-feu offerts dès cette commande" : "10 allume-feu offerts dès 2 stères"}</span>
+                <span style={{ ...mono, fontSize: 10.5, color: qty >= 5 ? "#5B321D" : "#C05621" }}>{isService ? "Service ajoutable avant validation de la commande" : isAccessory ? "Ajoutable à une livraison ou à un retrait dépôt" : qty >= 5 ? "Livraison offerte jusqu'à 30 km" : ""}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 18, border: "1px solid rgba(35,41,31,.14)", borderRadius: 999, padding: "10px 20px" }}>
@@ -2323,7 +2330,8 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
 
 function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCategoryPath, account }) {
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = subtotal >= 600 ? 0 : subtotal === 0 ? 0 : 49;
+  const shippingEstimate = subtotal === 0 ? { amount: 0, label: "" } : computeShipping({ subtotalTtc: subtotal });
+  const shipping = shippingEstimate.amount;
   const totals = buildVatBreakdown(subtotal, shipping);
   const hasDiscount = subtotal >= 560;
   const woodVolume = cartItems.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + item.quantity, 0);
@@ -2411,10 +2419,11 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Sous-total produits HT</span><span style={{ color: "#23291F" }}>{formatPrice(totals.productsHt)}</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA produits 10 %</span><span style={{ color: "#23291F" }}>{formatPrice(totals.productsVat)}</span></div>
                 {hasDiscount && <div style={{ display: "flex", justifyContent: "space-between", gap: 16, color: "#C05621" }}><span>Remise lot volume</span><span>incluse</span></div>}
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Livraison zone 1 HT</span><span style={{ color: "#23291F" }}>{shipping === 0 ? "Offerte" : formatPrice(totals.shippingHt)}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Livraison HT (estimation)</span><span style={{ color: "#23291F" }}>{shipping === 0 ? "Offerte" : formatPrice(totals.shippingHt)}</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA livraison 10 %</span><span style={{ color: "#23291F" }}>{shipping === 0 ? "Offerte" : formatPrice(totals.shippingVat)}</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16, ...mono, fontSize: 11, letterSpacing: ".05em", color: "#8A9180" }}><span>Total TVA 10 %</span><span>{formatPrice(totals.totalVat)}</span></div>
               </div>
+              <p style={{ ...mono, fontSize: 10.5, letterSpacing: ".03em", color: "#8A9180", margin: "12px 0 0" }}>Frais estimés pour une adresse locale ; le montant définitif est calculé à l'étape suivante selon votre code postal.</p>
               <div style={{ height: 1, background: "rgba(35,41,31,.1)", margin: "22px 0" }} />
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16 }}>
                 <span style={{ ...sans, fontWeight: 700, fontSize: 17, letterSpacing: "-.02em" }}>Total TTC</span>
@@ -2507,7 +2516,8 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
   const [feedback, setFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = subtotal >= 600 ? 0 : subtotal === 0 ? 0 : 49;
+  const shippingResult = computeShipping({ postcode: draft.deliveryAddress.postcode, subtotalTtc: subtotal });
+  const shipping = shippingResult.amount;
   const totals = buildVatBreakdown(subtotal, shipping);
   const searchParams = new URLSearchParams(location.search);
   const stripeCancelled = searchParams.get("payment") === "cancelled";
@@ -2551,6 +2561,12 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
   async function handleSubmit(event) {
     event.preventDefault();
     setFeedback("");
+
+    if (shippingResult.quoteRequired) {
+      setFeedback("Cette adresse est hors zone de livraison automatique. Contactez-nous pour établir un devis avant de commander.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -2622,6 +2638,7 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
                   <input value={draft.deliveryAddress.postcode} onChange={(event) => updateAddress("deliveryAddress", "postcode", event.target.value)} placeholder="Code postal" className="lbb-admin-input" required />
                   <input value={draft.deliveryAddress.city} onChange={(event) => updateAddress("deliveryAddress", "city", event.target.value)} placeholder="Ville" className="lbb-admin-input" required />
                 </div>
+                <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".03em", color: shippingResult.quoteRequired ? "#A8501B" : "#8A9180" }}>{shippingResult.label}</span>
               </div>
 
               <div style={{ display: "grid", gap: 12 }}>
@@ -2660,7 +2677,7 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
 
               {stripeCancelled ? <div style={{ background: "#FFF2DD", color: "#9A5A00", borderRadius: 16, padding: "12px 14px", ...mono, fontSize: 10.5 }}>Paiement Stripe annulé. Votre panier et vos informations sont toujours là.</div> : null}
               {feedback ? <div style={{ background: "#FCE7DF", color: "#A8501B", borderRadius: 16, padding: "12px 14px", ...mono, fontSize: 10.5 }}>{feedback}</div> : null}
-              <button type="submit" className="lbb-btn lbb-btn-primary" style={{ justifyContent: "center" }} disabled={isSubmitting || slotOptions.length === 0}>{isSubmitting ? "Validation..." : "Payer avec Stripe"}</button>
+              <button type="submit" className="lbb-btn lbb-btn-primary" style={{ justifyContent: "center" }} disabled={isSubmitting || slotOptions.length === 0 || shippingResult.quoteRequired}>{isSubmitting ? "Validation..." : "Payer avec Stripe"}</button>
             </form>
 
             <aside className="lbb-sticky-panel" style={{ background: "#FFFFFF", border: "1px solid rgba(35,41,31,.09)", borderRadius: 28, padding: 28, display: "grid", gap: 16, position: "sticky", top: 140 }}>
@@ -2946,6 +2963,7 @@ function createCategoryDraft(productOptions) {
     heading: "",
     description: "",
     shortDescription: "",
+    imageUrl: "",
     coverProductId: "",
     essences: [],
     productIds: []
@@ -3650,6 +3668,7 @@ function AdminProductsIndex({ products: adminProducts, categories, onStockUpdate
 
 function AdminCategoryCreatePage({ products: productOptions, onCreateCategory }) {
   const [draft, setDraft] = useState(() => createCategoryDraft(productOptions));
+  const [feedback, setFeedback] = useState("");
   const selectedProducts = useMemo(
     () => productOptions.filter((product) => draft.productIds.includes(product.id)),
     [draft.productIds, productOptions]
@@ -3668,6 +3687,22 @@ function AdminCategoryCreatePage({ products: productOptions, onCreateCategory })
       return next;
     });
   }
+
+  async function handleImageUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const imageUrl = await readFileAsDataUrl(file);
+      setDraft((current) => ({ ...current, imageUrl, coverProductId: "" }));
+      setFeedback(`Photo importee : ${file.name}`);
+    } catch {
+      setFeedback("Impossible d'importer la photo de la categorie.");
+    } finally {
+      event.target.value = "";
+    }
+  }
+
 
   function toggleProduct(categoryProductId) {
     setDraft((current) => {
@@ -3722,7 +3757,14 @@ function AdminCategoryCreatePage({ products: productOptions, onCreateCategory })
             </div>
           </div>
           <div style={{ display: "grid", gap: 12 }}>
-            <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>VISUEL DE CATEGORIE</span>
+            <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>PHOTO DE CATEGORIE</span>
+            {draft.imageUrl ? <img src={draft.imageUrl} alt="Apercu categorie" style={{ width: 160, height: 160, objectFit: "cover", borderRadius: 18, border: "1px solid rgba(35,41,31,.12)", background: "#F3EEE4" }} /> : <div style={{ width: 160, height: 160, borderRadius: 18, border: "1px dashed rgba(35,41,31,.18)", background: "#FBFAF5", display: "grid", placeItems: "center", color: "#8A9180", ...mono, fontSize: 10.5, letterSpacing: ".05em" }}>AUCUNE PHOTO</div>}
+            <input type="file" accept="image/*" onChange={handleImageUpload} className="lbb-admin-input" />
+            {draft.imageUrl ? <button type="button" className="lbb-btn lbb-btn-secondary lbb-btn-small" style={{ width: "fit-content" }} onClick={() => updateDraft("imageUrl", "")}>Retirer la photo</button> : null}
+            {feedback ? <div style={{ ...mono, fontSize: 10, color: "#8A9180" }}>{feedback}</div> : null}
+          </div>
+          <div style={{ display: "grid", gap: 12 }}>
+            <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>VISUEL DE SECOURS (SI AUCUNE PHOTO)</span>
             <div style={{ display: "grid", gap: 10 }}>
               <button type="button" onClick={() => updateDraft("coverProductId", "")} style={{ border: draft.coverProductId ? "1px solid rgba(35,41,31,.09)" : "1px solid rgba(91,50,29,.45)", background: draft.coverProductId ? "#FFFFFF" : "#F3E5D8", borderRadius: 18, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, cursor: "pointer", textAlign: "left" }}>
                 <span style={{ display: "grid", gap: 3 }}>
@@ -3750,11 +3792,23 @@ function AdminCategoriesIndex({ categories, products: productOptions, onUpdateCa
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    setEdits(Object.fromEntries(categories.map((category) => [category.id, { slug: category.slug }])));
+    setEdits(Object.fromEntries(categories.map((category) => [category.id, { slug: category.slug, imageUrl: category.imageUrl || "" }])));
   }, [categories]);
 
   function updateEdit(categoryId, field, value) {
     setEdits((current) => ({ ...current, [categoryId]: { ...current[categoryId], [field]: value } }));
+  }
+
+  async function handleImageUpload(categoryId, event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const imageUrl = await readFileAsDataUrl(file);
+      updateEdit(categoryId, "imageUrl", imageUrl);
+    } finally {
+      event.target.value = "";
+    }
   }
 
   async function handleDeleteClick(category) {
@@ -3787,14 +3841,18 @@ function AdminCategoriesIndex({ categories, products: productOptions, onUpdateCa
       <div className="lbb-admin-surface" style={{ display: "grid", gap: 18 }}>
         <div className="lbb-admin-toolbar"><span style={{ ...sans, fontWeight: 700, fontSize: 21, letterSpacing: "-.024em", color: "#2C241D" }}>Pages categories publiees</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher une categorie..." className="lbb-admin-search" /></div>
         <div className="lbb-admin-table lbb-admin-table-categories-cms">
-          <div className="lbb-admin-table-head">Categorie</div><div className="lbb-admin-table-head">Slug</div><div className="lbb-admin-table-head">Produits</div><div className="lbb-admin-table-head">Apercu</div><div className="lbb-admin-table-head">Action</div>
+          <div className="lbb-admin-table-head">Categorie</div><div className="lbb-admin-table-head">Slug</div><div className="lbb-admin-table-head">Photo</div><div className="lbb-admin-table-head">Produits</div><div className="lbb-admin-table-head">Apercu</div><div className="lbb-admin-table-head">Action</div>
           {filteredCategories.map((category) => <AdminRow key={category.id} className="lbb-admin-table-categories-cms" cells={[
             <span style={{ display: "grid", gap: 3 }}><strong style={{ ...sans, fontSize: 15 }}>{category.label}</strong><span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>{category.heading}</span></span>,
             <input value={edits[category.id]?.slug || ""} onChange={(event) => updateEdit(category.id, "slug", event.target.value)} className="lbb-admin-input" style={{ minHeight: 40 }} />,
+            <span style={{ display: "grid", gap: 8 }}>
+              {edits[category.id]?.imageUrl ? <img src={edits[category.id].imageUrl} alt={category.label} style={{ width: 48, height: 48, borderRadius: 12, objectFit: "cover", background: "#F3EEE4" }} /> : <span style={{ width: 48, height: 48, borderRadius: 12, border: "1px dashed rgba(35,41,31,.18)", background: "#FBFAF5", display: "grid", placeItems: "center", ...mono, fontSize: 9, color: "#8A9180" }}>PHOTO</span>}
+              <input type="file" accept="image/*" onChange={(event) => handleImageUpload(category.id, event)} className="lbb-admin-input" style={{ minHeight: 36, fontSize: 10.5 }} />
+            </span>,
             <span style={{ display: "grid", gap: 6 }}>{productOptions.filter((product) => category.productIds.includes(product.id)).slice(0, 3).map((product) => <span key={product.id} style={{ fontSize: 14.5, color: "#4E5647" }}>{product.name}</span>)}<span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>{category.productIds.length} produit(s) relies</span></span>,
             <Link to={getCategoryHref(category.slug)} className="lbb-btn lbb-btn-secondary lbb-btn-small">Voir page</Link>,
             <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button type="button" className="lbb-btn lbb-btn-small lbb-btn-primary" onClick={() => onUpdateCategory(category.id, { ...category, slug: edits[category.id]?.slug || category.slug })}>Sauver</button>
+              <button type="button" className="lbb-btn lbb-btn-small lbb-btn-primary" onClick={() => onUpdateCategory(category.id, { ...category, slug: edits[category.id]?.slug || category.slug, imageUrl: edits[category.id]?.imageUrl ?? category.imageUrl })}>Sauver</button>
               <button type="button" className="lbb-btn lbb-btn-small lbb-btn-secondary" onClick={() => handleDeleteClick(category)}>Supprimer</button>
             </span>
           ]} />)}
@@ -4475,7 +4533,7 @@ function ProductCard({ product, addToCart, detailed = false, compact = false }) 
         )}
         {!detailed && (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {[product.length, product.humidity, product.drying].slice(0, 3).map((tag) => (
+            {[product.length, product.humidity, product.drying].filter(Boolean).slice(0, 3).map((tag) => (
               <span key={tag} style={{ ...mono, fontSize: 10, letterSpacing: ".04em", background: "#F3E5D8", color: "#6F5848", borderRadius: 999, padding: "6px 11px" }}>{tag}</span>
             ))}
           </div>

@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { getDbPool, withTransaction } from "./db.js";
 import { appConfig } from "./config.js";
+import { computeShipping } from "../shared/deliveryZones.js";
 
 function sanitizeStoreStrings(value) {
   if (Array.isArray(value)) {
@@ -98,6 +99,11 @@ function formatMoment(value) {
 
 function normalizeText(value) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+// Livraison n'est pas garantie par defaut, on retire toute mention "livre/livré" du libelle d'unite.
+function stripDeliveredWording(value) {
+  return normalizeText(value).replace(/\s*livr[ée]e?s?\b/gi, "").trim();
 }
 
 function normalizeEmail(value) {
@@ -495,10 +501,10 @@ function buildProductSpecs(input) {
   const label = input.essence || input.family || input.name;
   return [
     { k: "Essence", v: label || "Feuillus" },
-    { k: "Origine", v: input.origin || "Sud-Ouest" },
+    input.origin ? { k: "Origine", v: input.origin } : null,
     input.length ? { k: "Longueur", v: input.length } : null,
-    { k: "Humidite", v: input.humidity || "16 %" },
-    { k: "Pouvoir calorifique", v: input.calorificValue || "1 800 kWh / stere" }
+    input.humidity ? { k: "Humidite", v: input.humidity } : null,
+    input.calorificValue ? { k: "Pouvoir calorifique", v: input.calorificValue } : null
   ].filter(Boolean);
 }
 
@@ -525,9 +531,9 @@ function buildProductTabs(input) {
       ],
       points: [
         `Reference ${input.sku || input.id}.`,
-        `${input.humidity || "16 % humidite"}.`,
-        `${input.origin || "Origine Sud-Ouest"}.`
-      ]
+        input.humidity ? `${input.humidity}.` : null,
+        input.origin ? `${input.origin}.` : null
+      ].filter(Boolean)
     },
     livraison: {
       title: "Livraison et disponibilite",
@@ -573,7 +579,7 @@ function normalizeProductInput(input) {
     sku: generatedSku,
     price: defaultPrice,
     oldPrice: Number.isFinite(oldPrice) ? oldPrice : null,
-    unit: input.unit || "/ stere livre",
+    unit: stripDeliveredWording(input.unit) || "/ stere",
     badge: input.badge || "Nouveau",
     badgeTone: input.badgeTone || "green",
     rating: input.rating || "★★★★★",
@@ -583,10 +589,10 @@ function normalizeProductInput(input) {
     availableLengths,
     lengthPrices,
     availableDryingDurations: dryingOptions,
-    humidity: input.humidity || "16 % humidite",
+    humidity: input.humidity || "",
     desc: input.desc || "",
-    origin: input.origin || "Sud-Ouest",
-    calorificValue: input.calorificValue || "1 800 kWh / stere",
+    origin: input.origin || "",
+    calorificValue: input.calorificValue || "",
     imageKey: input.imageKey || null,
     imageUrl: input.imageUrl || "",
     galleryKeys: Array.isArray(input.galleryKeys) ? uniqueValues(input.galleryKeys) : [],
@@ -731,6 +737,7 @@ async function readSqlState() {
       c.heading,
       c.description,
       c.short_description,
+      c.image_url,
       c.cover_product_external_id,
       c.essences_json,
       p.external_id AS product_external_id
@@ -751,6 +758,7 @@ async function readSqlState() {
         heading: row.heading || row.label || row.slug,
         description: row.description || "",
         shortDescription: row.short_description || "",
+        imageUrl: row.image_url || "",
         coverProductId: row.cover_product_external_id || "",
         essences: parseJson(row.essences_json, []) || [],
         productIds: []
@@ -822,7 +830,7 @@ async function readSqlState() {
     sku: row.sku,
     price: Number(row.price || 0),
     oldPrice: row.old_price === null ? null : Number(row.old_price),
-    unit: row.unit_label || "/ stere livre",
+    unit: stripDeliveredWording(row.unit_label) || "/ stere",
     badge: row.badge || "Nouveau",
     badgeTone: row.badge_tone || "green",
     rating: row.rating_label || "",
@@ -832,10 +840,10 @@ async function readSqlState() {
     availableLengths: parseJson(row.available_lengths_json, []),
     lengthPrices: parseJson(row.length_prices_json, {}),
     availableDryingDurations: parseJson(row.available_drying_durations_json, []),
-    humidity: row.humidity_label || "16 % humidite",
+    humidity: row.humidity_label || "",
     desc: row.description || "",
-    origin: row.origin_label || "Sud-Ouest",
-    calorificValue: row.calorific_value_label || "1 800 kWh / stere",
+    origin: row.origin_label || "",
+    calorificValue: row.calorific_value_label || "",
     imageKey: row.image_key || null,
     imageUrl: row.image_url || "",
     galleryKeys: parseJson(row.gallery_keys_json, []),
@@ -1076,8 +1084,8 @@ export async function replaceAllDataFromSnapshot(snapshot) {
     for (const category of normalized.categories) {
       await connection.query(
         `INSERT INTO categories
-          (external_id, name, label, slug, kicker, heading, description, short_description, cover_product_external_id, essences_json)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (external_id, name, label, slug, kicker, heading, description, short_description, image_url, cover_product_external_id, essences_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           category.id,
           category.label || category.slug || category.id,
@@ -1087,6 +1095,7 @@ export async function replaceAllDataFromSnapshot(snapshot) {
           category.heading || category.label || category.slug,
           category.description || null,
           category.shortDescription || null,
+          category.imageUrl || null,
           category.coverProductId || null,
           toJson(uniqueValues(category.essences || []))
         ]
@@ -1427,6 +1436,7 @@ export async function createCategory(input) {
     heading: input.heading,
     description: input.description,
     shortDescription: input.shortDescription,
+    imageUrl: input.imageUrl || "",
     coverProductId: input.coverProductId,
     essences: Array.isArray(input.essences) ? input.essences : [],
     productIds: Array.isArray(input.productIds) ? input.productIds : []
@@ -1725,11 +1735,6 @@ export async function createOrder(input) {
   });
 
   const subtotal = roundCurrency(items.reduce((sum, item) => sum + item.total, 0));
-  const shippingAmount = Number.isFinite(Number(input.shippingAmount))
-    ? roundCurrency(Number(input.shippingAmount))
-    : subtotal >= 600 ? 0 : 49;
-  const total = roundCurrency(subtotal + shippingAmount);
-  const taxAmount = roundCurrency(total / 6);
   const paymentMethod = normalizeText(input.paymentMethod) || "Carte bancaire";
   const slot = normalizeText(input.slot) || "À planifier";
   const logisticsNote = normalizeText(input.logisticsNote);
@@ -1740,6 +1745,13 @@ export async function createOrder(input) {
   const billingAddress = input.billingSameAsDelivery === false
     ? normalizeAddress(input.billingAddress, customerName)
     : { ...deliveryAddress };
+  const shippingResult = computeShipping({ postcode: deliveryAddress.postcode, subtotalTtc: subtotal });
+  if (shippingResult.quoteRequired) {
+    throw httpError(400, "Cette adresse est hors zone de livraison automatique. Contactez-nous pour établir un devis.");
+  }
+  const shippingAmount = shippingResult.amount;
+  const total = roundCurrency(subtotal + shippingAmount);
+  const taxAmount = roundCurrency(total / 6);
   const now = new Date().toISOString();
   const status = normalizeText(input.status) || (paymentMethod === "Paiement à la livraison" ? "pending" : "paid");
   const statusLabel = normalizeText(input.statusLabel) || (status === "paid" ? "Paiement accepté" : "En attente");

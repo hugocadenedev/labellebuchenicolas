@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { appConfig, isStripeEnabled, isStripeWebhookEnabled } from "./config.js";
 import { createOrder } from "./dataStore.js";
+import { computeShipping } from "../shared/deliveryZones.js";
 import {
   clearPendingStripeCheckout,
   readPendingStripeCheckout,
@@ -106,7 +107,7 @@ async function finalizePaidStripeSession(sessionId, requestBody = {}) {
 
 export async function createStripeCheckoutSession(req, res, next) {
   try {
-    const { items = [], shippingAmount = 0, customerId, contactEmail } = req.body || {};
+    const { items = [], customerId, contactEmail, deliveryAddress } = req.body || {};
     if (!customerId) {
       return res.status(400).json({ message: "Compte client requis pour le paiement Stripe." });
     }
@@ -114,6 +115,13 @@ export async function createStripeCheckoutSession(req, res, next) {
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: "Le panier est vide." });
     }
+
+    const subtotal = items.reduce((sum, item) => sum + Number(item.unitPrice || 0) * Number(item.quantity || 0), 0);
+    const shippingResult = computeShipping({ postcode: deliveryAddress?.postcode, subtotalTtc: subtotal });
+    if (shippingResult.quoteRequired) {
+      return res.status(400).json({ message: "Cette adresse est hors zone de livraison automatique. Contactez-nous pour établir un devis." });
+    }
+    const shippingAmount = shippingResult.amount;
 
     const session = await getStripeClient().checkout.sessions.create({
       mode: "payment",
@@ -127,7 +135,7 @@ export async function createStripeCheckoutSession(req, res, next) {
       }
     });
 
-    await savePendingStripeCheckout(session.id, req.body || {});
+    await savePendingStripeCheckout(session.id, { ...(req.body || {}), shippingAmount });
 
     return res.status(201).json({
       sessionId: session.id,
