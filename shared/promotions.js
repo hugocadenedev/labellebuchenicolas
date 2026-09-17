@@ -4,6 +4,16 @@ function roundToCents(value) {
   return Math.round(Number(value || 0) * 100) / 100;
 }
 
+// Les remises par volume ciblent les categories du back-office (assignation par produit),
+// pas le champ generique "category" (bois-de-chauffage / accessoires / services).
+export function getCategorySlugsForProduct(categories = [], product) {
+  if (!product) return [];
+  return (Array.isArray(categories) ? categories : [])
+    .filter((category) => Array.isArray(category.productIds) && category.productIds.includes(product.id))
+    .map((category) => category.slug)
+    .filter(Boolean);
+}
+
 export function normalizeVolumeDiscounts(values) {
   return (Array.isArray(values) ? values : [])
     .map((rule) => {
@@ -35,6 +45,14 @@ export function normalizePromoCodes(values) {
     .filter((entry) => entry.code && entry.value > 0);
 }
 
+function itemMatchesRuleCategories(item, rule) {
+  if (rule.categorySlugs.length === 0) return true;
+  const itemSlugs = Array.isArray(item.categorySlugs) && item.categorySlugs.length > 0
+    ? item.categorySlugs
+    : (item.category ? [item.category] : []);
+  return itemSlugs.some((slug) => rule.categorySlugs.includes(slug));
+}
+
 // Le(s) article(s) les moins chers du lot sont offerts, comme "4 achetes = le 5e offert".
 export function computeVolumeDiscount(cartItems = [], rules = []) {
   const activeRules = normalizeVolumeDiscounts(rules).filter((rule) => rule.active);
@@ -42,7 +60,7 @@ export function computeVolumeDiscount(cartItems = [], rules = []) {
   let amount = 0;
 
   activeRules.forEach((rule) => {
-    const matching = cartItems.filter((item) => rule.categorySlugs.length === 0 || rule.categorySlugs.includes(item.category));
+    const matching = cartItems.filter((item) => itemMatchesRuleCategories(item, rule));
     const totalQuantity = matching.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
     const bundleSize = rule.buyQuantity + rule.freeQuantity;
     if (totalQuantity < bundleSize) return;
@@ -76,7 +94,7 @@ export function applyAutomaticGifts(cartItems = [], rules = []) {
   const giftLines = [];
 
   activeRules.forEach((rule) => {
-    const matching = cartItems.filter((item) => !item.isGift && (rule.categorySlugs.length === 0 || rule.categorySlugs.includes(item.category)));
+    const matching = cartItems.filter((item) => !item.isGift && itemMatchesRuleCategories(item, rule));
     const paidQuantity = matching.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
     if (paidQuantity < rule.buyQuantity) return;
 

@@ -19,7 +19,7 @@ import {
   reviews,
 } from "./catalog";
 import { computeShipping } from "../shared/deliveryZones.js";
-import { validatePromoCode, normalizeVolumeDiscounts, normalizePromoCodes, applyAutomaticGifts } from "../shared/promotions.js";
+import { validatePromoCode, normalizeVolumeDiscounts, normalizePromoCodes, applyAutomaticGifts, getCategorySlugsForProduct } from "../shared/promotions.js";
 
 const tones = {
   dark: { background: "#23291F", color: "#F4F7EC" },
@@ -888,6 +888,7 @@ function buildOrderRequest(draft, customerId, cartItems, shippingAmount) {
       productId: item.id,
       name: item.name,
       category: item.category,
+      categorySlugs: item.categorySlugs,
       quantity: item.quantity,
       length: item.selectedLength,
       drying: item.selectedDrying,
@@ -1026,7 +1027,8 @@ function StorefrontApp() {
       quantity: line.quantity,
       price: unitPrice,
       selectedLength,
-      selectedDrying
+      selectedDrying,
+      categorySlugs: getCategorySlugsForProduct(siteCategories, product)
     };
   }).filter(Boolean);
   const cartItemsWithGifts = useMemo(

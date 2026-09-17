@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import bcrypt from "bcryptjs";
 import { appConfig } from "./config.js";
 import { computeShipping } from "../shared/deliveryZones.js";
-import { normalizeVolumeDiscounts, normalizePromoCodes, computeVolumeDiscount, validatePromoCode } from "../shared/promotions.js";
+import { normalizeVolumeDiscounts, normalizePromoCodes, computeVolumeDiscount, validatePromoCode, getCategorySlugsForProduct } from "../shared/promotions.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1057,7 +1057,7 @@ export async function createOrder(input) {
   });
 
   const subtotal = roundCurrency(items.reduce((sum, item) => sum + item.total, 0));
-  const discountItems = items.map((item) => ({ category: item.product.category, price: item.unitPrice, quantity: item.quantity }));
+  const discountItems = items.map((item) => ({ categorySlugs: getCategorySlugsForProduct(data.categories, item.product), price: item.unitPrice, quantity: item.quantity }));
   const volumeDiscount = computeVolumeDiscount(discountItems, data.settings?.promotions?.volumeDiscounts);
   const promoResult = validatePromoCode(input.promoCode, subtotal, data.settings?.promotions?.promoCodes);
   if (input.promoCode && !promoResult.valid) {
