@@ -1048,7 +1048,10 @@ async function readSqlState() {
 
   return normalizeStoreShape(sanitizeStoreStrings({
     profile: settings.profile || defaultProfile,
-    settings: settings.product_options || { productOptions: defaultProductOptionSettings },
+    settings: {
+      ...(settings.product_options || { productOptions: defaultProductOptionSettings }),
+      promotions: settings.promotions || { volumeDiscounts: [], promoCodes: [] }
+    },
     deliveries: settings.deliveries || defaultDeliveries,
     categories,
     products,
@@ -1081,11 +1084,12 @@ export async function replaceAllDataFromSnapshot(snapshot) {
     await connection.query("DELETE FROM app_settings");
 
     await connection.query(
-      "INSERT INTO app_settings (setting_key, value_json) VALUES (?, ?), (?, ?), (?, ?)",
+      "INSERT INTO app_settings (setting_key, value_json) VALUES (?, ?), (?, ?), (?, ?), (?, ?)",
       [
         "profile", toJson(normalized.profile || defaultProfile),
         "product_options", toJson(normalized.settings || { productOptions: defaultProductOptionSettings }),
-        "deliveries", toJson(normalized.deliveries || defaultDeliveries)
+        "deliveries", toJson(normalized.deliveries || defaultDeliveries),
+        "promotions", toJson(normalized.settings?.promotions || { volumeDiscounts: [], promoCodes: [] })
       ]
     );
 
