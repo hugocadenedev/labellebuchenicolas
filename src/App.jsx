@@ -3953,38 +3953,6 @@ function AdminOrders({ orders, onOrderUpdate, onOrderFulfillmentUpdate }) {
             </div>
           ))}
         </div>
-          <div style={{ display: "grid", gap: 12 }}>
-            <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>VISUEL DE CATEGORIE</span>
-            <div style={{ display: "grid", gap: 10 }}>
-              <button
-                type="button"
-                onClick={() => updateDraft("coverProductId", "")}
-                style={{
-                  border: draft.coverProductId ? "1px solid rgba(35,41,31,.09)" : "1px solid rgba(91,50,29,.45)",
-                  background: draft.coverProductId ? "#FFFFFF" : "#F3E5D8",
-                  borderRadius: 18,
-                  padding: "14px 16px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 14,
-                  cursor: "pointer",
-                  textAlign: "left"
-                }}
-              >
-                <span style={{ display: "grid", gap: 3 }}>
-                  <strong style={{ ...sans, fontSize: 15, color: "#2C241D" }}>Aucun visuel</strong>
-                  <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>La categorie affichera un placeholder neutre tant qu'aucune image n'est choisie.</span>
-                </span>
-                <AdminPill tone={draft.coverProductId ? "neutral" : "success"}>{draft.coverProductId ? "Choisir" : "Actif"}</AdminPill>
-              </button>
-              {imageCandidates.length === 0 ? <div style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>Selectionne d'abord un produit avec une vraie image pour l'utiliser comme visuel de categorie.</div> : null}
-              {imageCandidates.map((product) => {
-                const active = draft.coverProductId === product.id;
-                return <button key={product.id} type="button" onClick={() => updateDraft("coverProductId", product.id)} style={{ border: active ? "1px solid rgba(91,50,29,.45)" : "1px solid rgba(35,41,31,.09)", background: active ? "#F3E5D8" : "#FFFFFF", borderRadius: 18, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, cursor: "pointer", textAlign: "left" }}><span style={{ display: "flex", alignItems: "center", gap: 12 }}><img src={product.image} alt={product.name} style={{ width: 52, height: 52, borderRadius: 14, objectFit: "cover", background: "#F3EEE4" }} /><span style={{ display: "grid", gap: 3 }}><strong style={{ ...sans, fontSize: 15, color: "#2C241D" }}>{product.name}</strong><span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>{product.id}</span></span></span><AdminPill tone={active ? "success" : "neutral"}>{active ? "Actif" : "Choisir"}</AdminPill></button>;
-              })}
-            </div>
-          </div>
       </div>
     </div>
   );
