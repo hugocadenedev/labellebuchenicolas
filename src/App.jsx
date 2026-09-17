@@ -18,7 +18,7 @@ import {
   products,
   reviews,
 } from "./catalog";
-import { computeShipping } from "../shared/deliveryZones.js";
+import { computeShipping, FREE_SHIPPING_MIN_STERES } from "../shared/deliveryZones.js";
 import { validatePromoCode, normalizeVolumeDiscounts, normalizePromoCodes, applyAutomaticGifts, getCategorySlugsForProduct } from "../shared/promotions.js";
 
 const tones = {
@@ -595,6 +595,9 @@ function buildProductTabsFromDraft(product) {
     return product.tabs;
   }
 
+  const isService = isServiceProduct(product);
+  const isAccessory = isAccessoryProduct(product);
+
   const overviewParagraphs = [
     product.desc || `${product.name} est pret pour une chauffe reguliere et une utilisation simple au quotidien.`
   ];
@@ -604,9 +607,33 @@ function buildProductTabsFromDraft(product) {
     );
   }
 
+  const deliveryParagraphs = isService
+    ? [
+        "Ce service est ajoute a la meme tournee que votre commande de bois : aucun deplacement supplementaire n'est facture.",
+        "Il reste ajoutable au panier jusqu'a la validation finale de la commande."
+      ]
+    : isAccessory
+      ? [
+          "Cet article est ajoutable a une livraison de bois ou a un retrait au depot, sans frais de livraison dedie.",
+          "Livraison jusqu'a 30 km : 44,00 € TTC. De 31 a 60 km : 66,00 € TTC. Au-dela de 60 km : sur devis."
+        ]
+      : [
+          `Livraison jusqu'a 30 km : 44,00 € TTC, offerte des ${FREE_SHIPPING_MIN_STERES} steres de bois commandes.`,
+          "De 31 a 60 km : 66,00 € TTC. Au-dela de 60 km, la livraison est etablie sur devis."
+        ];
+  const deliveryPoints = isService
+    ? ["Planifie sur le meme creneau que la livraison.", "Visible dans le panier et la commande finale.", "Aucun frais de deplacement supplementaire."]
+    : isAccessory
+      ? ["Compatible avec les tournees bois et le retrait depot.", "Aucun surcout logistique dedie.", "Sur devis au-dela de 60 km."]
+      : [
+          `Offerte des ${FREE_SHIPPING_MIN_STERES} steres dans la zone locale (jusqu'a 30 km).`,
+          "44,00 € TTC jusqu'a 30 km, 66,00 € TTC de 31 a 60 km.",
+          "Au-dela de 60 km : livraison sur devis."
+        ];
+
   return {
     overview: {
-      title: `Pourquoi choisir ${product.name}`,
+      title: "Description",
       paragraphs: overviewParagraphs,
       points: [
         product.humidity ? `${product.humidity}.` : null,
@@ -615,15 +642,9 @@ function buildProductTabsFromDraft(product) {
       ].filter(Boolean)
     },
     livraison: {
-      title: "Livraison et disponibilite",
-      paragraphs: [
-        "Le produit peut etre integre aux tournees locales ou prepare pour un retrait depot selon la saison.",
-        `Stock actualise depuis le back office avec ${product.stockQty ?? 0} unites disponibles.`
-      ],
-      points: [
-        "Suivi stock immediate.",
-        "Publication storefront des creation admin."
-      ]
+      title: "Comment fonctionne la livraison",
+      paragraphs: deliveryParagraphs,
+      points: deliveryPoints
     }
   };
 }
