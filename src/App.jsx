@@ -2979,6 +2979,7 @@ function createProductDraft(categories, settings, creationMode = "product") {
     availableLengths: [],
     lengthPrices: {},
     availableDryingDurations: [],
+    humidity: "",
     imageUrl: "",
     unit: "",
     status: "active"
@@ -3002,6 +3003,7 @@ function createProductDraftFromProduct(categories, product, settings) {
       [length]: product?.lengthPrices?.[length] ?? product?.price ?? ""
     }), {}),
     availableDryingDurations: product?.availableDryingDurations?.length ? product.availableDryingDurations : [product?.drying].filter(Boolean),
+    humidity: product?.humidity || "",
     imageUrl: product?.imageUrl || "",
     unit: product?.unit || "",
     status: product?.status || "active"
@@ -3544,6 +3546,7 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
         categoryId: draft.categoryId,
         family: familyLabel,
         essence: familyLabel,
+        humidity: isAccessoryCategory || isServiceCategory ? "" : draft.humidity,
         status: draft.status
       });
       setFeedback(successContext === "edition" ? (isServiceCategory ? "Service mis a jour." : "Produit mis a jour.") : (isServiceCategory ? "Service cree." : "Produit cree."));
@@ -3649,6 +3652,11 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
         {!isServiceCategory ? <label style={{ display: "grid", gap: 6 }}>
           <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>STOCK</span>
           <input value={draft.stockQty} onChange={(event) => updateDraft("stockQty", event.target.value)} placeholder="Ex: 120" type="number" min="0" className="lbb-admin-input" required />
+        </label> : null}
+        {!isAccessoryCategory && !isServiceCategory ? <label style={{ display: "grid", gap: 6 }}>
+          <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>HUMIDITÉ (optionnel)</span>
+          <input value={draft.humidity} onChange={(event) => updateDraft("humidity", event.target.value)} placeholder="Ex: 16 % humidité" className="lbb-admin-input" />
+          <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>Affiché sur la fiche produit et la carte. Laisse vide si non mesuré.</span>
         </label> : null}
         <label style={{ display: "grid", gap: 6 }}>
           <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>UNITÉ DE VENTE</span>
