@@ -1455,6 +1455,50 @@ img {
     gap: 28px;
   }
 
+  .lbb-cart-item {
+    padding: 16px 4px !important;
+    gap: 14px !important;
+  }
+
+  .lbb-cart-item-media {
+    flex: 0 0 74px !important;
+    width: 74px !important;
+  }
+
+  .lbb-cart-item-title {
+    font-size: 16px !important;
+  }
+
+  .lbb-cart-item-price {
+    margin-left: 0 !important;
+    text-align: left !important;
+    justify-items: start !important;
+    width: 100%;
+  }
+
+  .lbb-cart-item-price span:first-child {
+    font-size: 18px !important;
+  }
+
+  .lbb-cart-summary {
+    padding: 18px !important;
+    border-radius: 20px !important;
+  }
+
+  .lbb-cart-summary-title {
+    font-size: 16px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .lbb-cart-summary-lines {
+    gap: 8px !important;
+    font-size: 13.5px !important;
+  }
+
+  .lbb-cart-summary-total-amount {
+    font-size: 24px !important;
+  }
+
   .lbb-admin-table,
   .lbb-admin-table-orders,
   .lbb-admin-table-products,

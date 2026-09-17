@@ -2415,11 +2415,11 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
                 <span>{woodVolume} stères — env. {woodVolume * 450} kg</span>
               </div>
               {cartItems.map((item) => (
-                <div key={item.lineId} style={{ display: "flex", flexWrap: "wrap", gap: 24, padding: "26px 28px", borderBottom: "1px solid rgba(35,41,31,.07)", alignItems: "flex-start" }}>
-                  {!isServiceProduct(item) && item.image ? <div style={{ flex: "0 0 132px", width: 132, aspectRatio: 1, borderRadius: 20, overflow: "hidden", background: "#EADACB" }}><img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div> : null}
+                <div key={item.lineId} className="lbb-cart-item" style={{ display: "flex", flexWrap: "wrap", gap: 24, padding: "26px 28px", borderBottom: "1px solid rgba(35,41,31,.07)", alignItems: "flex-start" }}>
+                  {!isServiceProduct(item) && item.image ? <div className="lbb-cart-item-media" style={{ flex: "0 0 132px", width: 132, aspectRatio: 1, borderRadius: 20, overflow: "hidden", background: "#EADACB" }}><img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div> : null}
                   <div style={{ flex: "1 1 260px", minWidth: 0, display: "grid", gap: 10 }}>
                     <div style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#C05621" }}>{item.id.toUpperCase()}</div>
-                    <Link to={`/produit/${item.slug}`} style={{ ...sans, fontWeight: 700, fontSize: 22, letterSpacing: "-.024em", lineHeight: 1.15 }}>{item.name}</Link>
+                    <Link to={`/produit/${item.slug}`} className="lbb-cart-item-title" style={{ ...sans, fontWeight: 700, fontSize: 22, letterSpacing: "-.024em", lineHeight: 1.15 }}>{item.name}</Link>
                     {item.isGift ? <span style={{ ...mono, fontSize: 9.5, letterSpacing: ".05em", color: "#5C7752", background: "#E6EFE4", borderRadius: 999, padding: "6px 11px", width: "fit-content" }}>OFFERT · {item.giftLabel}</span> : null}
                     <div style={{ fontSize: 16.5, lineHeight: 1.5, color: "#4E5647", maxWidth: "44ch" }}>{item.desc}</div>
                     {[item.selectedLength, item.selectedDrying].some(Boolean) ? (
@@ -2442,7 +2442,7 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
                       <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".05em", color: "#8A9180", marginTop: 4 }}>{item.quantity} offert(s) automatiquement</span>
                     )}
                   </div>
-                  <div style={{ marginLeft: "auto", textAlign: "right", display: "grid", gap: 6, justifyItems: "end" }}>
+                  <div className="lbb-cart-item-price" style={{ marginLeft: "auto", textAlign: "right", display: "grid", gap: 6, justifyItems: "end" }}>
                     <span style={{ ...sans, fontWeight: 700, fontSize: 25, letterSpacing: "-.03em" }}>{formatPrice(item.price * item.quantity)}</span>
                     <span style={{ ...mono, fontSize: 10, letterSpacing: ".05em", color: "#8A9180" }}>soit {formatPrice(item.price)} l'unité TTC</span>
                     <span style={{ ...mono, fontSize: 9.5, letterSpacing: ".05em", color: "#5B321D", background: "#F3E5D8", borderRadius: 999, padding: "5px 10px", marginTop: 4 }}>{item.stockLabel}</span>
@@ -2456,9 +2456,9 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
           </div>
           <aside className="lbb-sticky-panel" style={{ minWidth: 0, display: "grid", gap: 16, position: "sticky", top: 140 }}>
             <ServiceUpsellSection siteProducts={siteProducts} cartItems={cartItems} addToCart={addToCart} title="Ajoutez la prestation qui va avec la livraison" description="" />
-            <div style={{ background: "#FFFFFF", border: "1px solid rgba(35,41,31,.09)", borderRadius: 28, padding: 28, boxShadow: "0 24px 54px -44px rgba(35,41,31,.65)" }}>
-              <h2 style={{ ...sans, fontWeight: 700, fontSize: 21, letterSpacing: "-.024em", margin: "0 0 22px" }}>Récapitulatif</h2>
-              <div style={{ display: "grid", gap: 13, fontSize: 17, color: "#4E5647" }}>
+            <div className="lbb-cart-summary" style={{ background: "#FFFFFF", border: "1px solid rgba(35,41,31,.09)", borderRadius: 28, padding: 28, boxShadow: "0 24px 54px -44px rgba(35,41,31,.65)" }}>
+              <h2 className="lbb-cart-summary-title" style={{ ...sans, fontWeight: 700, fontSize: 21, letterSpacing: "-.024em", margin: "0 0 22px" }}>Récapitulatif</h2>
+              <div className="lbb-cart-summary-lines" style={{ display: "grid", gap: 13, fontSize: 17, color: "#4E5647" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Sous-total produits HT</span><span style={{ color: "#23291F" }}>{formatPrice(totals.productsHt)}</span></div>
                 {promoResult.valid ? <div style={{ display: "flex", justifyContent: "space-between", gap: 16, color: "#5C7752" }}><span>Code {promoResult.code}</span><span>−{formatPrice(promoResult.amount)}</span></div> : null}
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA produits 10 %</span><span style={{ color: "#23291F" }}>{formatPrice(totals.productsVat)}</span></div>
@@ -2473,9 +2473,9 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
               {promoCode && !promoResult.valid && promoResult.message ? <p style={{ ...mono, fontSize: 10.5, color: "#A8501B", margin: "8px 0 0" }}>{promoResult.message}</p> : null}
               <p style={{ ...mono, fontSize: 10.5, letterSpacing: ".03em", color: "#8A9180", margin: "12px 0 0" }}>Frais estimés pour une adresse locale ; le montant définitif est calculé à l'étape suivante selon votre code postal.</p>
               <div style={{ height: 1, background: "rgba(35,41,31,.1)", margin: "22px 0" }} />
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16 }}>
+              <div className="lbb-cart-summary-total" style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16 }}>
                 <span style={{ ...sans, fontWeight: 700, fontSize: 17, letterSpacing: "-.02em" }}>Total TTC</span>
-                <span style={{ ...sans, fontWeight: 700, fontSize: 34, letterSpacing: "-.035em" }}>{formatPrice(totals.totalTtc)}</span>
+                <span className="lbb-cart-summary-total-amount" style={{ ...sans, fontWeight: 700, fontSize: 34, letterSpacing: "-.035em" }}>{formatPrice(totals.totalTtc)}</span>
               </div>
               <div style={{ ...mono, fontSize: 10.5, letterSpacing: ".05em", color: "#8A9180", marginTop: 8 }}>Ou {formatPrice(totals.totalTtc / 3)} en 3× sans frais</div>
               <Link to="/commande" className="lbb-btn lbb-btn-primary" style={{ width: "100%", justifyContent: "center", marginTop: 22 }}>Passer à la commande</Link>
