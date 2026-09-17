@@ -89,7 +89,7 @@ const defaultProductOptionSettings = {
   },
   heroProof: {
     primaryText: "Tarifs TTC avec TVA 10 %",
-    secondaryText: "Livraison offerte des 5 steres dans 30 km",
+    secondaryText: "Livraison jusqu'a 30 km : 44,00 EUR TTC",
     tertiaryText: "Offre 4 steres achetes = le 5e offert"
   }
 };
@@ -1677,7 +1677,7 @@ function HomePage({ addToCart, categories, settings, siteProducts, defaultCatego
             <div style={{ background: "#23291F", color: "#F4F7EC", borderRadius: 30, padding: "32px 34px", display: "grid", gap: 14 }}>
               <div style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#C05621" }}>Offre de lancement</div>
               <h3 style={{ ...sans, fontWeight: 700, fontSize: "clamp(28px, 3.6vw, 38px)", letterSpacing: "-.03em", margin: 0 }}>4 stères achetés = le 5e offert</h3>
-              <p style={{ fontSize: 17, lineHeight: 1.6, margin: 0, color: "#F3E5D8", maxWidth: "58ch" }}>Valable jusqu'au 20/11/2026, non cumulable avec la livraison offerte dès 5 stères.</p>
+              <p style={{ fontSize: 17, lineHeight: 1.6, margin: 0, color: "#F3E5D8", maxWidth: "58ch" }}>Valable jusqu'au 20/11/2026.</p>
             </div>
             <div style={{ marginTop: 28 }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 20 }}>
@@ -2357,7 +2357,7 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
 function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCategoryPath, account, settings, promoCode, onApplyPromoCode }) {
   const [promoInput, setPromoInput] = useState(promoCode || "");
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shippingEstimate = subtotal === 0 ? { amount: 0, label: "" } : computeShipping({ subtotalTtc: subtotal });
+  const shippingEstimate = subtotal === 0 ? { amount: 0, label: "", quoteRequired: false } : computeShipping({});
   const shipping = shippingEstimate.amount;
   const promoResult = promoCode ? validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes) : { valid: false, amount: 0, message: "" };
   const discountAmount = promoResult.valid ? promoResult.amount : 0;
@@ -2462,8 +2462,8 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Sous-total produits HT</span><span style={{ color: "#23291F" }}>{formatPrice(totals.productsHt)}</span></div>
                 {promoResult.valid ? <div style={{ display: "flex", justifyContent: "space-between", gap: 16, color: "#5C7752" }}><span>Code {promoResult.code}</span><span>−{formatPrice(promoResult.amount)}</span></div> : null}
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA produits 10 %</span><span style={{ color: "#23291F" }}>{formatPrice(totals.productsVat)}</span></div>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Livraison HT (estimation)</span><span style={{ color: "#23291F" }}>{shipping === 0 ? "Offerte" : formatPrice(totals.shippingHt)}</span></div>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA livraison 10 %</span><span style={{ color: "#23291F" }}>{shipping === 0 ? "Offerte" : formatPrice(totals.shippingVat)}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Livraison HT (estimation)</span><span style={{ color: "#23291F" }}>{shippingEstimate.quoteRequired ? "Sur devis" : formatPrice(totals.shippingHt)}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA livraison 10 %</span><span style={{ color: "#23291F" }}>{shippingEstimate.quoteRequired ? "Sur devis" : formatPrice(totals.shippingVat)}</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16, ...mono, fontSize: 11, letterSpacing: ".05em", color: "#8A9180" }}><span>Total TVA 10 %</span><span>{formatPrice(totals.totalVat)}</span></div>
               </div>
               <form onSubmit={handleApplyPromo} style={{ display: "flex", gap: 8, marginTop: 14 }}>
@@ -2564,7 +2564,7 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [promoInput, setPromoInput] = useState(promoCode || "");
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shippingResult = computeShipping({ postcode: draft.deliveryAddress.postcode, subtotalTtc: subtotal });
+  const shippingResult = computeShipping({ postcode: draft.deliveryAddress.postcode });
   const shipping = shippingResult.amount;
   const promoResult = promoCode ? validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes) : { valid: false, amount: 0, message: "" };
   const discountAmount = promoResult.valid ? promoResult.amount : 0;
@@ -2733,8 +2733,8 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Sous-total produits HT</span><strong>{formatPrice(totals.productsHt)}</strong></div>
               {promoResult.valid ? <div style={{ display: "flex", justifyContent: "space-between", gap: 16, color: "#5C7752" }}><span>Code {promoResult.code}</span><span>−{formatPrice(promoResult.amount)}</span></div> : null}
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA produits 10 %</span><strong>{formatPrice(totals.productsVat)}</strong></div>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Livraison HT</span><strong>{shipping === 0 ? "Offerte" : formatPrice(totals.shippingHt)}</strong></div>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA livraison 10 %</span><strong>{shipping === 0 ? "Offerte" : formatPrice(totals.shippingVat)}</strong></div>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Livraison HT</span><strong>{shippingResult.quoteRequired ? "Sur devis" : formatPrice(totals.shippingHt)}</strong></div>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA livraison 10 %</span><strong>{shippingResult.quoteRequired ? "Sur devis" : formatPrice(totals.shippingVat)}</strong></div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16, ...mono, fontSize: 11, color: "#8A9180" }}><span>Total TVA 10 %</span><span>{formatPrice(totals.totalVat)}</span></div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "baseline" }}><span style={{ ...sans, fontWeight: 700, fontSize: 18 }}>Total TTC</span><strong style={{ ...sans, fontWeight: 700, fontSize: 30 }}>{formatPrice(totals.totalTtc)}</strong></div>
               <form onSubmit={handleApplyPromo} style={{ display: "flex", gap: 8 }}>
@@ -4556,7 +4556,7 @@ function AdminSettings({ session, profile, settings, categories, products, custo
           </label>
           <label style={{ display: "grid", gap: 8 }}>
             <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>LIGNE 2</span>
-            <input value={heroProofSecondaryText} onChange={(event) => setHeroProofSecondaryText(event.target.value)} className="lbb-admin-input" placeholder="Ex: Livraison offerte des 5 steres dans 30 km" />
+            <input value={heroProofSecondaryText} onChange={(event) => setHeroProofSecondaryText(event.target.value)} className="lbb-admin-input" placeholder="Ex: Livraison jusqu'a 30 km : 44,00 EUR TTC" />
           </label>
         </div>
         <label style={{ display: "grid", gap: 8 }}>

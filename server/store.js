@@ -179,7 +179,7 @@ function normalizeSettings(input = {}) {
     },
     heroProof: {
       primaryText: normalizeAnnouncementText(heroProof.primaryText, "Tarifs TTC avec TVA 10 %"),
-      secondaryText: normalizeAnnouncementText(heroProof.secondaryText, "Livraison offerte des 5 steres dans 30 km"),
+      secondaryText: normalizeAnnouncementText(heroProof.secondaryText, "Livraison jusqu'a 30 km : 44,00 EUR TTC"),
       tertiaryText: normalizeAnnouncementText(heroProof.tertiaryText, "Offre 4 steres achetes = le 5e offert")
     }
   };
@@ -1074,7 +1074,7 @@ export async function createOrder(input) {
   const billingAddress = input.billingSameAsDelivery === false
     ? normalizeAddress(input.billingAddress, customerName)
     : { ...deliveryAddress };
-  const shippingResult = computeShipping({ postcode: deliveryAddress.postcode, subtotalTtc: subtotal });
+  const shippingResult = computeShipping({ postcode: deliveryAddress.postcode });
   if (shippingResult.quoteRequired) {
     throw httpError(400, "Cette adresse est hors zone de livraison automatique. Contactez-nous pour établir un devis.");
   }

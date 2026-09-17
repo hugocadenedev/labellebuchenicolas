@@ -122,7 +122,7 @@ export async function createStripeCheckoutSession(req, res, next) {
     }
 
     const subtotal = items.reduce((sum, item) => sum + Number(item.unitPrice || 0) * Number(item.quantity || 0), 0);
-    const shippingResult = computeShipping({ postcode: deliveryAddress?.postcode, subtotalTtc: subtotal });
+    const shippingResult = computeShipping({ postcode: deliveryAddress?.postcode });
     if (shippingResult.quoteRequired) {
       return res.status(400).json({ message: "Cette adresse est hors zone de livraison automatique. Contactez-nous pour établir un devis." });
     }
