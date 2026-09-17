@@ -51,6 +51,7 @@ export const deleteProduct = bindBackendMethod("deleteProduct");
 export const getBootstrap = bindBackendMethod("getBootstrap");
 export const getCustomerAccount = bindBackendMethod("getCustomerAccount");
 export const getSiteBootstrap = bindBackendMethod("getSiteBootstrap");
+export const getSettings = bindBackendMethod("getSettings");
 export const listCategories = bindBackendMethod("listCategories");
 export const listCustomers = bindBackendMethod("listCustomers");
 export const listOrders = bindBackendMethod("listOrders");

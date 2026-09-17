@@ -1,7 +1,8 @@
 import Stripe from "stripe";
 import { appConfig, isStripeEnabled, isStripeWebhookEnabled } from "./config.js";
-import { createOrder } from "./dataStore.js";
+import { createOrder, getSettings } from "./dataStore.js";
 import { computeShipping } from "../shared/deliveryZones.js";
+import { computeVolumeDiscount, validatePromoCode } from "../shared/promotions.js";
 import {
   clearPendingStripeCheckout,
   readPendingStripeCheckout,
@@ -32,6 +33,10 @@ function getBaseUrl(req) {
 
 function normalizeText(value) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function roundCurrency(value) {
+  return Math.round(Number(value || 0) * 100) / 100;
 }
 
 function buildCheckoutLineItems(items, shippingAmount) {
@@ -107,7 +112,7 @@ async function finalizePaidStripeSession(sessionId, requestBody = {}) {
 
 export async function createStripeCheckoutSession(req, res, next) {
   try {
-    const { items = [], customerId, contactEmail, deliveryAddress } = req.body || {};
+    const { items = [], customerId, contactEmail, deliveryAddress, promoCode } = req.body || {};
     if (!customerId) {
       return res.status(400).json({ message: "Compte client requis pour le paiement Stripe." });
     }
@@ -123,19 +128,40 @@ export async function createStripeCheckoutSession(req, res, next) {
     }
     const shippingAmount = shippingResult.amount;
 
+    const settings = await getSettings();
+    const volumeDiscount = computeVolumeDiscount(items, settings?.promotions?.volumeDiscounts);
+    const promoResult = validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes);
+    if (promoCode && !promoResult.valid) {
+      return res.status(400).json({ message: promoResult.message || "Code promo invalide." });
+    }
+    const discountAmount = roundCurrency(volumeDiscount.amount + promoResult.amount);
+
+    let discounts;
+    if (discountAmount > 0) {
+      const coupon = await getStripeClient().coupons.create({
+        amount_off: Math.round(discountAmount * 100),
+        currency: appConfig.stripe.currency,
+        duration: "once",
+        name: "Remise"
+      });
+      discounts = [{ coupon: coupon.id }];
+    }
+
     const session = await getStripeClient().checkout.sessions.create({
       mode: "payment",
       success_url: `${getBaseUrl(req)}/#/commande/confirmation/stripe?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${getBaseUrl(req)}/#/commande?payment=cancelled`,
       customer_email: normalizeText(contactEmail) || undefined,
       line_items: buildCheckoutLineItems(items, shippingAmount),
+      discounts,
+      invoice_creation: { enabled: true },
       metadata: {
         customerId,
         source: "la-belle-buche"
       }
     });
 
-    await savePendingStripeCheckout(session.id, { ...(req.body || {}), shippingAmount });
+    await savePendingStripeCheckout(session.id, { ...(req.body || {}), shippingAmount, discountAmount });
 
     return res.status(201).json({
       sessionId: session.id,

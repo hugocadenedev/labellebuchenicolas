@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import bcrypt from "bcryptjs";
 import { appConfig } from "./config.js";
 import { computeShipping } from "../shared/deliveryZones.js";
+import { normalizeVolumeDiscounts, normalizePromoCodes, computeVolumeDiscount, validatePromoCode } from "../shared/promotions.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -158,12 +159,17 @@ function normalizeSettings(input = {}) {
   const productOptions = input?.productOptions || {};
   const announcementBar = input?.announcementBar || {};
   const heroProof = input?.heroProof || {};
+  const promotions = input?.promotions || {};
   return {
     productOptions: {
       lengths: normalizeOptionList(productOptions.lengths, defaultProductOptionSettings.lengths),
       dryingDurations: normalizeOptionList(productOptions.dryingDurations, defaultProductOptionSettings.dryingDurations)
     },
     deliverySlots: normalizeOptionList(input?.deliverySlots, []),
+    promotions: {
+      volumeDiscounts: normalizeVolumeDiscounts(promotions.volumeDiscounts),
+      promoCodes: normalizePromoCodes(promotions.promoCodes)
+    },
     announcementBar: {
       primaryText: normalizeAnnouncementText(announcementBar.primaryText, "Tarifs TTC · TVA 10 %"),
       secondaryText: normalizeAnnouncementText(announcementBar.secondaryText, "Livraison jusqu'a 30 km : 44,00 EUR TTC"),
@@ -723,6 +729,11 @@ export async function getSiteBootstrap() {
   };
 }
 
+export async function getSettings() {
+  const data = await readStore();
+  return data.settings;
+}
+
 export async function updateSettings(input) {
   const data = await readStore();
   data.profile = normalizeProfile({
@@ -1047,6 +1058,13 @@ export async function createOrder(input) {
   });
 
   const subtotal = roundCurrency(items.reduce((sum, item) => sum + item.total, 0));
+  const discountItems = items.map((item) => ({ category: item.product.category, price: item.unitPrice, quantity: item.quantity }));
+  const volumeDiscount = computeVolumeDiscount(discountItems, data.settings?.promotions?.volumeDiscounts);
+  const promoResult = validatePromoCode(input.promoCode, subtotal, data.settings?.promotions?.promoCodes);
+  if (input.promoCode && !promoResult.valid) {
+    throw httpError(400, promoResult.message || "Code promo invalide.");
+  }
+  const discountAmount = roundCurrency(volumeDiscount.amount + promoResult.amount);
   const paymentMethod = normalizeText(input.paymentMethod) || "Carte bancaire";
   const slot = normalizeText(input.slot) || "À planifier";
   const logisticsNote = normalizeText(input.logisticsNote);
@@ -1062,7 +1080,7 @@ export async function createOrder(input) {
     throw httpError(400, "Cette adresse est hors zone de livraison automatique. Contactez-nous pour établir un devis.");
   }
   const shippingAmount = shippingResult.amount;
-  const total = roundCurrency(subtotal + shippingAmount);
+  const total = roundCurrency(subtotal - discountAmount + shippingAmount);
   const taxAmount = roundCurrency(total / 6);
   const now = new Date().toISOString();
   const status = normalizeText(input.status) || (paymentMethod === "Paiement à la livraison" ? "pending" : "paid");
@@ -1102,6 +1120,8 @@ export async function createOrder(input) {
     paymentMethod,
     paymentReference,
     shippingAmount,
+    discountAmount,
+    promoCode: promoResult.valid ? promoResult.code : "",
     taxAmount,
     contactEmail,
     contactPhone,

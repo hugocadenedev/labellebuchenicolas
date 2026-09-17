@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { getDbPool, withTransaction } from "./db.js";
 import { appConfig } from "./config.js";
 import { computeShipping } from "../shared/deliveryZones.js";
+import { normalizeVolumeDiscounts, normalizePromoCodes, computeVolumeDiscount, validatePromoCode } from "../shared/promotions.js";
 
 function sanitizeStoreStrings(value) {
   if (Array.isArray(value)) {
@@ -154,12 +155,17 @@ function normalizeSettings(input = {}) {
   const productOptions = input?.productOptions || {};
   const announcementBar = input?.announcementBar || {};
   const heroProof = input?.heroProof || {};
+  const promotions = input?.promotions || {};
   return {
     productOptions: {
       lengths: normalizeOptionList(productOptions.lengths, defaultProductOptionSettings.lengths),
       dryingDurations: normalizeOptionList(productOptions.dryingDurations, defaultProductOptionSettings.dryingDurations)
     },
     deliverySlots: normalizeOptionList(input?.deliverySlots, []),
+    promotions: {
+      volumeDiscounts: normalizeVolumeDiscounts(promotions.volumeDiscounts),
+      promoCodes: normalizePromoCodes(promotions.promoCodes)
+    },
     announcementBar: {
       primaryText: normalizeAnnouncementText(announcementBar.primaryText, "Tarifs TTC · TVA 10 %"),
       secondaryText: normalizeAnnouncementText(announcementBar.secondaryText, "Livraison jusqu'a 30 km : 44,00 EUR TTC"),
@@ -935,6 +941,7 @@ async function readSqlState() {
       o.payment_method_label,
       o.payment_reference,
       o.shipping_amount,
+      o.discount_amount,
       o.tax_amount,
       o.customer_email,
       o.customer_phone,
@@ -1024,6 +1031,7 @@ async function readSqlState() {
       paymentMethod: row.payment_method_label || "",
       paymentReference: row.payment_reference || "",
       shippingAmount: Number(row.shipping_amount || 0),
+      discountAmount: Number(row.discount_amount || 0),
       taxAmount: Number(row.tax_amount || 0),
       contactEmail: row.customer_email || "",
       contactPhone: row.customer_phone || "",
@@ -1274,8 +1282,8 @@ export async function replaceAllDataFromSnapshot(snapshot) {
             : "pending";
       await connection.query(
         `INSERT INTO orders
-          (external_id, order_number, customer_id, status, status_label, payment_status, fulfillment_status, fulfillment_label, customer_name, customer_email, customer_phone, channel, slot_label, payment_method_label, payment_reference, delivery_truck, subtotal_amount, shipping_amount, tax_amount, total_amount, logistics_note, internal_note_title, internal_note, timeline_json, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)` ,
+          (external_id, order_number, customer_id, status, status_label, payment_status, fulfillment_status, fulfillment_label, customer_name, customer_email, customer_phone, channel, slot_label, payment_method_label, payment_reference, delivery_truck, subtotal_amount, discount_amount, shipping_amount, tax_amount, total_amount, logistics_note, internal_note_title, internal_note, timeline_json, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)` ,
         [
           orderInput.id,
           orderInput.id,
@@ -1294,6 +1302,7 @@ export async function replaceAllDataFromSnapshot(snapshot) {
           orderInput.paymentReference || null,
           orderInput.deliveryTruck || null,
           Number((orderInput.items || []).reduce((sum, item) => sum + Number(item.total || 0), 0)),
+          Number(orderInput.discountAmount || 0),
           Number(orderInput.shippingAmount || 0),
           Number(orderInput.taxAmount || 0),
           Number(orderInput.total || 0),
@@ -1401,6 +1410,11 @@ export async function getSiteBootstrap() {
     products: data.products.map(makeProductView),
     account: buildAccountView(data)
   };
+}
+
+export async function getSettings() {
+  const data = await readStore();
+  return data.settings;
 }
 
 export async function updateSettings(input) {
@@ -1735,6 +1749,13 @@ export async function createOrder(input) {
   });
 
   const subtotal = roundCurrency(items.reduce((sum, item) => sum + item.total, 0));
+  const discountItems = items.map((item) => ({ category: item.product.category, price: item.unitPrice, quantity: item.quantity }));
+  const volumeDiscount = computeVolumeDiscount(discountItems, data.settings?.promotions?.volumeDiscounts);
+  const promoResult = validatePromoCode(input.promoCode, subtotal, data.settings?.promotions?.promoCodes);
+  if (input.promoCode && !promoResult.valid) {
+    throw httpError(400, promoResult.message || "Code promo invalide.");
+  }
+  const discountAmount = roundCurrency(volumeDiscount.amount + promoResult.amount);
   const paymentMethod = normalizeText(input.paymentMethod) || "Carte bancaire";
   const slot = normalizeText(input.slot) || "À planifier";
   const logisticsNote = normalizeText(input.logisticsNote);
@@ -1750,7 +1771,7 @@ export async function createOrder(input) {
     throw httpError(400, "Cette adresse est hors zone de livraison automatique. Contactez-nous pour établir un devis.");
   }
   const shippingAmount = shippingResult.amount;
-  const total = roundCurrency(subtotal + shippingAmount);
+  const total = roundCurrency(subtotal - discountAmount + shippingAmount);
   const taxAmount = roundCurrency(total / 6);
   const now = new Date().toISOString();
   const status = normalizeText(input.status) || (paymentMethod === "Paiement à la livraison" ? "pending" : "paid");
@@ -1790,6 +1811,8 @@ export async function createOrder(input) {
     paymentMethod,
     paymentReference,
     shippingAmount,
+    discountAmount,
+    promoCode: promoResult.valid ? promoResult.code : "",
     taxAmount,
     contactEmail,
     contactPhone,

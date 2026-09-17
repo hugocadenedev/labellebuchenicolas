@@ -142,6 +142,27 @@
       ]
     },
     "deliverySlots": [],
+    "promotions": {
+      "volumeDiscounts": [
+        {
+          "id": "vol_a9d8qy1",
+          "label": "4 achetes = le 5e offert",
+          "categorySlug": "",
+          "buyQuantity": 4,
+          "freeQuantity": 1,
+          "active": true
+        }
+      ],
+      "promoCodes": [
+        {
+          "code": "BIENVENUE10",
+          "type": "percent",
+          "value": 10,
+          "minSubtotal": 0,
+          "active": true
+        }
+      ]
+    },
     "announcementBar": {
       "primaryText": "Tarifs TTC · TVA 10 %",
       "secondaryText": "Livraison jusqu'a 30 km : 44,00 EUR TTC",
@@ -164,7 +185,7 @@
       "role": "super_admin",
       "isActive": true,
       "passwordHash": "$2a$10$bn8BUnDPUcjjUYtMXIUr5.Gh3nBnMhknLxiSnd0KSJnTn39bIGz2O",
-      "lastLoginAt": "2026-09-17T14:37:51.320Z"
+      "lastLoginAt": "2026-09-17T21:36:33.429Z"
     }
   ]
 }

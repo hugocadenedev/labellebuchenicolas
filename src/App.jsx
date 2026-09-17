@@ -19,6 +19,7 @@ import {
   reviews,
 } from "./catalog";
 import { computeShipping } from "../shared/deliveryZones.js";
+import { validatePromoCode, normalizeVolumeDiscounts, normalizePromoCodes, applyAutomaticGifts } from "../shared/promotions.js";
 
 const tones = {
   dark: { background: "#23291F", color: "#F4F7EC" },
@@ -75,6 +76,10 @@ const defaultProductOptionSettings = {
     dryingDurations: ["Seche 18 mois", "Seche 2 ans", "Seche 2 ans et demi"]
   },
   deliverySlots: [],
+  promotions: {
+    volumeDiscounts: [],
+    promoCodes: []
+  },
   announcementBar: {
     primaryText: "Tarifs TTC · TVA 10 %",
     secondaryText: "Livraison jusqu'a 30 km : 44,00 EUR TTC",
@@ -419,6 +424,7 @@ function normalizeProductOptionSettings(settings) {
   const deliverySlots = uniqueByValue(Array.isArray(settings?.deliverySlots) ? settings.deliverySlots : []);
   const announcementBar = settings?.announcementBar || {};
   const heroProof = settings?.heroProof || {};
+  const promotions = settings?.promotions || {};
 
   return {
     productOptions: {
@@ -426,6 +432,10 @@ function normalizeProductOptionSettings(settings) {
       dryingDurations: dryingDurations.length > 0 ? dryingDurations : [...defaultProductOptionSettings.productOptions.dryingDurations]
     },
     deliverySlots,
+    promotions: {
+      volumeDiscounts: normalizeVolumeDiscounts(promotions.volumeDiscounts),
+      promoCodes: normalizePromoCodes(promotions.promoCodes)
+    },
     announcementBar: {
       primaryText: normalizeAnnouncementText(announcementBar.primaryText, defaultProductOptionSettings.announcementBar.primaryText),
       secondaryText: normalizeAnnouncementText(announcementBar.secondaryText, defaultProductOptionSettings.announcementBar.secondaryText),
@@ -876,6 +886,7 @@ function buildOrderRequest(draft, customerId, cartItems, shippingAmount) {
     items: cartItems.map((item) => ({
       productId: item.id,
       name: item.name,
+      category: item.category,
       quantity: item.quantity,
       length: item.selectedLength,
       drying: item.selectedDrying,
@@ -902,6 +913,15 @@ function StorefrontApp() {
   const [customerSession, setCustomerSession] = useState(() => readCustomerSession());
   const [customerAccount, setCustomerAccount] = useState(null);
   const [accountStatus, setAccountStatus] = useState(() => readCustomerSession() ? "loading" : "idle");
+  const [promoCode, setPromoCode] = useState(() => window.localStorage.getItem("lbb-promo-code") || "");
+
+  useEffect(() => {
+    if (promoCode) {
+      window.localStorage.setItem("lbb-promo-code", promoCode);
+    } else {
+      window.localStorage.removeItem("lbb-promo-code");
+    }
+  }, [promoCode]);
   const [cart, setCart] = useState(() => {
     const stored = window.localStorage.getItem("lbb-cart");
     return stored ? normalizeCartState(JSON.parse(stored)) : normalizeCartState({ "chene-33": 2, "hetre-33": 1, "filet-bois-allumage-50l": 1 });
@@ -1003,7 +1023,11 @@ function StorefrontApp() {
       selectedDrying
     };
   }).filter(Boolean);
-  const cartCount = cartItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  const cartItemsWithGifts = useMemo(
+    () => applyAutomaticGifts(cartItems, siteSettings.promotions.volumeDiscounts),
+    [cartItems, siteSettings]
+  );
+  const cartCount = cartItemsWithGifts.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
 
   useEffect(() => {
     if (siteStatus !== "ready" || siteProducts.length === 0) {
@@ -1101,7 +1125,7 @@ function StorefrontApp() {
 
     const payload = await apiRequest("/api/orders", {
       method: "POST",
-      body: JSON.stringify(buildOrderRequest(draft, customerSession.id, cartItems, Number(draft.shippingAmount || 0)))
+      body: JSON.stringify(buildOrderRequest(draft, customerSession.id, cartItemsWithGifts, Number(draft.shippingAmount || 0)))
     });
 
     setCart({});
@@ -1116,7 +1140,7 @@ function StorefrontApp() {
       throw new Error("Connectez-vous avant de valider la commande.");
     }
 
-    const orderRequest = buildOrderRequest(draft, customerSession.id, cartItems, Number(draft.shippingAmount || 0));
+    const orderRequest = buildOrderRequest(draft, customerSession.id, cartItemsWithGifts, Number(draft.shippingAmount || 0));
     persistPendingStripeCheckout({
       orderRequest,
       createdAt: new Date().toISOString()
@@ -1160,15 +1184,15 @@ function StorefrontApp() {
         <Route path="/categorie/:slug" element={<CategoryPage addToCart={addToCart} categories={storefrontCategories} siteProducts={storefrontProducts} defaultCategoryPath={defaultCategoryPath} siteStatus={siteStatus} />} />
         <Route path="/produit/:slug" element={<ProductPage addToCart={addToCart} categories={storefrontCategories} settings={siteSettings} siteProducts={storefrontProducts} defaultCategoryPath={defaultCategoryPath} siteStatus={siteStatus} />} />
         <Route path="/estimation-consommation" element={<ConsumptionEstimatorPage siteProducts={storefrontProducts} defaultCategoryPath={defaultCategoryPath} onPrepareCart={prepareEstimatedCart} />} />
-        <Route path="/panier" element={<CartPage cartItems={cartItems} setQuantity={setQuantity} addToCart={addToCart} siteProducts={siteProducts} defaultCategoryPath={defaultCategoryPath} account={activeAccount} />} />
-        <Route path="/commande" element={<CheckoutPage cartItems={cartItems} addToCart={addToCart} siteProducts={siteProducts} settings={siteSettings} account={activeAccount} defaultCategoryPath={defaultCategoryPath} onLogin={handleCustomerLogin} onRegister={handleCustomerRegister} onPlaceOrder={handlePlaceOrder} onStartStripeCheckout={handleStartStripeCheckout} />} />
+        <Route path="/panier" element={<CartPage cartItems={cartItemsWithGifts} setQuantity={setQuantity} addToCart={addToCart} siteProducts={siteProducts} defaultCategoryPath={defaultCategoryPath} account={activeAccount} settings={siteSettings} promoCode={promoCode} onApplyPromoCode={setPromoCode} />} />
+        <Route path="/commande" element={<CheckoutPage cartItems={cartItemsWithGifts} addToCart={addToCart} siteProducts={siteProducts} settings={siteSettings} account={activeAccount} defaultCategoryPath={defaultCategoryPath} onLogin={handleCustomerLogin} onRegister={handleCustomerRegister} onPlaceOrder={handlePlaceOrder} onStartStripeCheckout={handleStartStripeCheckout} promoCode={promoCode} onApplyPromoCode={setPromoCode} />} />
         <Route path="/commande/confirmation/stripe" element={<StripeCheckoutConfirmationPage onConfirmStripeCheckout={handleConfirmStripeCheckout} />} />
         <Route path="/commande/confirmation/:orderId" element={<CheckoutConfirmationPage account={activeAccount} defaultCategoryPath={defaultCategoryPath} />} />
         <Route path="/compte" element={<AccountPage account={activeAccount} accountStatus={accountStatus} onLogin={handleCustomerLogin} onRegister={handleCustomerRegister} onLogout={handleCustomerLogout} />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <CartDrawer cartItems={cartItems} setQuantity={setQuantity} isOpen={isCartDrawerOpen} onClose={() => setCartDrawerOpen(false)} defaultCategoryPath={defaultCategoryPath} />
+      <CartDrawer cartItems={cartItemsWithGifts} setQuantity={setQuantity} isOpen={isCartDrawerOpen} onClose={() => setCartDrawerOpen(false)} defaultCategoryPath={defaultCategoryPath} />
       <SiteFooter />
     </div>
   );
@@ -1436,19 +1460,21 @@ function CartDrawer({ cartItems, setQuantity, isOpen, onClose, defaultCategoryPa
                   <div style={{ minWidth: 0, display: "grid", gap: 6 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start" }}>
                       <div style={{ minWidth: 0 }}>
-                        <strong style={{ ...sans, display: "block", fontWeight: 700, fontSize: 18, lineHeight: 1.2, letterSpacing: "-.02em", color: "#5B321D" }}>{item.name}</strong>
-                        <span style={{ display: "block", marginTop: 4, ...mono, fontSize: 10.5, lineHeight: 1.55, color: "#8A9180" }}>{[...([item.selectedLength, item.selectedDrying].filter(Boolean)), item.unit ? item.unit.replace("/ ", "") : ""].filter(Boolean).join(" · ")}</span>
+                        <strong style={{ ...sans, display: "block", fontWeight: 700, fontSize: 18, lineHeight: 1.2, letterSpacing: "-.02em", color: "#5B321D" }}>{item.name}{item.isGift ? <span style={{ ...mono, fontSize: 9.5, letterSpacing: ".05em", color: "#5C7752", background: "#E6EFE4", borderRadius: 999, padding: "3px 8px", marginLeft: 8 }}>OFFERT</span> : null}</strong>
+                        <span style={{ display: "block", marginTop: 4, ...mono, fontSize: 10.5, lineHeight: 1.55, color: "#8A9180" }}>{item.isGift ? item.giftLabel : (isServiceProduct(item) ? [item.unit ? item.unit.replace("/ ", "") : ""] : [...([item.selectedLength, item.selectedDrying].filter(Boolean)), item.unit ? item.unit.replace("/ ", "") : ""]).filter(Boolean).join(" · ")}</span>
                       </div>
                       <span style={{ ...sans, fontWeight: 700, fontSize: 18, whiteSpace: "nowrap", color: "#55715B" }}>{formatPrice(item.price * item.quantity)}</span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                      <div className="lbb-cart-drawer-stepper">
-                        <button type="button" onClick={() => setQuantity(item.lineId, item.quantity - 1)} aria-label={`Retirer une unité de ${item.name}`}>−</button>
-                        <span>{item.quantity}</span>
-                        <button type="button" onClick={() => setQuantity(item.lineId, item.quantity + 1)} aria-label={`Ajouter une unité de ${item.name}`}>+</button>
+                    {!item.isGift ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                        <div className="lbb-cart-drawer-stepper">
+                          <button type="button" onClick={() => setQuantity(item.lineId, item.quantity - 1)} aria-label={`Retirer une unité de ${item.name}`}>−</button>
+                          <span>{item.quantity}</span>
+                          <button type="button" onClick={() => setQuantity(item.lineId, item.quantity + 1)} aria-label={`Ajouter une unité de ${item.name}`}>+</button>
+                        </div>
+                        <button type="button" onClick={() => setQuantity(item.lineId, 0)} style={{ border: 0, background: "transparent", cursor: "pointer", ...mono, fontSize: 10.5, color: "#A8AE9C", padding: 0 }}>Retirer</button>
                       </div>
-                      <button type="button" onClick={() => setQuantity(item.lineId, 0)} style={{ border: 0, background: "transparent", cursor: "pointer", ...mono, fontSize: 10.5, color: "#A8AE9C", padding: 0 }}>Retirer</button>
-                    </div>
+                    ) : null}
                   </div>
                 </article>
               ))}
@@ -2216,7 +2242,7 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
             <div style={{ display: "grid", gap: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
                 <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>{isService ? "QUANTITÉ DE PRESTATIONS" : isAccessory ? "QUANTITÉ" : "NOMBRE DE STÈRES"}</span>
-                <span style={{ ...mono, fontSize: 10.5, color: qty >= 5 ? "#5B321D" : "#C05621" }}>{isService ? "Service ajoutable avant validation de la commande" : isAccessory ? "Ajoutable à une livraison ou à un retrait dépôt" : qty >= 5 ? "Livraison offerte jusqu'à 30 km" : ""}</span>
+                <span style={{ ...mono, fontSize: 10.5, color: "#C05621" }}>{isService ? "Service ajoutable avant validation de la commande" : isAccessory ? "Ajoutable à une livraison ou à un retrait dépôt" : ""}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 18, border: "1px solid rgba(35,41,31,.14)", borderRadius: 999, padding: "10px 20px" }}>
@@ -2239,25 +2265,11 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
                 </div>
                 <span style={{ ...mono, fontSize: 11, color: "#4E5647" }}>Total {qty} {quantityUnitLabel} · <span style={{ color: "#23291F" }}>{formatPrice(total)}</span> · tarifs TTC TVA 10 %</span>
               </div>
-              <span style={{ ...mono, fontSize: 10.5, color: "#FBF6EE", background: "#5B321D", borderRadius: 999, padding: "9px 14px" }}>{isService ? "Planifié avec votre livraison" : isAccessory ? "Retrait dépôt ou ajout à la tournée" : qty >= 5 ? "Livraison offerte jusqu'à 30 km" : "Livraison 44 € TTC jusqu'à 30 km"}</span>
             </div>
             <div className="lbb-cta-grid" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 10 }}>
               <button type="button" onClick={() => addToCart(activeProduct.id, qty, isAccessory || isService ? { unitPrice: activeUnitPrice } : { length, drying, unitPrice: activeUnitPrice })} className="lbb-btn lbb-btn-primary" style={{ width: "100%", justifyContent: "center" }}>Ajouter {qty} {quantityUnitLabel}</button>
               {!isService ? <Link to="/estimation-consommation" className="lbb-btn lbb-btn-secondary" style={{ justifyContent: "center" }}>Estimer ma consommation</Link> : <Link to="/panier" className="lbb-btn lbb-btn-secondary" style={{ justifyContent: "center" }}>Voir mon panier</Link>}
             </div>
-            {!isService ? <div style={{ display: "grid", gap: 10, background: "#F7F8F1", borderRadius: 18, padding: "18px 20px" }}>
-              <div style={{ ...mono, fontSize: 10.5, letterSpacing: ".07em", color: "#8A9180" }}>LIVRAISON — VÉRIFIER MA COMMUNE</div>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-                <input placeholder="Code postal" maxLength="5" style={{ background: "#FFFFFF", border: "1px solid rgba(35,41,31,.14)", color: "#23291F", ...mono, fontSize: 13.5, letterSpacing: ".06em", padding: "12px 16px", width: 140, borderRadius: 999, outline: 0 }} />
-                <button type="button" className="lbb-btn lbb-btn-dark">Vérifier</button>
-                <span style={{ ...mono, fontSize: 11.5, color: "#5B321D" }}>Zone 1 couverte sous 5 jours ouvrés</span>
-              </div>
-            </div> : null}
-            {!isService ? <div className="lbb-mini-features" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, ...mono, fontSize: 10.5, lineHeight: 1.6, color: "#6B7263" }}>
-              <span>Créneau de 2 h<br />confirmé par SMS</span>
-              <span>Humidimètre<br />présenté au déchargement</span>
-              <span>Rangement au bûcher<br />+39 € / stère</span>
-            </div> : null}
           </div>
         </div>
       </section>
@@ -2328,13 +2340,25 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
   );
 }
 
-function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCategoryPath, account }) {
+function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCategoryPath, account, settings, promoCode, onApplyPromoCode }) {
+  const [promoInput, setPromoInput] = useState(promoCode || "");
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shippingEstimate = subtotal === 0 ? { amount: 0, label: "" } : computeShipping({ subtotalTtc: subtotal });
   const shipping = shippingEstimate.amount;
-  const totals = buildVatBreakdown(subtotal, shipping);
-  const hasDiscount = subtotal >= 560;
+  const promoResult = promoCode ? validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes) : { valid: false, amount: 0, message: "" };
+  const discountAmount = promoResult.valid ? promoResult.amount : 0;
+  const totals = buildVatBreakdown(Math.max(0, subtotal - discountAmount), shipping);
   const woodVolume = cartItems.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + item.quantity, 0);
+
+  function handleApplyPromo(event) {
+    event.preventDefault();
+    onApplyPromoCode(promoInput.trim());
+  }
+
+  function handleRemovePromo() {
+    setPromoInput("");
+    onApplyPromoCode("");
+  }
 
   return (
     <main>
@@ -2382,6 +2406,7 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
                   <div style={{ flex: "1 1 260px", minWidth: 0, display: "grid", gap: 10 }}>
                     <div style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#C05621" }}>{item.id.toUpperCase()}</div>
                     <Link to={`/produit/${item.slug}`} style={{ ...sans, fontWeight: 700, fontSize: 22, letterSpacing: "-.024em", lineHeight: 1.15 }}>{item.name}</Link>
+                    {item.isGift ? <span style={{ ...mono, fontSize: 9.5, letterSpacing: ".05em", color: "#5C7752", background: "#E6EFE4", borderRadius: 999, padding: "6px 11px", width: "fit-content" }}>OFFERT · {item.giftLabel}</span> : null}
                     <div style={{ fontSize: 16.5, lineHeight: 1.5, color: "#4E5647", maxWidth: "44ch" }}>{item.desc}</div>
                     {[item.selectedLength, item.selectedDrying].some(Boolean) ? (
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", ...mono, fontSize: 9.5, letterSpacing: ".05em" }}>
@@ -2389,15 +2414,19 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
                         {item.selectedDrying ? <span style={{ background: "#F5EFE2", color: "#8A6B3C", borderRadius: 999, padding: "6px 11px" }}>{item.selectedDrying}</span> : null}
                       </div>
                     ) : null}
-                    <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", marginTop: 4, ...mono, fontSize: 10.5, letterSpacing: ".05em" }}>
-                      <div style={{ display: "flex", alignItems: "center", border: "1px solid rgba(35,41,31,.14)", borderRadius: 999, overflow: "hidden" }}>
-                        <button type="button" onClick={() => setQuantity(item.lineId, item.quantity - 1)} style={{ border: 0, background: "transparent", cursor: "pointer", width: 38, height: 38, fontSize: 15, color: "#5B321D" }}>−</button>
-                        <span style={{ minWidth: 58, textAlign: "center", ...sans, fontWeight: 700, fontSize: 14, color: "#23291F" }}>{item.quantity}</span>
-                        <button type="button" onClick={() => setQuantity(item.lineId, item.quantity + 1)} style={{ border: 0, background: "transparent", cursor: "pointer", width: 38, height: 38, fontSize: 15, color: "#5B321D" }}>+</button>
+                    {!item.isGift ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", marginTop: 4, ...mono, fontSize: 10.5, letterSpacing: ".05em" }}>
+                        <div style={{ display: "flex", alignItems: "center", border: "1px solid rgba(35,41,31,.14)", borderRadius: 999, overflow: "hidden" }}>
+                          <button type="button" onClick={() => setQuantity(item.lineId, item.quantity - 1)} style={{ border: 0, background: "transparent", cursor: "pointer", width: 38, height: 38, fontSize: 15, color: "#5B321D" }}>−</button>
+                          <span style={{ minWidth: 58, textAlign: "center", ...sans, fontWeight: 700, fontSize: 14, color: "#23291F" }}>{item.quantity}</span>
+                          <button type="button" onClick={() => setQuantity(item.lineId, item.quantity + 1)} style={{ border: 0, background: "transparent", cursor: "pointer", width: 38, height: 38, fontSize: 15, color: "#5B321D" }}>+</button>
+                        </div>
+                        <span style={{ color: "#8A9180" }}>{formatPrice(item.price)} / unité TTC</span>
+                        <button type="button" onClick={() => setQuantity(item.lineId, 0)} style={{ border: 0, background: "transparent", cursor: "pointer", ...mono, fontSize: 10.5, letterSpacing: ".06em", color: "#A8AE9C", padding: 0 }}>Retirer</button>
                       </div>
-                      <span style={{ color: "#8A9180" }}>{formatPrice(item.price)} / unité TTC</span>
-                      <button type="button" onClick={() => setQuantity(item.lineId, 0)} style={{ border: 0, background: "transparent", cursor: "pointer", ...mono, fontSize: 10.5, letterSpacing: ".06em", color: "#A8AE9C", padding: 0 }}>Retirer</button>
-                    </div>
+                    ) : (
+                      <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".05em", color: "#8A9180", marginTop: 4 }}>{item.quantity} offert(s) automatiquement</span>
+                    )}
                   </div>
                   <div style={{ marginLeft: "auto", textAlign: "right", display: "grid", gap: 6, justifyItems: "end" }}>
                     <span style={{ ...sans, fontWeight: 700, fontSize: 25, letterSpacing: "-.03em" }}>{formatPrice(item.price * item.quantity)}</span>
@@ -2406,23 +2435,28 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
                   </div>
                 </div>
               ))}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, padding: "20px 28px", background: "#F7F4EA" }}>
-                <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".06em", color: "#6B7263" }}>Palettes et sacs voyagent dans le même camion que les stères.</span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 20, padding: "20px 28px", background: "#F7F4EA" }}>
                 <Link to={defaultCategoryPath} style={{ ...mono, fontSize: 10.5, letterSpacing: ".06em", color: "#5B321D", borderBottom: "1px solid rgba(91,50,29,.35)" }}>Ajouter un autre produit</Link>
               </div>
             </div>
           </div>
           <aside className="lbb-sticky-panel" style={{ minWidth: 0, display: "grid", gap: 16, position: "sticky", top: 140 }}>
+            <ServiceUpsellSection siteProducts={siteProducts} cartItems={cartItems} addToCart={addToCart} title="Ajoutez la prestation qui va avec la livraison" description="" />
             <div style={{ background: "#FFFFFF", border: "1px solid rgba(35,41,31,.09)", borderRadius: 28, padding: 28, boxShadow: "0 24px 54px -44px rgba(35,41,31,.65)" }}>
               <h2 style={{ ...sans, fontWeight: 700, fontSize: 21, letterSpacing: "-.024em", margin: "0 0 22px" }}>Récapitulatif</h2>
               <div style={{ display: "grid", gap: 13, fontSize: 17, color: "#4E5647" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Sous-total produits HT</span><span style={{ color: "#23291F" }}>{formatPrice(totals.productsHt)}</span></div>
+                {promoResult.valid ? <div style={{ display: "flex", justifyContent: "space-between", gap: 16, color: "#5C7752" }}><span>Code {promoResult.code}</span><span>−{formatPrice(promoResult.amount)}</span></div> : null}
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA produits 10 %</span><span style={{ color: "#23291F" }}>{formatPrice(totals.productsVat)}</span></div>
-                {hasDiscount && <div style={{ display: "flex", justifyContent: "space-between", gap: 16, color: "#C05621" }}><span>Remise lot volume</span><span>incluse</span></div>}
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Livraison HT (estimation)</span><span style={{ color: "#23291F" }}>{shipping === 0 ? "Offerte" : formatPrice(totals.shippingHt)}</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA livraison 10 %</span><span style={{ color: "#23291F" }}>{shipping === 0 ? "Offerte" : formatPrice(totals.shippingVat)}</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16, ...mono, fontSize: 11, letterSpacing: ".05em", color: "#8A9180" }}><span>Total TVA 10 %</span><span>{formatPrice(totals.totalVat)}</span></div>
               </div>
+              <form onSubmit={handleApplyPromo} style={{ display: "flex", gap: 8, marginTop: 14 }}>
+                <input value={promoInput} onChange={(event) => setPromoInput(event.target.value)} placeholder="Code promo" className="lbb-admin-input" style={{ flex: 1, minHeight: 40 }} />
+                {promoCode ? <button type="button" onClick={handleRemovePromo} className="lbb-btn lbb-btn-secondary lbb-btn-small">Retirer</button> : <button type="submit" className="lbb-btn lbb-btn-secondary lbb-btn-small">Appliquer</button>}
+              </form>
+              {promoCode && !promoResult.valid && promoResult.message ? <p style={{ ...mono, fontSize: 10.5, color: "#A8501B", margin: "8px 0 0" }}>{promoResult.message}</p> : null}
               <p style={{ ...mono, fontSize: 10.5, letterSpacing: ".03em", color: "#8A9180", margin: "12px 0 0" }}>Frais estimés pour une adresse locale ; le montant définitif est calculé à l'étape suivante selon votre code postal.</p>
               <div style={{ height: 1, background: "rgba(35,41,31,.1)", margin: "22px 0" }} />
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16 }}>
@@ -2438,7 +2472,6 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
               <div style={{ ...mono, fontSize: 10, letterSpacing: ".05em", color: "#9AA391", marginBottom: 16 }}>{account?.activeOrderStatus || "Créez votre compte pour suivre vos commandes."}</div>
               <Link to="/compte" style={{ ...mono, fontSize: 10.5, letterSpacing: ".06em", color: "#F4F7EC", borderBottom: "1px solid rgba(244,247,236,.35)" }}>Voir mon espace client →</Link>
             </div>
-            <ServiceUpsellSection siteProducts={siteProducts} cartItems={cartItems} addToCart={addToCart} title="Ajoutez la prestation qui va avec la livraison" description="Rangement, aide au déchargement ou autre service configurable depuis le back office." />
           </aside>
         </section>
       )}
@@ -2509,21 +2542,21 @@ function CustomerAuthCard({ title, description, initialMode = "login", onLogin, 
   );
 }
 
-function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, defaultCategoryPath, onLogin, onRegister, onPlaceOrder, onStartStripeCheckout }) {
+function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, defaultCategoryPath, onLogin, onRegister, onPlaceOrder, onStartStripeCheckout, promoCode, onApplyPromoCode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [draft, setDraft] = useState(() => buildCheckoutDraft(account));
   const [feedback, setFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [promoInput, setPromoInput] = useState(promoCode || "");
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shippingResult = computeShipping({ postcode: draft.deliveryAddress.postcode, subtotalTtc: subtotal });
   const shipping = shippingResult.amount;
-  const totals = buildVatBreakdown(subtotal, shipping);
+  const promoResult = promoCode ? validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes) : { valid: false, amount: 0, message: "" };
+  const discountAmount = promoResult.valid ? promoResult.amount : 0;
+  const totals = buildVatBreakdown(Math.max(0, subtotal - discountAmount), shipping);
   const searchParams = new URLSearchParams(location.search);
   const stripeCancelled = searchParams.get("payment") === "cancelled";
-  const slotOptions = account?.deliveries?.length
-    ? account.deliveries.map((slot) => `${slot.day} · ${slot.hours}`)
-    : settings?.deliverySlots || [];
 
   useEffect(() => {
     setDraft(buildCheckoutDraft(account));
@@ -2532,6 +2565,16 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
 
   if (cartItems.length === 0) {
     return <Navigate to="/panier" replace />;
+  }
+
+  function handleApplyPromo(event) {
+    event.preventDefault();
+    onApplyPromoCode(promoInput.trim());
+  }
+
+  function handleRemovePromo() {
+    setPromoInput("");
+    onApplyPromoCode("");
   }
 
   function updateDraft(field, value) {
@@ -2574,11 +2617,9 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
         ...draft,
         paymentMethod: "Carte bancaire",
         shippingAmount: shipping,
+        promoCode: promoResult.valid ? promoResult.code : "",
         billingAddress: draft.billingSameAsDelivery ? draft.deliveryAddress : draft.billingAddress
       };
-      if (!payload.slot) {
-        throw new Error("Aucun créneau de livraison n'est configuré pour le moment.");
-      }
       await onStartStripeCheckout(payload);
       return;
     } catch (error) {
@@ -2610,7 +2651,7 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
             <CustomerAuthCard title="Espace client" description="Créez votre compte ou connectez-vous avant de choisir votre créneau et valider la commande." onLogin={onLogin} onRegister={onRegister} />
             <div style={{ background: "#FFFFFF", border: "1px solid rgba(35,41,31,.09)", borderRadius: 28, padding: 28, display: "grid", gap: 16 }}>
               <strong style={{ ...sans, fontWeight: 700, fontSize: 22, letterSpacing: "-.02em" }}>Votre panier</strong>
-              {cartItems.map((item) => <div key={item.lineId} style={{ display: "flex", justifyContent: "space-between", gap: 16, fontSize: 16, color: "#4E5647" }}><span>{item.quantity} × {item.name}{[item.selectedLength, item.selectedDrying].filter(Boolean).length ? ` · ${[item.selectedLength, item.selectedDrying].filter(Boolean).join(" · ")}` : ""}</span><strong style={{ color: "#23291F" }}>{formatPrice(item.price * item.quantity)}</strong></div>)}
+              {cartItems.map((item) => <div key={item.lineId} style={{ display: "flex", justifyContent: "space-between", gap: 16, fontSize: 16, color: "#4E5647" }}><span>{item.quantity} × {item.name}{item.isGift ? " · OFFERT" : [item.selectedLength, item.selectedDrying].filter(Boolean).length ? ` · ${[item.selectedLength, item.selectedDrying].filter(Boolean).join(" · ")}` : ""}</span><strong style={{ color: "#23291F" }}>{formatPrice(item.price * item.quantity)}</strong></div>)}
               <div style={{ height: 1, background: "rgba(35,41,31,.08)" }} />
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Sous-total HT</span><strong>{formatPrice(totals.totalHt)}</strong></div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA 10 %</span><strong>{formatPrice(totals.totalVat)}</strong></div>
@@ -2656,18 +2697,9 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
                 ) : null}
               </div>
 
-              <div className="lbb-two-col" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 18 }}>
-                <label style={{ display: "grid", gap: 8 }}>
-                  <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>CRÉNEAU</span>
-                  {slotOptions.length > 0 ? <select value={draft.slot} onChange={(event) => updateDraft("slot", event.target.value)} className="lbb-admin-select">
-                    <option value="">Choisir un créneau</option>
-                    {slotOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-                  </select> : <div className="lbb-admin-input" style={{ display: "flex", alignItems: "center", color: "#8A9180", background: "#FBFAF5" }}>Aucun créneau configuré</div>}
-                </label>
-                <div style={{ display: "grid", gap: 8 }}>
-                  <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>PAIEMENT</span>
-                  <div className="lbb-admin-input" style={{ display: "flex", alignItems: "center", color: "#23291F", background: "#F8F6F1" }}>Carte bancaire</div>
-                </div>
+              <div style={{ display: "grid", gap: 8 }}>
+                <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>PAIEMENT</span>
+                <div className="lbb-admin-input" style={{ display: "flex", alignItems: "center", color: "#23291F", background: "#F8F6F1" }}>Carte bancaire</div>
               </div>
 
               <label style={{ display: "grid", gap: 8 }}>
@@ -2677,19 +2709,25 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
 
               {stripeCancelled ? <div style={{ background: "#FFF2DD", color: "#9A5A00", borderRadius: 16, padding: "12px 14px", ...mono, fontSize: 10.5 }}>Paiement Stripe annulé. Votre panier et vos informations sont toujours là.</div> : null}
               {feedback ? <div style={{ background: "#FCE7DF", color: "#A8501B", borderRadius: 16, padding: "12px 14px", ...mono, fontSize: 10.5 }}>{feedback}</div> : null}
-              <button type="submit" className="lbb-btn lbb-btn-primary" style={{ justifyContent: "center" }} disabled={isSubmitting || slotOptions.length === 0 || shippingResult.quoteRequired}>{isSubmitting ? "Validation..." : "Payer avec Stripe"}</button>
+              <button type="submit" className="lbb-btn lbb-btn-primary" style={{ justifyContent: "center" }} disabled={isSubmitting || shippingResult.quoteRequired}>{isSubmitting ? "Validation..." : "Payer avec Stripe"}</button>
             </form>
 
             <aside className="lbb-sticky-panel" style={{ background: "#FFFFFF", border: "1px solid rgba(35,41,31,.09)", borderRadius: 28, padding: 28, display: "grid", gap: 16, position: "sticky", top: 140 }}>
               <strong style={{ ...sans, fontWeight: 700, fontSize: 22, letterSpacing: "-.02em" }}>Récapitulatif</strong>
-              {cartItems.map((item) => <div key={item.lineId} style={{ display: "flex", justifyContent: "space-between", gap: 16, fontSize: 16, color: "#4E5647" }}><span>{item.quantity} × {item.name}{[item.selectedLength, item.selectedDrying].filter(Boolean).length ? ` · ${[item.selectedLength, item.selectedDrying].filter(Boolean).join(" · ")}` : ""}</span><strong style={{ color: "#23291F" }}>{formatPrice(item.price * item.quantity)}</strong></div>)}
+              {cartItems.map((item) => <div key={item.lineId} style={{ display: "flex", justifyContent: "space-between", gap: 16, fontSize: 16, color: "#4E5647" }}><span>{item.quantity} × {item.name}{item.isGift ? " · OFFERT" : [item.selectedLength, item.selectedDrying].filter(Boolean).length ? ` · ${[item.selectedLength, item.selectedDrying].filter(Boolean).join(" · ")}` : ""}</span><strong style={{ color: "#23291F" }}>{formatPrice(item.price * item.quantity)}</strong></div>)}
               <div style={{ height: 1, background: "rgba(35,41,31,.08)" }} />
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Sous-total produits HT</span><strong>{formatPrice(totals.productsHt)}</strong></div>
+              {promoResult.valid ? <div style={{ display: "flex", justifyContent: "space-between", gap: 16, color: "#5C7752" }}><span>Code {promoResult.code}</span><span>−{formatPrice(promoResult.amount)}</span></div> : null}
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA produits 10 %</span><strong>{formatPrice(totals.productsVat)}</strong></div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Livraison HT</span><strong>{shipping === 0 ? "Offerte" : formatPrice(totals.shippingHt)}</strong></div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA livraison 10 %</span><strong>{shipping === 0 ? "Offerte" : formatPrice(totals.shippingVat)}</strong></div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16, ...mono, fontSize: 11, color: "#8A9180" }}><span>Total TVA 10 %</span><span>{formatPrice(totals.totalVat)}</span></div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "baseline" }}><span style={{ ...sans, fontWeight: 700, fontSize: 18 }}>Total TTC</span><strong style={{ ...sans, fontWeight: 700, fontSize: 30 }}>{formatPrice(totals.totalTtc)}</strong></div>
+              <form onSubmit={handleApplyPromo} style={{ display: "flex", gap: 8 }}>
+                <input value={promoInput} onChange={(event) => setPromoInput(event.target.value)} placeholder="Code promo" className="lbb-admin-input" style={{ flex: 1, minHeight: 40 }} />
+                {promoCode ? <button type="button" onClick={handleRemovePromo} className="lbb-btn lbb-btn-secondary lbb-btn-small">Retirer</button> : <button type="submit" className="lbb-btn lbb-btn-secondary lbb-btn-small">Appliquer</button>}
+              </form>
+              {promoCode && !promoResult.valid && promoResult.message ? <p style={{ ...mono, fontSize: 10.5, color: "#A8501B", margin: 0 }}>{promoResult.message}</p> : null}
               <Link to={defaultCategoryPath} className="lbb-btn lbb-btn-secondary" style={{ justifyContent: "center" }}>Ajouter un autre produit</Link>
               <ServiceUpsellSection siteProducts={siteProducts} cartItems={cartItems} addToCart={addToCart} title="Services encore ajoutables" description="Le panier reste modifiable jusqu'à la validation finale de la commande." />
             </aside>
@@ -2928,6 +2966,7 @@ function createProductDraft(categories, settings, creationMode = "product") {
     lengthPrices: {},
     availableDryingDurations: [],
     imageUrl: "",
+    unit: "",
     status: "active"
   };
 }
@@ -2950,6 +2989,7 @@ function createProductDraftFromProduct(categories, product, settings) {
     }), {}),
     availableDryingDurations: product?.availableDryingDurations?.length ? product.availableDryingDurations : [product?.drying].filter(Boolean),
     imageUrl: product?.imageUrl || "",
+    unit: product?.unit || "",
     status: product?.status || "active"
   };
 }
@@ -3485,6 +3525,7 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
         lengthPrices: normalizedLengthPrices,
         availableDryingDurations: draft.availableDryingDurations,
         imageUrl: isServiceCategory ? "" : draft.imageUrl,
+        unit: draft.unit,
         category: categoryType,
         categoryId: draft.categoryId,
         family: familyLabel,
@@ -3595,6 +3636,11 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
           <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>STOCK</span>
           <input value={draft.stockQty} onChange={(event) => updateDraft("stockQty", event.target.value)} placeholder="Ex: 120" type="number" min="0" className="lbb-admin-input" required />
         </label> : null}
+        <label style={{ display: "grid", gap: 6 }}>
+          <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>UNITÉ DE VENTE</span>
+          <input value={draft.unit} onChange={(event) => updateDraft("unit", event.target.value)} placeholder={isServiceCategory ? "Ex: / prestation TTC" : isAccessoryCategory ? "Ex: / boîte de 12" : "Ex: / stère"} className="lbb-admin-input" />
+          <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>Affichée à côté du prix (ex: / stère, / boîte, / sac, / kg). Laisse vide pour "/ stère" par défaut.</span>
+        </label>
         {!isServiceCategory ? <label style={{ display: "grid", gap: 8 }}>
           <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>PHOTO DU PRODUIT</span>
           {draft.imageUrl ? <img src={draft.imageUrl} alt="Apercu produit" style={{ width: 160, height: 160, objectFit: "cover", borderRadius: 18, border: "1px solid rgba(35,41,31,.12)", background: "#F3EEE4" }} /> : <div style={{ width: 160, height: 160, borderRadius: 18, border: "1px dashed rgba(35,41,31,.18)", background: "#FBFAF5", display: "grid", placeItems: "center", color: "#8A9180", ...mono, fontSize: 10.5, letterSpacing: ".05em" }}>AUCUNE PHOTO</div>}
@@ -4158,12 +4204,113 @@ function AdminOptionListEditor({ title, items, draftValue, setDraftValue, onAdd,
   );
 }
 
+function AdminVolumeDiscountEditor({ categories, rules, onAdd, onRemove }) {
+  const [label, setLabel] = useState("");
+  const [categorySlug, setCategorySlug] = useState("");
+  const [buyQuantity, setBuyQuantity] = useState("4");
+  const [freeQuantity, setFreeQuantity] = useState("1");
+
+  function handleAdd() {
+    const buy = Math.round(Number(buyQuantity));
+    const free = Math.round(Number(freeQuantity));
+    if (!Number.isFinite(buy) || buy <= 0 || !Number.isFinite(free) || free <= 0) return;
+    onAdd({
+      label: label.trim() || `${buy} achetés = ${free} offert(s)`,
+      categorySlug,
+      buyQuantity: buy,
+      freeQuantity: free,
+      active: true
+    });
+    setLabel("");
+  }
+
+  return (
+    <div style={{ display: "grid", gap: 12, alignContent: "start" }}>
+      <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>REMISES AUTOMATIQUES PAR VOLUME</span>
+      <span style={{ fontSize: 14, color: "#6B7263" }}>Ex: "Achetez 4 stères, le 5e est offert" — les articles les moins chers du lot concerné sont offerts automatiquement dans le panier.</span>
+      <div style={{ display: "grid", gap: 10 }}>
+        {rules.length === 0 ? <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>Aucune remise automatique configurée.</span> : null}
+        {rules.map((rule) => (
+          <div key={rule.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: "#FBFAF5", border: "1px solid rgba(35,41,31,.08)", borderRadius: 16, padding: "12px 14px" }}>
+            <span style={{ display: "grid", gap: 2 }}>
+              <strong style={{ ...sans, fontWeight: 600, fontSize: 15, color: "#2C241D" }}>{rule.label}</strong>
+              <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>{categories.find((category) => category.slug === rule.categorySlug)?.label || "Toutes catégories"} · {rule.buyQuantity} achetés / {rule.freeQuantity} offert(s)</span>
+            </span>
+            <button type="button" className="lbb-btn lbb-btn-small lbb-btn-secondary" onClick={() => onRemove(rule.id)}>Retirer</button>
+          </div>
+        ))}
+      </div>
+      <div className="lbb-two-col" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
+        <input value={label} onChange={(event) => setLabel(event.target.value)} placeholder="Libellé (ex: 4 achetés = le 5e offert)" className="lbb-admin-input" />
+        <select value={categorySlug} onChange={(event) => setCategorySlug(event.target.value)} className="lbb-admin-select">
+          <option value="">Toutes catégories</option>
+          {categories.map((category) => <option key={category.id} value={category.slug}>{category.label}</option>)}
+        </select>
+        <input value={buyQuantity} onChange={(event) => setBuyQuantity(event.target.value)} type="number" min="1" placeholder="Quantité achetée" className="lbb-admin-input" />
+        <input value={freeQuantity} onChange={(event) => setFreeQuantity(event.target.value)} type="number" min="1" placeholder="Quantité offerte" className="lbb-admin-input" />
+      </div>
+      <button type="button" className="lbb-btn lbb-btn-primary" style={{ width: "fit-content" }} onClick={handleAdd}>Ajouter la remise</button>
+    </div>
+  );
+}
+
+function AdminPromoCodeEditor({ codes, onAdd, onRemove }) {
+  const [code, setCode] = useState("");
+  const [type, setType] = useState("percent");
+  const [value, setValue] = useState("10");
+  const [minSubtotal, setMinSubtotal] = useState("0");
+
+  function handleAdd() {
+    const normalizedCode = code.trim().toUpperCase();
+    const numericValue = Number(value);
+    if (!normalizedCode || !Number.isFinite(numericValue) || numericValue <= 0) return;
+    onAdd({
+      code: normalizedCode,
+      type,
+      value: numericValue,
+      minSubtotal: Math.max(0, Number(minSubtotal) || 0),
+      active: true
+    });
+    setCode("");
+    setValue("10");
+    setMinSubtotal("0");
+  }
+
+  return (
+    <div style={{ display: "grid", gap: 12, alignContent: "start" }}>
+      <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>CODES PROMO</span>
+      <span style={{ fontSize: 14, color: "#6B7263" }}>Le client saisit ce code au panier ou au checkout pour obtenir la remise.</span>
+      <div style={{ display: "grid", gap: 10 }}>
+        {codes.length === 0 ? <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>Aucun code promo configuré.</span> : null}
+        {codes.map((entry) => (
+          <div key={entry.code} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: "#FBFAF5", border: "1px solid rgba(35,41,31,.08)", borderRadius: 16, padding: "12px 14px" }}>
+            <span style={{ display: "grid", gap: 2 }}>
+              <strong style={{ ...sans, fontWeight: 600, fontSize: 15, color: "#2C241D" }}>{entry.code}</strong>
+              <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>{entry.type === "percent" ? `${entry.value} %` : formatPrice(entry.value)}{entry.minSubtotal > 0 ? ` · dès ${formatPrice(entry.minSubtotal)}` : ""}</span>
+            </span>
+            <button type="button" className="lbb-btn lbb-btn-small lbb-btn-secondary" onClick={() => onRemove(entry.code)}>Retirer</button>
+          </div>
+        ))}
+      </div>
+      <div className="lbb-two-col" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
+        <input value={code} onChange={(event) => setCode(event.target.value)} placeholder="Code (ex: BIENVENUE10)" className="lbb-admin-input" style={{ textTransform: "uppercase" }} />
+        <select value={type} onChange={(event) => setType(event.target.value)} className="lbb-admin-select">
+          <option value="percent">Pourcentage</option>
+          <option value="fixed">Montant fixe</option>
+        </select>
+        <input value={value} onChange={(event) => setValue(event.target.value)} type="number" min="0" step="0.01" placeholder={type === "percent" ? "Ex: 10 (%)" : "Ex: 15 (€)"} className="lbb-admin-input" />
+        <input value={minSubtotal} onChange={(event) => setMinSubtotal(event.target.value)} type="number" min="0" step="0.01" placeholder="Panier minimum (€), 0 = aucun" className="lbb-admin-input" />
+      </div>
+      <button type="button" className="lbb-btn lbb-btn-primary" style={{ width: "fit-content" }} onClick={handleAdd}>Ajouter le code</button>
+    </div>
+  );
+}
+
 function AdminSettings({ session, profile, settings, categories, products, customers, onLogout, onUpdateSettings }) {
   const productSettings = useMemo(() => normalizeProductOptionSettings(settings), [settings]);
   const [adminName, setAdminName] = useState(profile?.name || "");
   const [lengths, setLengths] = useState(productSettings.productOptions.lengths);
   const [dryingDurations, setDryingDurations] = useState(productSettings.productOptions.dryingDurations);
-  const [deliverySlots, setDeliverySlots] = useState(productSettings.deliverySlots);
   const [announcementPrimaryText, setAnnouncementPrimaryText] = useState(productSettings.announcementBar.primaryText);
   const [announcementSecondaryText, setAnnouncementSecondaryText] = useState(productSettings.announcementBar.secondaryText);
   const [announcementTertiaryText, setAnnouncementTertiaryText] = useState(productSettings.announcementBar.tertiaryText);
@@ -4172,16 +4319,16 @@ function AdminSettings({ session, profile, settings, categories, products, custo
   const [heroProofPrimaryText, setHeroProofPrimaryText] = useState(productSettings.heroProof.primaryText);
   const [heroProofSecondaryText, setHeroProofSecondaryText] = useState(productSettings.heroProof.secondaryText);
   const [heroProofTertiaryText, setHeroProofTertiaryText] = useState(productSettings.heroProof.tertiaryText);
+  const [volumeDiscounts, setVolumeDiscounts] = useState(productSettings.promotions.volumeDiscounts);
+  const [promoCodes, setPromoCodes] = useState(productSettings.promotions.promoCodes);
   const [lengthDraft, setLengthDraft] = useState("");
   const [dryingDraft, setDryingDraft] = useState("");
-  const [deliverySlotDraft, setDeliverySlotDraft] = useState("");
   const [feedback, setFeedback] = useState("");
 
   useEffect(() => {
     setAdminName(profile?.name || "");
     setLengths(productSettings.productOptions.lengths);
     setDryingDurations(productSettings.productOptions.dryingDurations);
-    setDeliverySlots(productSettings.deliverySlots);
     setAnnouncementPrimaryText(productSettings.announcementBar.primaryText);
     setAnnouncementSecondaryText(productSettings.announcementBar.secondaryText);
     setAnnouncementTertiaryText(productSettings.announcementBar.tertiaryText);
@@ -4190,9 +4337,10 @@ function AdminSettings({ session, profile, settings, categories, products, custo
     setHeroProofPrimaryText(productSettings.heroProof.primaryText);
     setHeroProofSecondaryText(productSettings.heroProof.secondaryText);
     setHeroProofTertiaryText(productSettings.heroProof.tertiaryText);
+    setVolumeDiscounts(productSettings.promotions.volumeDiscounts);
+    setPromoCodes(productSettings.promotions.promoCodes);
     setLengthDraft("");
     setDryingDraft("");
-    setDeliverySlotDraft("");
   }, [productSettings, profile]);
 
   function addOption(setter, resetter, value) {
@@ -4204,6 +4352,22 @@ function AdminSettings({ session, profile, settings, categories, products, custo
 
   function removeOption(setter, value, allowEmpty = false) {
     setter((current) => current.length <= 1 && !allowEmpty ? current : current.filter((item) => item !== value));
+  }
+
+  function addVolumeDiscount(rule) {
+    setVolumeDiscounts((current) => [...current, { id: `vol_${Date.now().toString(36)}`, ...rule }]);
+  }
+
+  function removeVolumeDiscount(id) {
+    setVolumeDiscounts((current) => current.filter((rule) => rule.id !== id));
+  }
+
+  function addPromoCode(entry) {
+    setPromoCodes((current) => [...current, entry]);
+  }
+
+  function removePromoCode(code) {
+    setPromoCodes((current) => current.filter((entry) => entry.code !== code));
   }
 
   async function handleSubmit(event) {
@@ -4219,7 +4383,6 @@ function AdminSettings({ session, profile, settings, categories, products, custo
           lengths,
           dryingDurations
         },
-        deliverySlots,
         announcementBar: {
           primaryText: announcementPrimaryText,
           secondaryText: announcementSecondaryText,
@@ -4231,9 +4394,13 @@ function AdminSettings({ session, profile, settings, categories, products, custo
           primaryText: heroProofPrimaryText,
           secondaryText: heroProofSecondaryText,
           tertiaryText: heroProofTertiaryText
+        },
+        promotions: {
+          volumeDiscounts,
+          promoCodes
         }
       });
-      setFeedback("Nom admin, bandeaux et textes accueil enregistrés.");
+      setFeedback("Nom admin, bandeaux, textes accueil et promotions enregistres.");
     } catch (updateError) {
       setFeedback(updateError.message);
     }
@@ -4286,15 +4453,12 @@ function AdminSettings({ session, profile, settings, categories, products, custo
             presetOptions={defaultProductOptionSettings.productOptions.dryingDurations}
           />
         </div>
-        <AdminOptionListEditor
-          title="CRÉNEAUX DE LIVRAISON"
-          items={deliverySlots}
-          draftValue={deliverySlotDraft}
-          setDraftValue={setDeliverySlotDraft}
-          onAdd={(value) => addOption(setDeliverySlots, setDeliverySlotDraft, value)}
-          onRemove={(value) => removeOption(setDeliverySlots, value, true)}
-          presetOptions={[]}
-        />
+        <div style={{ display: "grid", gap: 6 }}>
+          <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#8A9180" }}>PROMOTIONS</span>
+          <strong style={{ ...sans, fontWeight: 700, fontSize: 24, letterSpacing: "-.03em", color: "#2C241D" }}>Remises automatiques et codes promo</strong>
+        </div>
+        <AdminVolumeDiscountEditor categories={categories} rules={volumeDiscounts} onAdd={addVolumeDiscount} onRemove={removeVolumeDiscount} />
+        <AdminPromoCodeEditor codes={promoCodes} onAdd={addPromoCode} onRemove={removePromoCode} />
         <div style={{ display: "grid", gap: 6 }}>
           <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#8A9180" }}>BANDEAU PROMOTIONNEL</span>
           <strong style={{ ...sans, fontWeight: 700, fontSize: 24, letterSpacing: "-.03em", color: "#2C241D" }}>Sur-header du site public</strong>
@@ -4639,7 +4803,7 @@ function ServiceUpsellSection({ siteProducts, cartItems, addToCart, title = "Ser
       <div style={{ display: "grid", gap: 8 }}>
         <div style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#C05621" }}>SERVICES COMPLÉMENTAIRES</div>
         <strong style={{ ...sans, fontWeight: 700, fontSize: 22, letterSpacing: "-.02em", color: "#23291F" }}>{title}</strong>
-        <p style={{ margin: 0, fontSize: 16, lineHeight: 1.55, color: "#4E5647" }}>{description}</p>
+        {description ? <p style={{ margin: 0, fontSize: 16, lineHeight: 1.55, color: "#4E5647" }}>{description}</p> : null}
       </div>
       <div style={{ display: "grid", gap: 12 }}>
         {suggestions.map((service) => (
