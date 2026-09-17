@@ -958,6 +958,14 @@ img {
   min-width: 0;
 }
 
+.lbb-filter-toggle {
+  display: none;
+}
+
+.lbb-filter-panel {
+  display: grid;
+}
+
 .lbb-header-nav {
   min-width: 0;
 }
@@ -1133,6 +1141,31 @@ img {
   .lbb-sticky-panel {
     position: static !important;
     top: auto !important;
+  }
+
+  .lbb-filter-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(35, 41, 31, .16);
+    background: #FFFFFF;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: .04em;
+    color: #23291F;
+    cursor: pointer;
+  }
+
+  .lbb-filter-panel {
+    display: none;
+  }
+
+  .lbb-filter-panel.is-open {
+    display: grid;
   }
 
   .lbb-product-gallery-thumbs {

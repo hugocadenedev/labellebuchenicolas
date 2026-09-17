@@ -1867,6 +1867,7 @@ function CategoryPage({ addToCart, categories, siteProducts, defaultCategoryPath
   const [selectedDrying, setSelectedDrying] = useState([]);
   const [priceMax, setPriceMax] = useState(140);
   const [view, setView] = useState("grid");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     if (currentCategory?.essences?.length) {
@@ -1936,19 +1937,19 @@ function CategoryPage({ addToCart, categories, siteProducts, defaultCategoryPath
       </section>
       <section id="grille" style={{ ...pageShell, paddingTop: 46 }}>
         <div className="lbb-category-layout">
-          <aside className="lbb-sticky-panel" style={{ position: "sticky", top: 158, display: "grid", gap: 26, alignSelf: "start" }}>
+          <aside className="lbb-sticky-panel" style={{ position: "sticky", top: 158, display: "grid", gap: 16, alignSelf: "start" }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
               <span style={{ ...sans, fontWeight: 700, fontSize: 15 }}>Filtrer</span>
               <button type="button" onClick={() => { setSelectedEssences([]); setSelectedLength([]); setSelectedDrying([]); setPriceMax(140); }} style={{ background: "transparent", border: 0, cursor: "pointer", ...mono, fontSize: 10.5, letterSpacing: ".06em", color: "#A8AE9C", padding: 0 }}>Tout effacer</button>
             </div>
-            <FacetList title="ESSENCE" valueLabel={`${selectedEssences.length || "Toutes"}`} options={Array.from(new Set(woodProducts.map((product) => product.essence)))} values={selectedEssences} onToggle={(value) => toggleArray(setSelectedEssences, value)} />
-            <FacetPills title="LONGUEUR" valueLabel={selectedLength[0] || "Toutes"} options={Array.from(new Set(woodProducts.map((product) => product.length).filter(Boolean)))} values={selectedLength} onToggle={(value) => toggleArray(setSelectedLength, value)} />
-            <FacetRange title="PRIX" valueLabel={`≤ ${formatPrice(priceMax)}`} value={priceMax} min={90} max={600} step={5} onChange={setPriceMax} />
-            <FacetPills title="SÉCHAGE" valueLabel={selectedDrying[0] || "Tous"} options={Array.from(new Set(woodProducts.map((product) => product.drying).filter(Boolean)))} values={selectedDrying} onToggle={(value) => toggleArray(setSelectedDrying, value)} />
-            <div style={{ background: "#5B321D", color: "#FBF6EE", borderRadius: 22, padding: 24 }}>
-              <div style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#E8C9B3", marginBottom: 10 }}>AIDE AU CHOIX</div>
-              <p style={{ margin: "0 0 16px", fontSize: 16.5, lineHeight: 1.5, color: "#FBF6EE" }}>Vous hésitez entre deux coupes ? Lancez l'estimation dédiée avant de choisir votre volume.</p>
-              <Link to="/estimation-consommation" className="lbb-btn lbb-btn-light">Lancer l'estimation</Link>
+            <button type="button" className="lbb-filter-toggle" onClick={() => setFiltersOpen((current) => !current)}>
+              {filtersOpen ? "Masquer les filtres" : `Filtrer${activeTags.length ? ` (${activeTags.length})` : ""}`}
+            </button>
+            <div className={`lbb-filter-panel${filtersOpen ? " is-open" : ""}`} style={{ gap: 26 }}>
+              <FacetList title="ESSENCE" valueLabel={`${selectedEssences.length || "Toutes"}`} options={Array.from(new Set(woodProducts.map((product) => product.essence)))} values={selectedEssences} onToggle={(value) => toggleArray(setSelectedEssences, value)} />
+              <FacetPills title="LONGUEUR" valueLabel={selectedLength[0] || "Toutes"} options={Array.from(new Set(woodProducts.map((product) => product.length).filter(Boolean)))} values={selectedLength} onToggle={(value) => toggleArray(setSelectedLength, value)} />
+              <FacetRange title="PRIX" valueLabel={`≤ ${formatPrice(priceMax)}`} value={priceMax} min={90} max={600} step={5} onChange={setPriceMax} />
+              <FacetPills title="SÉCHAGE" valueLabel={selectedDrying[0] || "Tous"} options={Array.from(new Set(woodProducts.map((product) => product.drying).filter(Boolean)))} values={selectedDrying} onToggle={(value) => toggleArray(setSelectedDrying, value)} />
             </div>
           </aside>
           <div>
@@ -1971,6 +1972,11 @@ function CategoryPage({ addToCart, categories, siteProducts, defaultCategoryPath
               {visible.map((product) => (
                 <ProductCard key={product.id} product={product} addToCart={addToCart} compact={view === "list"} />
               ))}
+            </div>
+            <div style={{ background: "#5B321D", color: "#FBF6EE", borderRadius: 22, padding: 24, marginTop: 28 }}>
+              <div style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#E8C9B3", marginBottom: 10 }}>AIDE AU CHOIX</div>
+              <p style={{ margin: "0 0 16px", fontSize: 16.5, lineHeight: 1.5, color: "#FBF6EE" }}>Vous hésitez entre deux coupes ? Lancez l'estimation dédiée avant de choisir votre volume.</p>
+              <Link to="/estimation-consommation" className="lbb-btn lbb-btn-light">Lancer l'estimation</Link>
             </div>
           </div>
         </div>
