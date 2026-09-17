@@ -3860,7 +3860,7 @@ function AdminCategoriesIndex({ categories, products: productOptions, onUpdateCa
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    setEdits(Object.fromEntries(categories.map((category) => [category.id, { slug: category.slug, imageUrl: category.imageUrl || "" }])));
+    setEdits(Object.fromEntries(categories.map((category) => [category.id, { slug: category.slug, imageUrl: category.imageUrl || "", description: category.description || "" }])));
   }, [categories]);
 
   function updateEdit(categoryId, field, value) {
@@ -3909,10 +3909,11 @@ function AdminCategoriesIndex({ categories, products: productOptions, onUpdateCa
       <div className="lbb-admin-surface" style={{ display: "grid", gap: 18 }}>
         <div className="lbb-admin-toolbar"><span style={{ ...sans, fontWeight: 700, fontSize: 21, letterSpacing: "-.024em", color: "#2C241D" }}>Pages categories publiees</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher une categorie..." className="lbb-admin-search" /></div>
         <div className="lbb-admin-table lbb-admin-table-categories-cms">
-          <div className="lbb-admin-table-head">Categorie</div><div className="lbb-admin-table-head">Slug</div><div className="lbb-admin-table-head">Photo</div><div className="lbb-admin-table-head">Produits</div><div className="lbb-admin-table-head">Apercu</div><div className="lbb-admin-table-head">Action</div>
+          <div className="lbb-admin-table-head">Categorie</div><div className="lbb-admin-table-head">Slug</div><div className="lbb-admin-table-head">Description</div><div className="lbb-admin-table-head">Photo</div><div className="lbb-admin-table-head">Produits</div><div className="lbb-admin-table-head">Apercu</div><div className="lbb-admin-table-head">Action</div>
           {filteredCategories.map((category) => <AdminRow key={category.id} className="lbb-admin-table-categories-cms" cells={[
             <span style={{ display: "grid", gap: 3 }}><strong style={{ ...sans, fontSize: 15 }}>{category.label}</strong><span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>{category.heading}</span></span>,
             <input value={edits[category.id]?.slug || ""} onChange={(event) => updateEdit(category.id, "slug", event.target.value)} className="lbb-admin-input" style={{ minHeight: 40 }} />,
+            <textarea value={edits[category.id]?.description || ""} onChange={(event) => updateEdit(category.id, "description", event.target.value)} placeholder="Quelques mots pour decrire la categorie" className="lbb-admin-input" style={{ minHeight: 60, resize: "vertical", fontSize: 13 }} />,
             <span style={{ display: "grid", gap: 8 }}>
               {edits[category.id]?.imageUrl ? <img src={edits[category.id].imageUrl} alt={category.label} style={{ width: 48, height: 48, borderRadius: 12, objectFit: "cover", background: "#F3EEE4" }} /> : <span style={{ width: 48, height: 48, borderRadius: 12, border: "1px dashed rgba(35,41,31,.18)", background: "#FBFAF5", display: "grid", placeItems: "center", ...mono, fontSize: 9, color: "#8A9180" }}>PHOTO</span>}
               <input type="file" accept="image/*" onChange={(event) => handleImageUpload(category.id, event)} className="lbb-admin-input" style={{ minHeight: 36, fontSize: 10.5 }} />
@@ -3920,7 +3921,7 @@ function AdminCategoriesIndex({ categories, products: productOptions, onUpdateCa
             <span style={{ display: "grid", gap: 6 }}>{productOptions.filter((product) => category.productIds.includes(product.id)).slice(0, 3).map((product) => <span key={product.id} style={{ fontSize: 14.5, color: "#4E5647" }}>{product.name}</span>)}<span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>{category.productIds.length} produit(s) relies</span></span>,
             <Link to={getCategoryHref(category.slug)} className="lbb-btn lbb-btn-secondary lbb-btn-small">Voir page</Link>,
             <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button type="button" className="lbb-btn lbb-btn-small lbb-btn-primary" onClick={() => onUpdateCategory(category.id, { ...category, slug: edits[category.id]?.slug || category.slug, imageUrl: edits[category.id]?.imageUrl ?? category.imageUrl })}>Sauver</button>
+              <button type="button" className="lbb-btn lbb-btn-small lbb-btn-primary" onClick={() => onUpdateCategory(category.id, { ...category, slug: edits[category.id]?.slug || category.slug, imageUrl: edits[category.id]?.imageUrl ?? category.imageUrl, description: edits[category.id]?.description ?? category.description })}>Sauver</button>
               <button type="button" className="lbb-btn lbb-btn-small lbb-btn-secondary" onClick={() => handleDeleteClick(category)}>Supprimer</button>
             </span>
           ]} />)}
