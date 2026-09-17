@@ -143,16 +143,7 @@
     },
     "deliverySlots": [],
     "promotions": {
-      "volumeDiscounts": [
-        {
-          "id": "vol_a9d8qy1",
-          "label": "4 achetes = le 5e offert",
-          "categorySlug": "",
-          "buyQuantity": 4,
-          "freeQuantity": 1,
-          "active": true
-        }
-      ],
+      "volumeDiscounts": [],
       "promoCodes": [
         {
           "code": "BIENVENUE10",

@@ -4380,20 +4380,38 @@ function AdminSettings({ session, profile, settings, categories, products, custo
     setter((current) => current.length <= 1 && !allowEmpty ? current : current.filter((item) => item !== value));
   }
 
+  async function savePromotions(nextVolumeDiscounts, nextPromoCodes) {
+    setFeedback("");
+    try {
+      await onUpdateSettings({ promotions: { volumeDiscounts: nextVolumeDiscounts, promoCodes: nextPromoCodes } });
+      setFeedback("Promotions enregistrees.");
+    } catch (updateError) {
+      setFeedback(updateError.message);
+    }
+  }
+
   function addVolumeDiscount(rule) {
-    setVolumeDiscounts((current) => [...current, { id: `vol_${Date.now().toString(36)}`, ...rule }]);
+    const next = [...volumeDiscounts, { id: `vol_${Date.now().toString(36)}`, ...rule }];
+    setVolumeDiscounts(next);
+    savePromotions(next, promoCodes);
   }
 
   function removeVolumeDiscount(id) {
-    setVolumeDiscounts((current) => current.filter((rule) => rule.id !== id));
+    const next = volumeDiscounts.filter((rule) => rule.id !== id);
+    setVolumeDiscounts(next);
+    savePromotions(next, promoCodes);
   }
 
   function addPromoCode(entry) {
-    setPromoCodes((current) => [...current, entry]);
+    const next = [...promoCodes, entry];
+    setPromoCodes(next);
+    savePromotions(volumeDiscounts, next);
   }
 
   function removePromoCode(code) {
-    setPromoCodes((current) => current.filter((entry) => entry.code !== code));
+    const next = promoCodes.filter((entry) => entry.code !== code);
+    setPromoCodes(next);
+    savePromotions(volumeDiscounts, next);
   }
 
   async function handleSubmit(event) {
