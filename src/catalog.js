@@ -1,5 +1,6 @@
 import heroImage from "../ChatGPT Image 11 sept. 2026, 10_06_45.png";
 import woodYardImage from "../parc.jpg";
+import historyImage from "../WhatsApp Image 2026-09-20 at 00.11.56.jpeg";
 import deliveryImage from "../livraison.jpg";
 import chene33 from "../chene-33.jpg";
 import chene25 from "../chene-25.jpg";
@@ -29,6 +30,7 @@ export const brand = {
   headerLogo: headerLogoImage,
   heroImage,
   woodYardImage,
+  historyImage,
   deliveryImage,
   forestImage,
   closeupImage

@@ -112,7 +112,7 @@ async function finalizePaidStripeSession(sessionId, requestBody = {}) {
 
 export async function createStripeCheckoutSession(req, res, next) {
   try {
-    const { items = [], customerId, contactEmail, deliveryAddress, promoCode } = req.body || {};
+    const { items = [], customerId, contactEmail, deliveryAddress, promoCode, pickupAtDepot } = req.body || {};
     if (!customerId) {
       return res.status(400).json({ message: "Compte client requis pour le paiement Stripe." });
     }
@@ -124,10 +124,10 @@ export async function createStripeCheckoutSession(req, res, next) {
     const subtotal = items.reduce((sum, item) => sum + Number(item.unitPrice || 0) * Number(item.quantity || 0), 0);
     const woodVolume = items.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + Number(item.quantity || 0), 0);
     const shippingResult = computeShipping({ postcode: deliveryAddress?.postcode, woodVolume });
-    if (shippingResult.quoteRequired) {
+    if (!pickupAtDepot && shippingResult.quoteRequired) {
       return res.status(400).json({ message: "Cette adresse est hors zone de livraison automatique. Contactez-nous pour établir un devis." });
     }
-    const shippingAmount = shippingResult.amount;
+    const shippingAmount = pickupAtDepot ? 0 : shippingResult.amount;
 
     const settings = await getSettings();
     const volumeDiscount = computeVolumeDiscount(items, settings?.promotions?.volumeDiscounts);

@@ -942,6 +942,7 @@ function StorefrontApp() {
   const [customerAccount, setCustomerAccount] = useState(null);
   const [accountStatus, setAccountStatus] = useState(() => readCustomerSession() ? "loading" : "idle");
   const [promoCode, setPromoCode] = useState(() => window.localStorage.getItem("lbb-promo-code") || "");
+  const [pickupAtDepot, setPickupAtDepot] = useState(() => window.localStorage.getItem("lbb-pickup-at-depot") === "1");
 
   useEffect(() => {
     if (promoCode) {
@@ -950,6 +951,10 @@ function StorefrontApp() {
       window.localStorage.removeItem("lbb-promo-code");
     }
   }, [promoCode]);
+
+  useEffect(() => {
+    window.localStorage.setItem("lbb-pickup-at-depot", pickupAtDepot ? "1" : "0");
+  }, [pickupAtDepot]);
   const [cart, setCart] = useState(() => {
     const stored = window.localStorage.getItem("lbb-cart");
     return stored ? normalizeCartState(JSON.parse(stored)) : normalizeCartState({ "chene-33": 2, "hetre-33": 1, "filet-bois-allumage-50l": 1 });
@@ -1213,8 +1218,8 @@ function StorefrontApp() {
         <Route path="/categorie/:slug" element={<CategoryPage addToCart={addToCart} categories={storefrontCategories} siteProducts={storefrontProducts} defaultCategoryPath={defaultCategoryPath} siteStatus={siteStatus} />} />
         <Route path="/produit/:slug" element={<ProductPage addToCart={addToCart} categories={storefrontCategories} settings={siteSettings} siteProducts={storefrontProducts} defaultCategoryPath={defaultCategoryPath} siteStatus={siteStatus} />} />
         <Route path="/estimation-consommation" element={<ConsumptionEstimatorPage siteProducts={storefrontProducts} defaultCategoryPath={defaultCategoryPath} onPrepareCart={prepareEstimatedCart} />} />
-        <Route path="/panier" element={<CartPage cartItems={cartItemsWithGifts} setQuantity={setQuantity} addToCart={addToCart} siteProducts={siteProducts} defaultCategoryPath={defaultCategoryPath} account={activeAccount} settings={siteSettings} promoCode={promoCode} onApplyPromoCode={setPromoCode} />} />
-        <Route path="/commande" element={<CheckoutPage cartItems={cartItemsWithGifts} addToCart={addToCart} siteProducts={siteProducts} settings={siteSettings} account={activeAccount} defaultCategoryPath={defaultCategoryPath} onLogin={handleCustomerLogin} onRegister={handleCustomerRegister} onPlaceOrder={handlePlaceOrder} onStartStripeCheckout={handleStartStripeCheckout} promoCode={promoCode} onApplyPromoCode={setPromoCode} />} />
+        <Route path="/panier" element={<CartPage cartItems={cartItemsWithGifts} setQuantity={setQuantity} addToCart={addToCart} siteProducts={siteProducts} defaultCategoryPath={defaultCategoryPath} account={activeAccount} settings={siteSettings} promoCode={promoCode} onApplyPromoCode={setPromoCode} pickupAtDepot={pickupAtDepot} onTogglePickup={setPickupAtDepot} />} />
+        <Route path="/commande" element={<CheckoutPage cartItems={cartItemsWithGifts} addToCart={addToCart} siteProducts={siteProducts} settings={siteSettings} account={activeAccount} defaultCategoryPath={defaultCategoryPath} onLogin={handleCustomerLogin} onRegister={handleCustomerRegister} onPlaceOrder={handlePlaceOrder} onStartStripeCheckout={handleStartStripeCheckout} promoCode={promoCode} onApplyPromoCode={setPromoCode} pickupAtDepot={pickupAtDepot} onTogglePickup={setPickupAtDepot} />} />
         <Route path="/commande/confirmation/stripe" element={<StripeCheckoutConfirmationPage onConfirmStripeCheckout={handleConfirmStripeCheckout} />} />
         <Route path="/commande/confirmation/:orderId" element={<CheckoutConfirmationPage account={activeAccount} defaultCategoryPath={defaultCategoryPath} />} />
         <Route path="/compte" element={<AccountPage account={activeAccount} accountStatus={accountStatus} onLogin={handleCustomerLogin} onRegister={handleCustomerRegister} onLogout={handleCustomerLogout} />} />
@@ -1541,9 +1546,11 @@ function HomePage({ addToCart, categories, settings, siteProducts, defaultCatego
     <main>
       {!showOnlyCatalogue && (
         <>
-          <section className="lbb-hero-banner" style={{ backgroundImage: `linear-gradient(90deg, rgba(20, 14, 10, .76) 0%, rgba(42, 28, 17, .58) 34%, rgba(64, 42, 24, .34) 56%, rgba(96, 62, 32, .18) 100%), linear-gradient(180deg, rgba(29, 20, 12, .06) 0%, rgba(29, 20, 12, .46) 100%), url(${brand.heroImage})` }}>
+          <section className="lbb-hero-banner">
+            <img className="lbb-hero-bg-image" src={brand.heroImage} alt="" aria-hidden="true" />
+            <div className="lbb-hero-overlay" style={{ backgroundImage: "linear-gradient(90deg, rgba(20, 14, 10, .76) 0%, rgba(42, 28, 17, .58) 34%, rgba(64, 42, 24, .34) 56%, rgba(96, 62, 32, .18) 100%), linear-gradient(180deg, rgba(20, 14, 9, .05) 0%, rgba(20, 14, 9, .55) 55%, rgba(15, 10, 6, .86) 100%)" }} />
             <div className="lbb-hero-haze" />
-            <div className="lbb-hero-inner" style={{ ...pageShell }}>
+            <div className="lbb-hero-inner" style={{ maxWidth: pageShell.maxWidth, margin: pageShell.margin, paddingLeft: "clamp(16px, 4vw, 32px)", paddingRight: "clamp(16px, 4vw, 32px)" }}>
               <div className="lbb-hero-copy">
                 <div className="lbb-hero-kicker" style={{ ...mono }}>
                   <span style={{ width: 8, height: 8, borderRadius: 999, background: "rgba(251,250,245,.88)", boxShadow: "0 0 0 4px rgba(251,250,245,.12)" }} />
@@ -1672,17 +1679,16 @@ function HomePage({ addToCart, categories, settings, siteProducts, defaultCatego
           <section id="histoire" style={{ ...pageShell, paddingTop: 96 }}>
             <div className="lbb-two-col" style={{ alignItems: "stretch" }}>
               <div style={{ position: "relative", minHeight: 420, borderRadius: 34, overflow: "hidden" }}>
-                <img src={brand.woodYardImage} alt="Parc à bois" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <img src={brand.historyImage} alt="Parc à bois" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 <div style={{ position: "absolute", left: 20, bottom: 20, display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <span style={{ ...mono, fontSize: 10, letterSpacing: ".06em", background: "rgba(251,250,245,.9)", borderRadius: 999, padding: "6px 11px", color: "#6B7263" }}>Montgaillard-Lauragais</span>
                   <span style={{ ...mono, fontSize: 10, letterSpacing: ".06em", background: "rgba(251,250,245,.9)", borderRadius: 999, padding: "6px 11px", color: "#6B7263" }}>31290</span>
-                  <span style={{ ...mono, fontSize: 10, letterSpacing: ".06em", background: "rgba(251,250,245,.9)", borderRadius: 999, padding: "6px 11px", color: "#6B7263" }}>Depuis 1919</span>
                 </div>
               </div>
               <div style={{ display: "grid", gap: 18, alignContent: "center" }}>
                 <div style={{ ...mono, fontSize: 11, letterSpacing: ".08em", color: "#C05621" }}>Notre histoire</div>
                 <h2 style={{ ...sans, fontWeight: 700, fontSize: 34, letterSpacing: "-.03em", margin: 0 }}>Une maison de bois locale, pas un catalogue générique.</h2>
-                <p style={{ fontSize: 17.5, lineHeight: 1.6, color: "#4E5647", margin: 0 }}>Depuis Montgaillard-Lauragais, La Belle Buche prepare et livre un bois de chauffage pense pour les besoins reels des foyers du secteur, avec un service simple, clair et local.</p>
+                <p style={{ fontSize: 17.5, lineHeight: 1.6, color: "#4E5647", margin: 0 }}>Depuis Montgaillard-Lauragais, La Belle Bûche prépare et livre un bois de chauffage pensé pour les besoins réels des foyers du secteur, avec un service simple, clair et local.</p>
                 <div className="lbb-stat-grid">
                   {["TVA 10 %", "31290", "> 60 km sur devis"].map((item, index) => (
                     <div key={item} style={{ background: index === 1 ? "#F3E5D8" : "#FFFFFF", border: "1px solid rgba(35,41,31,.08)", borderRadius: 22, padding: 20 }}>
@@ -2375,11 +2381,14 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
   );
 }
 
-function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCategoryPath, account, settings, promoCode, onApplyPromoCode }) {
+function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCategoryPath, account, settings, promoCode, onApplyPromoCode, pickupAtDepot, onTogglePickup }) {
   const [promoInput, setPromoInput] = useState(promoCode || "");
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const woodVolume = cartItems.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + item.quantity, 0);
-  const shippingEstimate = subtotal === 0 ? { amount: 0, label: "", quoteRequired: false } : computeShipping({ woodVolume });
+  const rawShippingEstimate = subtotal === 0 ? { amount: 0, label: "", quoteRequired: false } : computeShipping({ woodVolume });
+  const shippingEstimate = pickupAtDepot
+    ? { amount: 0, label: "Retrait au dépôt — gratuit", quoteRequired: false, freeShipping: true }
+    : rawShippingEstimate;
   const shipping = shippingEstimate.amount;
   const promoResult = promoCode ? validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes) : { valid: false, amount: 0, message: "" };
   const discountAmount = promoResult.valid ? promoResult.amount : 0;
@@ -2487,12 +2496,16 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA livraison 10 %</span><span style={{ color: "#23291F" }}>{shippingEstimate.quoteRequired ? "Sur devis" : shippingEstimate.freeShipping ? "Offerte" : formatPrice(totals.shippingVat)}</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16, ...mono, fontSize: 11, letterSpacing: ".05em", color: "#8A9180" }}><span>Total TVA 10 %</span><span>{formatPrice(totals.totalVat)}</span></div>
               </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14.5, color: "#4E5647", marginTop: 16 }}>
+                <input type="checkbox" checked={pickupAtDepot} onChange={(event) => onTogglePickup(event.target.checked)} />
+                Je retire ma commande au dépôt (Montgaillard-Lauragais) — livraison offerte
+              </label>
               <form onSubmit={handleApplyPromo} style={{ display: "flex", gap: 8, marginTop: 14 }}>
                 <input value={promoInput} onChange={(event) => setPromoInput(event.target.value)} placeholder="Code promo" className="lbb-admin-input" style={{ flex: 1, minHeight: 40 }} />
                 {promoCode ? <button type="button" onClick={handleRemovePromo} className="lbb-btn lbb-btn-secondary lbb-btn-small">Retirer</button> : <button type="submit" className="lbb-btn lbb-btn-secondary lbb-btn-small">Appliquer</button>}
               </form>
               {promoCode && !promoResult.valid && promoResult.message ? <p style={{ ...mono, fontSize: 10.5, color: "#A8501B", margin: "8px 0 0" }}>{promoResult.message}</p> : null}
-              <p style={{ ...mono, fontSize: 10.5, letterSpacing: ".03em", color: "#8A9180", margin: "12px 0 0" }}>Frais estimés pour une adresse locale ; le montant définitif est calculé à l'étape suivante selon votre code postal.</p>
+              <p style={{ ...mono, fontSize: 10.5, letterSpacing: ".03em", color: "#8A9180", margin: "12px 0 0" }}>{pickupAtDepot ? "Retrait au dépôt sélectionné : aucun frais de livraison ne sera facturé." : "Frais estimés pour une adresse locale ; le montant définitif est calculé à l'étape suivante selon votre code postal."}</p>
               <div style={{ height: 1, background: "rgba(35,41,31,.1)", margin: "22px 0" }} />
               <div className="lbb-cart-summary-total" style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16 }}>
                 <span style={{ ...sans, fontWeight: 700, fontSize: 17, letterSpacing: "-.02em" }}>Total TTC</span>
@@ -2577,7 +2590,7 @@ function CustomerAuthCard({ title, description, initialMode = "login", onLogin, 
   );
 }
 
-function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, defaultCategoryPath, onLogin, onRegister, onPlaceOrder, onStartStripeCheckout, promoCode, onApplyPromoCode }) {
+function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, defaultCategoryPath, onLogin, onRegister, onPlaceOrder, onStartStripeCheckout, promoCode, onApplyPromoCode, pickupAtDepot, onTogglePickup }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [draft, setDraft] = useState(() => buildCheckoutDraft(account));
@@ -2586,7 +2599,10 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
   const [promoInput, setPromoInput] = useState(promoCode || "");
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const woodVolume = cartItems.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + item.quantity, 0);
-  const shippingResult = computeShipping({ postcode: draft.deliveryAddress.postcode, woodVolume });
+  const rawShippingResult = computeShipping({ postcode: draft.deliveryAddress.postcode, woodVolume });
+  const shippingResult = pickupAtDepot
+    ? { amount: 0, label: "Retrait au dépôt — gratuit", quoteRequired: false, freeShipping: true }
+    : rawShippingResult;
   const shipping = shippingResult.amount;
   const promoResult = promoCode ? validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes) : { valid: false, amount: 0, message: "" };
   const discountAmount = promoResult.valid ? promoResult.amount : 0;
@@ -2653,6 +2669,7 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
         ...draft,
         paymentMethod: "Carte bancaire",
         shippingAmount: shipping,
+        pickupAtDepot,
         promoCode: promoResult.valid ? promoResult.code : "",
         billingAddress: draft.billingSameAsDelivery ? draft.deliveryAddress : draft.billingAddress
       };
@@ -2709,11 +2726,15 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
 
               <div style={{ display: "grid", gap: 12 }}>
                 <strong style={{ ...sans, fontWeight: 700, fontSize: 22, letterSpacing: "-.02em" }}>Adresse de livraison</strong>
+                <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 15.5, color: "#4E5647" }}>
+                  <input type="checkbox" checked={pickupAtDepot} onChange={(event) => onTogglePickup(event.target.checked)} />
+                  Je retire ma commande au dépôt (Montgaillard-Lauragais) — livraison offerte
+                </label>
                 <div className="lbb-two-col" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
-                  <input value={draft.deliveryAddress.line1} onChange={(event) => updateAddress("deliveryAddress", "line1", event.target.value)} placeholder="Adresse" className="lbb-admin-input" required />
+                  <input value={draft.deliveryAddress.line1} onChange={(event) => updateAddress("deliveryAddress", "line1", event.target.value)} placeholder="Adresse" className="lbb-admin-input" required={!pickupAtDepot} />
                   <input value={draft.deliveryAddress.line2} onChange={(event) => updateAddress("deliveryAddress", "line2", event.target.value)} placeholder="Complément" className="lbb-admin-input" />
-                  <input value={draft.deliveryAddress.postcode} onChange={(event) => updateAddress("deliveryAddress", "postcode", event.target.value)} placeholder="Code postal" className="lbb-admin-input" required />
-                  <input value={draft.deliveryAddress.city} onChange={(event) => updateAddress("deliveryAddress", "city", event.target.value)} placeholder="Ville" className="lbb-admin-input" required />
+                  <input value={draft.deliveryAddress.postcode} onChange={(event) => updateAddress("deliveryAddress", "postcode", event.target.value)} placeholder="Code postal" className="lbb-admin-input" required={!pickupAtDepot} />
+                  <input value={draft.deliveryAddress.city} onChange={(event) => updateAddress("deliveryAddress", "city", event.target.value)} placeholder="Ville" className="lbb-admin-input" required={!pickupAtDepot} />
                 </div>
                 <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".03em", color: shippingResult.quoteRequired ? "#A8501B" : "#8A9180" }}>{shippingResult.label}</span>
               </div>
@@ -4898,7 +4919,7 @@ function CheckoutStep({ active = false, label, number }) {
 
 function SiteFooter() {
   return (
-    <footer style={{ background: "#23291F", color: "#9AA391" }}>
+    <footer style={{ background: "#5B321D", color: "#D9C9BA" }}>
       <div className="lbb-footer-grid" style={{ ...pageShell, paddingTop: 80, paddingBottom: 30 }}>
         <div>
           <img className="brand-logo brand-logo-footer" src={brand.logo} alt="La Belle Bûche" />
@@ -4906,21 +4927,19 @@ function SiteFooter() {
           <p style={{ margin: "0 0 20px", fontSize: 16, lineHeight: 1.55, maxWidth: "40ch" }}>Bûcherons-négociants dans le Sud-Ouest. Du bois coupé près de chez vous, séché deux ans, livré et rangé.</p>
         </div>
         <div style={{ display: "grid", gap: 11, alignContent: "start", fontSize: 16 }}>
-          <div style={{ ...sans, fontWeight: 700, fontSize: 12.5, letterSpacing: ".05em", color: "#F4F7EC", marginBottom: 6 }}>Ville</div>
+          <div style={{ ...sans, fontWeight: 700, fontSize: 12.5, letterSpacing: ".05em", color: "#FBF6EE", marginBottom: 6 }}>Ville</div>
+          <span>Montgaillard-Lauragais</span>
+        </div>
+        <div style={{ display: "grid", gap: 11, alignContent: "start", fontSize: 16 }}>
+          <div style={{ ...sans, fontWeight: 700, fontSize: 12.5, letterSpacing: ".05em", color: "#FBF6EE", marginBottom: 6 }}>Contact</div>
           <span>{brand.phone}</span>
-          <span>Montgaillard-Lauragais</span>
         </div>
         <div style={{ display: "grid", gap: 11, alignContent: "start", fontSize: 16 }}>
-          <div style={{ ...sans, fontWeight: 700, fontSize: 12.5, letterSpacing: ".05em", color: "#F4F7EC", marginBottom: 6 }}>Contact</div>
-          <span>{brand.advisorPhone}</span>
-          <span>Montgaillard-Lauragais</span>
-        </div>
-        <div style={{ display: "grid", gap: 11, alignContent: "start", fontSize: 16 }}>
-          <div style={{ ...sans, fontWeight: 700, fontSize: 12.5, letterSpacing: ".05em", color: "#F4F7EC", marginBottom: 6 }}>Informations</div>
+          <div style={{ ...sans, fontWeight: 700, fontSize: 12.5, letterSpacing: ".05em", color: "#FBF6EE", marginBottom: 6 }}>Informations</div>
           <a href="#">Livraison</a><a href="#">Qu'est-ce qu'un stère ?</a><Link to="/compte">Programme de fidélité</Link><a href="#">CGV — CGU</a><a href="#">Mentions légales</a>
         </div>
       </div>
-      <div style={{ ...pageShell, paddingTop: 22, paddingBottom: 40, borderTop: "1px solid rgba(244,247,236,.1)", ...mono, fontSize: 10.5, letterSpacing: ".07em", display: "flex", justifyContent: "space-between", gap: 20, flexWrap: "wrap" }}>
+      <div style={{ ...pageShell, paddingTop: 22, paddingBottom: 40, borderTop: "1px solid rgba(251,246,238,.15)", ...mono, fontSize: 10.5, letterSpacing: ".07em", display: "flex", justifyContent: "space-between", gap: 20, flexWrap: "wrap" }}>
         <span>© 2026 La Belle Bûche — Maquette portée sous React</span>
         <span>Paiement par carte bancaire · 3× sans frais</span>
       </div>

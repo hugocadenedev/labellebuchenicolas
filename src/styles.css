@@ -234,9 +234,25 @@ img {
   min-height: 760px;
   overflow: hidden;
   background-color: #2f2116;
+  isolation: isolate;
+}
+
+.lbb-hero-bg-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  z-index: -3;
+}
+
+.lbb-hero-overlay {
+  position: absolute;
+  inset: 0;
   background-position: center center;
   background-size: cover;
-  isolation: isolate;
+  z-index: -2;
 }
 
 .lbb-hero-haze {
@@ -1206,11 +1222,6 @@ img {
     content: "•";
     margin-left: 28px;
     opacity: 0.6;
-  }
-
-  .lbb-announcement-bar-item:last-child::after {
-    content: "";
-    margin-left: 0;
   }
 
   .lbb-btn {

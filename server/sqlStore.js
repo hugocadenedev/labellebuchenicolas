@@ -1785,11 +1785,12 @@ export async function createOrder(input) {
     ? normalizeAddress(input.billingAddress, customerName)
     : { ...deliveryAddress };
   const woodVolume = items.filter((item) => item.product.category === "bois-de-chauffage").reduce((sum, item) => sum + item.quantity, 0);
+  const pickupAtDepot = Boolean(input.pickupAtDepot);
   const shippingResult = computeShipping({ postcode: deliveryAddress.postcode, woodVolume });
-  if (shippingResult.quoteRequired) {
+  if (!pickupAtDepot && shippingResult.quoteRequired) {
     throw httpError(400, "Cette adresse est hors zone de livraison automatique. Contactez-nous pour établir un devis.");
   }
-  const shippingAmount = shippingResult.amount;
+  const shippingAmount = pickupAtDepot ? 0 : shippingResult.amount;
   const total = roundCurrency(subtotal - discountAmount + shippingAmount);
   const taxAmount = roundCurrency(total / 6);
   const now = new Date().toISOString();
@@ -1830,6 +1831,7 @@ export async function createOrder(input) {
     paymentMethod,
     paymentReference,
     shippingAmount,
+    pickupAtDepot,
     discountAmount,
     promoCode: promoResult.valid ? promoResult.code : "",
     taxAmount,
