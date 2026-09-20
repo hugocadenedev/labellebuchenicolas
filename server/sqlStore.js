@@ -1117,7 +1117,7 @@ export async function replaceAllDataFromSnapshot(snapshot) {
       await connection.query(
         `INSERT INTO products
           (external_id, template_product_external_id, name, slug, sku, cat_label, essence_name, family_name, legacy_category_slug, short_description, description, unit_label, sell_unit, badge, badge_tone, rating_label, reviews_label, default_length, available_lengths_json, length_prices_json, default_drying, available_drying_durations_json, humidity_label, origin_label, calorific_value_label, image_key, image_url, gallery_keys_json, gallery_urls_json, specs_json, tabs_json, old_price, status, product_type)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           product.id,
           product.templateProductId || null,
