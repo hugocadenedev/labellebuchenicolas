@@ -259,13 +259,13 @@ function estimateStorageRatio(length) {
   return 1;
 }
 
-// Un produit vendu au m3 stocke son prix reel par m3; on affiche en avant l'equivalent au stere.
+// Un produit vendu au m3 saisit son prix au stere comme d'habitude; on calcule le prix reel au m3.
 function isSoldByVolume(product) {
   return product?.sellUnit === "m3";
 }
 
-function getStereEquivalentPrice(product, pricePerM3) {
-  return Math.round(pricePerM3 * estimateStorageRatio(product?.length) * 100) / 100;
+function getM3PriceFromSterePrice(product, pricePerStere) {
+  return Math.round((pricePerStere / Math.max(estimateStorageRatio(product?.length), 0.01)) * 100) / 100;
 }
 
 function selectEstimatorProduct(siteProducts, preferredLength, preferredEssence = "") {
@@ -505,7 +505,6 @@ function getProductQuantityUnitLabel(product) {
   if (isAccessoryProduct(product)) {
     return product.unit?.includes("filet") ? "filet(s)" : "boîte(s)";
   }
-  if (isSoldByVolume(product)) return "m³";
   return "stère(s)";
 }
 
@@ -2208,8 +2207,7 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
   const activeUnitPrice = getProductPriceForLength(activeProduct, length);
   const total = activeUnitPrice * qty;
   const sellsByVolume = !isAccessory && !isService && isSoldByVolume(activeProduct);
-  const displayedPrice = sellsByVolume ? getStereEquivalentPrice(activeProduct, activeUnitPrice) : activeUnitPrice;
-  const displayedUnitLabel = sellsByVolume ? "/ stère TTC (éq.)" : activeProduct.unit;
+  const m3Price = sellsByVolume ? getM3PriceFromSterePrice(activeProduct, activeUnitPrice) : null;
   const currentCategory = getCategoryForProduct(categories, activeProduct.id);
   const currentCategoryPath = currentCategory ? getCategoryHref(currentCategory.slug) : defaultCategoryPath;
   const related = siteProducts.filter((item) => item.category === activeProduct.category && item.id !== activeProduct.id).slice(0, 4);
@@ -2295,7 +2293,7 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
             {!isService && (optionChoices.length > 0 || secondaryOptionChoices.length > 0) ? <div style={{ height: 1, background: "rgba(35,41,31,.09)" }} /> : null}
             <div style={{ display: "grid", gap: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-                <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>{isService ? "QUANTITÉ DE PRESTATIONS" : isAccessory ? "QUANTITÉ" : sellsByVolume ? "NOMBRE DE M³" : "NOMBRE DE STÈRES"}</span>
+                <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>{isService ? "QUANTITÉ DE PRESTATIONS" : isAccessory ? "QUANTITÉ" : "NOMBRE DE STÈRES"}</span>
                 <span style={{ ...mono, fontSize: 10.5, color: "#C05621" }}>{isService ? "Service ajoutable avant validation de la commande" : isAccessory ? "Ajoutable à une livraison ou à un retrait dépôt" : ""}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
@@ -2305,7 +2303,7 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
                   <button type="button" onClick={() => setQty((current) => current + 1)} style={{ background: "transparent", border: 0, cursor: "pointer", fontSize: 19, color: "#55604F", lineHeight: 1 }}>+</button>
                 </div>
                 <div style={{ display: "grid", gap: 4 }}>
-                  <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>{isService ? `${qty} ${quantityUnitLabel}` : isAccessory ? `${qty} ${quantityUnitLabel}` : sellsByVolume ? `soit env. ${(qty / Math.max(estimateStorageRatio(activeProduct.length), 0.01)).toFixed(1).replace(".", ",")} stère(s) éq.` : `soit env. ${(qty * 0.7).toFixed(1).replace(".", ",")} m³ empilé`}</span>
+                  <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>{isService ? `${qty} ${quantityUnitLabel}` : isAccessory ? `${qty} ${quantityUnitLabel}` : `soit env. ${(qty * estimateStorageRatio(activeProduct.length)).toFixed(1).replace(".", ",")} m³ empilé`}</span>
                   <span style={{ ...mono, fontSize: 10.5, color: "#5B321D" }}>{isService ? "Ajout facturé comme ligne complémentaire." : isAccessory ? "Compatible avec les tournées bois et le retrait dépôt" : `Base saison moyenne pour une maison de ${qty >= 5 ? "100 à 130" : "70 à 90"} m²`}</span>
                 </div>
               </div>
@@ -2313,11 +2311,11 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
             <div style={{ display: "flex", alignItems: "end", justifyContent: "space-between", gap: 20, flexWrap: "wrap" }}>
               <div style={{ display: "grid", gap: 6 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                  <span style={{ ...sans, fontWeight: 700, fontSize: 40, letterSpacing: "-.035em", lineHeight: 1 }}>{formatPrice(displayedPrice)}</span>
+                  <span style={{ ...sans, fontWeight: 700, fontSize: 40, letterSpacing: "-.035em", lineHeight: 1 }}>{formatPrice(activeUnitPrice)}</span>
                   {hasOldPrice ? <span style={{ ...mono, fontSize: 11.5, color: "#A8AE9C", textDecoration: "line-through" }}>{formatPrice(activeProduct.oldPrice)}</span> : null}
-                  <span style={{ ...mono, fontSize: 11.5, color: "#8A9180" }}>{displayedUnitLabel}</span>
+                  <span style={{ ...mono, fontSize: 11.5, color: "#8A9180" }}>{activeProduct.unit}</span>
                 </div>
-                {sellsByVolume ? <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>Facturé au m³ réel livré : {formatPrice(activeUnitPrice)} TTC / m³</span> : null}
+                {sellsByVolume ? <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>Soit environ {formatPrice(m3Price)} TTC / m³ réel</span> : null}
                 <span style={{ ...mono, fontSize: 11, color: "#4E5647" }}>Total {qty} {quantityUnitLabel} · <span style={{ color: "#23291F" }}>{formatPrice(total)}</span> · tarifs TTC TVA 10 %</span>
               </div>
             </div>
@@ -3727,8 +3725,8 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
           <label style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
             <input type="checkbox" checked={draft.sellUnit === "m3"} onChange={(event) => updateDraft("sellUnit", event.target.checked ? "m3" : "stere")} style={{ marginTop: 4 }} />
             <span style={{ display: "grid", gap: 4 }}>
-              <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>VENDU AU M³ (PRIX HT SAISI = PRIX PAR M³)</span>
-              <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>La fiche produit met en avant le prix équivalent au stère, mais la commande est bien facturée et suivie en stock au m³ réel.</span>
+              <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>VENDU AU M³ (CALCUL AUTOMATIQUE DU PRIX AU M³)</span>
+              <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>Le prix HT saisi ci-dessus reste le prix au stère comme d'habitude. La fiche produit affiche aussi le prix équivalent au m³, calculé automatiquement selon la longueur des bûches.</span>
             </span>
           </label>
         ) : null}
