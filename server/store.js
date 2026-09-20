@@ -546,33 +546,18 @@ function buildProductSpecs(input) {
   return [
     { k: "Essence", v: label || "Feuillus" },
     input.origin ? { k: "Origine", v: input.origin } : null,
-    input.length ? { k: "Longueur", v: input.length } : null,
-    input.humidity ? { k: "Humidite", v: input.humidity } : null,
-    input.calorificValue ? { k: "Pouvoir calorifique", v: input.calorificValue } : null
+    input.length ? { k: "Longueur", v: input.length } : null
   ].filter(Boolean);
 }
 
 function buildProductTabs(input) {
   const productName = input.name || "Ce lot";
-  const family = input.essence || input.family || "bois";
-  const length = normalizeText(input.length);
-  const drying = normalizeText(input.drying);
   const desc = input.desc || `${productName} est prepare pour une chauffe reguliere et une utilisation simple au quotidien.`;
-  const optionFragments = [
-    length ? `une coupe ${length}` : "",
-    drying ? `un lot ${drying.toLowerCase()}` : ""
-  ].filter(Boolean);
-  const optionSentence = optionFragments.length > 0
-    ? `${family} propose ${optionFragments.join(" avec ")} pour un usage immediat.`
-    : `${family} propose un lot prepare pour un usage immediat.`;
 
   return {
     overview: {
       title: `Pourquoi choisir ${productName}`,
-      paragraphs: [
-        desc,
-        optionSentence
-      ],
+      paragraphs: [desc],
       points: [
         `Reference ${input.sku || input.id}.`,
         input.humidity ? `${input.humidity}.` : null,
@@ -582,13 +567,9 @@ function buildProductTabs(input) {
     livraison: {
       title: "Livraison et disponibilite",
       paragraphs: [
-        "Le produit peut etre integre aux tournees locales ou prepare pour un retrait depot selon la saison.",
-        `Stock pilote en back office avec un seuil d'alerte a ${Number(input.threshold || 0)} unites.`
+        "Frais de livraison calcule a la validation de la commande ou retrait au depot."
       ],
-      points: [
-        "Mise a jour immediate des stocks admin.",
-        "Produit publiable directement sur le storefront."
-      ]
+      points: []
     }
   };
 }
@@ -623,6 +604,7 @@ function normalizeProductInput(input) {
     price: defaultPrice,
     oldPrice: Number.isFinite(oldPrice) ? oldPrice : null,
     unit: stripDeliveredWording(input.unit) || "/ stere",
+    sellUnit: input.sellUnit === "m3" ? "m3" : "stere",
     badge: input.badge || "Nouveau",
     badgeTone: input.badgeTone || "green",
     rating: input.rating || "★★★★★",
@@ -852,7 +834,7 @@ export async function updateProduct(id, input) {
     ...currentProduct,
     ...nextProduct,
     specs: Array.isArray(input.specs) ? input.specs : currentProduct.specs,
-    tabs: input.tabs?.overview && input.tabs?.livraison ? input.tabs : currentProduct.tabs
+    tabs: nextProduct.tabs
   };
   removeProductFromCategories(data, currentProduct.id);
   assignProductToCategory(data, data.products[index].categoryId, data.products[index]);

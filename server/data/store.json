@@ -95,28 +95,22 @@
       ],
       "tabs": {
         "overview": {
-          "title": "Un service ajouté à votre livraison",
+          "title": "Pourquoi choisir Rangement du bois",
           "paragraphs": [
-            "Le rangement du bois permet de préparer l'espace avant notre passage et de faire positionner le bois directement dans la zone prévue.",
-            "Cette prestation est proposée comme un complément simple, visible dans le panier et dans la commande finale."
+            "Mise en place du bois au bûcher ou dans votre zone de stockage lors de la livraison."
           ],
           "points": [
-            "Ajoutable directement au panier.",
-            "Facturation claire sur la commande.",
-            "Planifiée sur le même créneau que la livraison."
+            "Reference SERVICE-RANGEMENT.",
+            "Intervention locale.",
+            "Équipe locale."
           ]
         },
         "livraison": {
-          "title": "Planification du service",
+          "title": "Livraison et disponibilite",
           "paragraphs": [
-            "Le service suit le même créneau que la commande principale pour éviter les doubles déplacements.",
-            "L'équipe confirme si un accès ou une consigne spécifique est nécessaire avant le passage."
+            "Frais de livraison calcule a la validation de la commande ou retrait au depot."
           ],
-          "points": [
-            "Visible dans le tunnel de commande.",
-            "Ajoutable jusqu'à la validation finale.",
-            "Suivi avec le reste de la commande."
-          ]
+          "points": []
         }
       },
       "stockQty": 999,

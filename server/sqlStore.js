@@ -517,33 +517,18 @@ function buildProductSpecs(input) {
   return [
     { k: "Essence", v: label || "Feuillus" },
     input.origin ? { k: "Origine", v: input.origin } : null,
-    input.length ? { k: "Longueur", v: input.length } : null,
-    input.humidity ? { k: "Humidite", v: input.humidity } : null,
-    input.calorificValue ? { k: "Pouvoir calorifique", v: input.calorificValue } : null
+    input.length ? { k: "Longueur", v: input.length } : null
   ].filter(Boolean);
 }
 
 function buildProductTabs(input) {
   const productName = input.name || "Ce lot";
-  const family = input.essence || input.family || "bois";
-  const length = normalizeText(input.length);
-  const drying = normalizeText(input.drying);
   const desc = input.desc || `${productName} est prepare pour une chauffe reguliere et une utilisation simple au quotidien.`;
-  const optionFragments = [
-    length ? `une coupe ${length}` : "",
-    drying ? `un lot ${drying.toLowerCase()}` : ""
-  ].filter(Boolean);
-  const optionSentence = optionFragments.length > 0
-    ? `${family} propose ${optionFragments.join(" avec ")} pour un usage immediat.`
-    : `${family} propose un lot prepare pour un usage immediat.`;
 
   return {
     overview: {
       title: `Pourquoi choisir ${productName}`,
-      paragraphs: [
-        desc,
-        optionSentence
-      ],
+      paragraphs: [desc],
       points: [
         `Reference ${input.sku || input.id}.`,
         input.humidity ? `${input.humidity}.` : null,
@@ -553,13 +538,9 @@ function buildProductTabs(input) {
     livraison: {
       title: "Livraison et disponibilite",
       paragraphs: [
-        "Le produit peut etre integre aux tournees locales ou prepare pour un retrait depot selon la saison.",
-        `Stock pilote en back office avec un seuil d'alerte a ${Number(input.threshold || 0)} unites.`
+        "Frais de livraison calcule a la validation de la commande ou retrait au depot."
       ],
-      points: [
-        "Mise a jour immediate des stocks admin.",
-        "Produit publiable directement sur le storefront."
-      ]
+      points: []
     }
   };
 }
@@ -594,6 +575,7 @@ function normalizeProductInput(input) {
     price: defaultPrice,
     oldPrice: Number.isFinite(oldPrice) ? oldPrice : null,
     unit: stripDeliveredWording(input.unit) || "/ stere",
+    sellUnit: input.sellUnit === "m3" ? "m3" : "stere",
     badge: input.badge || "Nouveau",
     badgeTone: input.badgeTone || "green",
     rating: input.rating || "★★★★★",
@@ -804,6 +786,7 @@ async function readSqlState() {
       pv.price,
       p.old_price,
       p.unit_label,
+      p.sell_unit,
       p.badge,
       p.badge_tone,
       p.rating_label,
@@ -845,6 +828,7 @@ async function readSqlState() {
     price: Number(row.price || 0),
     oldPrice: row.old_price === null ? null : Number(row.old_price),
     unit: stripDeliveredWording(row.unit_label) || "/ stere",
+    sellUnit: row.sell_unit === "m3" ? "m3" : "stere",
     badge: row.badge || "Nouveau",
     badgeTone: row.badge_tone || "green",
     rating: row.rating_label || "",
@@ -1132,7 +1116,7 @@ export async function replaceAllDataFromSnapshot(snapshot) {
       const productType = String(product.family || "").toLowerCase().includes("service") ? "service" : "physical";
       await connection.query(
         `INSERT INTO products
-          (external_id, template_product_external_id, name, slug, sku, cat_label, essence_name, family_name, legacy_category_slug, short_description, description, unit_label, badge, badge_tone, rating_label, reviews_label, default_length, available_lengths_json, length_prices_json, default_drying, available_drying_durations_json, humidity_label, origin_label, calorific_value_label, image_key, image_url, gallery_keys_json, gallery_urls_json, specs_json, tabs_json, old_price, status, product_type)
+          (external_id, template_product_external_id, name, slug, sku, cat_label, essence_name, family_name, legacy_category_slug, short_description, description, unit_label, sell_unit, badge, badge_tone, rating_label, reviews_label, default_length, available_lengths_json, length_prices_json, default_drying, available_drying_durations_json, humidity_label, origin_label, calorific_value_label, image_key, image_url, gallery_keys_json, gallery_urls_json, specs_json, tabs_json, old_price, status, product_type)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           product.id,
@@ -1147,6 +1131,7 @@ export async function replaceAllDataFromSnapshot(snapshot) {
           product.desc || null,
           product.desc || null,
           product.unit || null,
+          product.sellUnit === "m3" ? "m3" : "stere",
           product.badge || null,
           product.badgeTone || null,
           product.rating || null,
@@ -1549,7 +1534,7 @@ export async function updateProduct(id, input) {
     ...currentProduct,
     ...nextProduct,
     specs: Array.isArray(input.specs) ? input.specs : currentProduct.specs,
-    tabs: input.tabs?.overview && input.tabs?.livraison ? input.tabs : currentProduct.tabs
+    tabs: nextProduct.tabs
   };
   removeProductFromCategories(data, currentProduct.id);
   assignProductToCategory(data, data.products[index].categoryId, data.products[index]);

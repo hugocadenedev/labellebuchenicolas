@@ -111,10 +111,10 @@ function buildCatalogProduct({
       { k: category === "accessoires" ? "Produit" : "Essence", v: essence },
       { k: "Origine", v: origin },
       { k: category === "accessoires" ? "Conditionnement" : "Longueur", v: length },
-      { k: category === "accessoires" ? "Usage" : "Humidité", v: humidity },
+      category === "accessoires" ? { k: "Usage", v: humidity } : null,
       ...specsExtras,
-      { k: category === "accessoires" ? "Tarif TTC" : "Pouvoir calorifique", v: calorificValue }
-    ],
+      category === "accessoires" ? { k: "Tarif TTC", v: calorificValue } : null
+    ].filter(Boolean),
     tabs: {
       overview: {
         title: overviewTitle,

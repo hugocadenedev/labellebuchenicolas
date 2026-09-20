@@ -259,6 +259,15 @@ function estimateStorageRatio(length) {
   return 1;
 }
 
+// Un produit vendu au m3 stocke son prix reel par m3; on affiche en avant l'equivalent au stere.
+function isSoldByVolume(product) {
+  return product?.sellUnit === "m3";
+}
+
+function getStereEquivalentPrice(product, pricePerM3) {
+  return Math.round(pricePerM3 * estimateStorageRatio(product?.length) * 100) / 100;
+}
+
 function selectEstimatorProduct(siteProducts, preferredLength, preferredEssence = "") {
   const woodProducts = siteProducts.filter((product) => product.category === "bois-de-chauffage");
   return woodProducts.find((product) => product.length === preferredLength && (!preferredEssence || product.family === preferredEssence || product.essence === preferredEssence))
@@ -496,6 +505,7 @@ function getProductQuantityUnitLabel(product) {
   if (isAccessoryProduct(product)) {
     return product.unit?.includes("filet") ? "filet(s)" : "boîte(s)";
   }
+  if (isSoldByVolume(product)) return "m³";
   return "stère(s)";
 }
 
@@ -2197,6 +2207,9 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
   const activeProduct = isAccessory || isService || hasProductLevelOptions ? product : findMatchingVariant(variantProducts, length, drying) || product;
   const activeUnitPrice = getProductPriceForLength(activeProduct, length);
   const total = activeUnitPrice * qty;
+  const sellsByVolume = !isAccessory && !isService && isSoldByVolume(activeProduct);
+  const displayedPrice = sellsByVolume ? getStereEquivalentPrice(activeProduct, activeUnitPrice) : activeUnitPrice;
+  const displayedUnitLabel = sellsByVolume ? "/ stère TTC (éq.)" : activeProduct.unit;
   const currentCategory = getCategoryForProduct(categories, activeProduct.id);
   const currentCategoryPath = currentCategory ? getCategoryHref(currentCategory.slug) : defaultCategoryPath;
   const related = siteProducts.filter((item) => item.category === activeProduct.category && item.id !== activeProduct.id).slice(0, 4);
@@ -2268,7 +2281,7 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
         </div>
         <div>
           <div style={{ ...mono, fontSize: 11, letterSpacing: ".08em", color: "#C05621", marginBottom: 14 }}>{activeProduct.essence} · Forêt du Sud-Ouest · réf. {activeProduct.id.toUpperCase()}</div>
-          <h1 style={{ ...sans, fontWeight: 700, fontSize: "clamp(34px, 3.7vw, 50px)", lineHeight: 1.02, letterSpacing: "-.034em", margin: "0 0 16px" }}>{activeProduct.name}<br />{isService ? "prestation disponible à la commande" : isAccessory ? "à ajouter à votre commande" : "vendu au stère"}</h1>
+          <h1 style={{ ...sans, fontWeight: 700, fontSize: "clamp(34px, 3.7vw, 50px)", lineHeight: 1.02, letterSpacing: "-.034em", margin: "0 0 16px" }}>{activeProduct.name}</h1>
           <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: 22, ...mono, fontSize: 11.5 }}>
             {activeProduct.rating ? <span style={{ color: "#C05621", letterSpacing: ".12em" }}>{activeProduct.rating}</span> : null}
             {activeProduct.reviews ? <a href="#avis" style={{ color: "#5B321D", borderBottom: "1px solid rgba(91,50,29,.35)" }}>{activeProduct.reviews}</a> : null}
@@ -2282,7 +2295,7 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
             {!isService && (optionChoices.length > 0 || secondaryOptionChoices.length > 0) ? <div style={{ height: 1, background: "rgba(35,41,31,.09)" }} /> : null}
             <div style={{ display: "grid", gap: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-                <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>{isService ? "QUANTITÉ DE PRESTATIONS" : isAccessory ? "QUANTITÉ" : "NOMBRE DE STÈRES"}</span>
+                <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>{isService ? "QUANTITÉ DE PRESTATIONS" : isAccessory ? "QUANTITÉ" : sellsByVolume ? "NOMBRE DE M³" : "NOMBRE DE STÈRES"}</span>
                 <span style={{ ...mono, fontSize: 10.5, color: "#C05621" }}>{isService ? "Service ajoutable avant validation de la commande" : isAccessory ? "Ajoutable à une livraison ou à un retrait dépôt" : ""}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
@@ -2292,7 +2305,7 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
                   <button type="button" onClick={() => setQty((current) => current + 1)} style={{ background: "transparent", border: 0, cursor: "pointer", fontSize: 19, color: "#55604F", lineHeight: 1 }}>+</button>
                 </div>
                 <div style={{ display: "grid", gap: 4 }}>
-                  <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>{isService ? `${qty} ${quantityUnitLabel}` : isAccessory ? `${qty} ${quantityUnitLabel}` : `soit env. ${(qty * 0.7).toFixed(1).replace(".", ",")} m³ empilé`}</span>
+                  <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>{isService ? `${qty} ${quantityUnitLabel}` : isAccessory ? `${qty} ${quantityUnitLabel}` : sellsByVolume ? `soit env. ${(qty / Math.max(estimateStorageRatio(activeProduct.length), 0.01)).toFixed(1).replace(".", ",")} stère(s) éq.` : `soit env. ${(qty * 0.7).toFixed(1).replace(".", ",")} m³ empilé`}</span>
                   <span style={{ ...mono, fontSize: 10.5, color: "#5B321D" }}>{isService ? "Ajout facturé comme ligne complémentaire." : isAccessory ? "Compatible avec les tournées bois et le retrait dépôt" : `Base saison moyenne pour une maison de ${qty >= 5 ? "100 à 130" : "70 à 90"} m²`}</span>
                 </div>
               </div>
@@ -2300,10 +2313,11 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
             <div style={{ display: "flex", alignItems: "end", justifyContent: "space-between", gap: 20, flexWrap: "wrap" }}>
               <div style={{ display: "grid", gap: 6 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                  <span style={{ ...sans, fontWeight: 700, fontSize: 40, letterSpacing: "-.035em", lineHeight: 1 }}>{formatPrice(activeUnitPrice)}</span>
+                  <span style={{ ...sans, fontWeight: 700, fontSize: 40, letterSpacing: "-.035em", lineHeight: 1 }}>{formatPrice(displayedPrice)}</span>
                   {hasOldPrice ? <span style={{ ...mono, fontSize: 11.5, color: "#A8AE9C", textDecoration: "line-through" }}>{formatPrice(activeProduct.oldPrice)}</span> : null}
-                  <span style={{ ...mono, fontSize: 11.5, color: "#8A9180" }}>{activeProduct.unit}</span>
+                  <span style={{ ...mono, fontSize: 11.5, color: "#8A9180" }}>{displayedUnitLabel}</span>
                 </div>
+                {sellsByVolume ? <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>Facturé au m³ réel livré : {formatPrice(activeUnitPrice)} TTC / m³</span> : null}
                 <span style={{ ...mono, fontSize: 11, color: "#4E5647" }}>Total {qty} {quantityUnitLabel} · <span style={{ color: "#23291F" }}>{formatPrice(total)}</span> · tarifs TTC TVA 10 %</span>
               </div>
             </div>
@@ -3025,6 +3039,7 @@ function createProductDraft(categories, settings, creationMode = "product") {
     humidity: "",
     imageUrl: "",
     unit: "",
+    sellUnit: "stere",
     status: "active"
   };
 }
@@ -3049,6 +3064,7 @@ function createProductDraftFromProduct(categories, product, settings) {
     humidity: product?.humidity || "",
     imageUrl: product?.imageUrl || "",
     unit: product?.unit || "",
+    sellUnit: product?.sellUnit === "m3" ? "m3" : "stere",
     status: product?.status || "active"
   };
 }
@@ -3585,6 +3601,7 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
         availableDryingDurations: draft.availableDryingDurations,
         imageUrl: isServiceCategory ? "" : draft.imageUrl,
         unit: draft.unit,
+        sellUnit: !isAccessoryCategory && !isServiceCategory && draft.sellUnit === "m3" ? "m3" : "stere",
         category: categoryType,
         categoryId: draft.categoryId,
         family: familyLabel,
@@ -3706,6 +3723,15 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
           <input value={draft.unit} onChange={(event) => updateDraft("unit", event.target.value)} placeholder={isServiceCategory ? "Ex: / prestation TTC" : isAccessoryCategory ? "Ex: / boîte de 12" : "Ex: / stère"} className="lbb-admin-input" />
           <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>Affichée à côté du prix (ex: / stère, / boîte, / sac, / kg). Laisse vide pour "/ stère" par défaut.</span>
         </label>
+        {!isAccessoryCategory && !isServiceCategory ? (
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+            <input type="checkbox" checked={draft.sellUnit === "m3"} onChange={(event) => updateDraft("sellUnit", event.target.checked ? "m3" : "stere")} style={{ marginTop: 4 }} />
+            <span style={{ display: "grid", gap: 4 }}>
+              <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>VENDU AU M³ (PRIX HT SAISI = PRIX PAR M³)</span>
+              <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>La fiche produit met en avant le prix équivalent au stère, mais la commande est bien facturée et suivie en stock au m³ réel.</span>
+            </span>
+          </label>
+        ) : null}
         {!isServiceCategory ? <label style={{ display: "grid", gap: 8 }}>
           <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>PHOTO DU PRODUIT</span>
           {draft.imageUrl ? <img src={draft.imageUrl} alt="Apercu produit" style={{ width: 160, height: 160, objectFit: "cover", borderRadius: 18, border: "1px solid rgba(35,41,31,.12)", background: "#F3EEE4" }} /> : <div style={{ width: 160, height: 160, borderRadius: 18, border: "1px dashed rgba(35,41,31,.18)", background: "#FBFAF5", display: "grid", placeItems: "center", color: "#8A9180", ...mono, fontSize: 10.5, letterSpacing: ".05em" }}>AUCUNE PHOTO</div>}

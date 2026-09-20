@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS products (
   short_description TEXT NULL,
   description LONGTEXT NULL,
   unit_label VARCHAR(100) NULL,
+  sell_unit VARCHAR(10) NOT NULL DEFAULT 'stere',
   badge VARCHAR(100) NULL,
   badge_tone VARCHAR(50) NULL,
   rating_label VARCHAR(50) NULL,
