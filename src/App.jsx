@@ -505,6 +505,7 @@ function getProductQuantityUnitLabel(product) {
   if (isAccessoryProduct(product)) {
     return product.unit?.includes("filet") ? "filet(s)" : "boîte(s)";
   }
+  if (isSoldByVolume(product)) return "m³";
   return "stère(s)";
 }
 
@@ -2205,9 +2206,10 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
   const hasProductLevelOptions = !isAccessory && !isService && ((product.availableLengths?.length || 0) > 1 || (product.availableDryingDurations?.length || 0) > 1);
   const activeProduct = isAccessory || isService || hasProductLevelOptions ? product : findMatchingVariant(variantProducts, length, drying) || product;
   const activeUnitPrice = getProductPriceForLength(activeProduct, length);
-  const total = activeUnitPrice * qty;
   const sellsByVolume = !isAccessory && !isService && isSoldByVolume(activeProduct);
   const m3Price = sellsByVolume ? getM3PriceFromSterePrice(activeProduct, activeUnitPrice) : null;
+  const billedUnitPrice = sellsByVolume ? m3Price : activeUnitPrice;
+  const total = billedUnitPrice * qty;
   const currentCategory = getCategoryForProduct(categories, activeProduct.id);
   const currentCategoryPath = currentCategory ? getCategoryHref(currentCategory.slug) : defaultCategoryPath;
   const related = siteProducts.filter((item) => item.category === activeProduct.category && item.id !== activeProduct.id).slice(0, 4);
@@ -2293,7 +2295,7 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
             {!isService && (optionChoices.length > 0 || secondaryOptionChoices.length > 0) ? <div style={{ height: 1, background: "rgba(35,41,31,.09)" }} /> : null}
             <div style={{ display: "grid", gap: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-                <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>{isService ? "QUANTITÉ DE PRESTATIONS" : isAccessory ? "QUANTITÉ" : "NOMBRE DE STÈRES"}</span>
+                <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>{isService ? "QUANTITÉ DE PRESTATIONS" : isAccessory ? "QUANTITÉ" : sellsByVolume ? "NOMBRE DE M³" : "NOMBRE DE STÈRES"}</span>
                 <span style={{ ...mono, fontSize: 10.5, color: "#C05621" }}>{isService ? "Service ajoutable avant validation de la commande" : isAccessory ? "Ajoutable à une livraison ou à un retrait dépôt" : ""}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
@@ -2303,7 +2305,7 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
                   <button type="button" onClick={() => setQty((current) => current + 1)} style={{ background: "transparent", border: 0, cursor: "pointer", fontSize: 19, color: "#55604F", lineHeight: 1 }}>+</button>
                 </div>
                 <div style={{ display: "grid", gap: 4 }}>
-                  <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>{isService ? `${qty} ${quantityUnitLabel}` : isAccessory ? `${qty} ${quantityUnitLabel}` : `soit env. ${(qty * estimateStorageRatio(activeProduct.length)).toFixed(1).replace(".", ",")} m³ empilé`}</span>
+                  <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>{isService ? `${qty} ${quantityUnitLabel}` : isAccessory ? `${qty} ${quantityUnitLabel}` : sellsByVolume ? `soit env. ${(qty / Math.max(estimateStorageRatio(activeProduct.length), 0.01)).toFixed(1).replace(".", ",")} stère(s) éq.` : `soit env. ${(qty * estimateStorageRatio(activeProduct.length)).toFixed(1).replace(".", ",")} m³ empilé`}</span>
                   <span style={{ ...mono, fontSize: 10.5, color: "#5B321D" }}>{isService ? "Ajout facturé comme ligne complémentaire." : isAccessory ? "Compatible avec les tournées bois et le retrait dépôt" : `Base saison moyenne pour une maison de ${qty >= 5 ? "100 à 130" : "70 à 90"} m²`}</span>
                 </div>
               </div>
@@ -2315,12 +2317,12 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
                   {hasOldPrice ? <span style={{ ...mono, fontSize: 11.5, color: "#A8AE9C", textDecoration: "line-through" }}>{formatPrice(activeProduct.oldPrice)}</span> : null}
                   <span style={{ ...mono, fontSize: 11.5, color: "#8A9180" }}>{activeProduct.unit}</span>
                 </div>
-                {sellsByVolume ? <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>Soit environ {formatPrice(m3Price)} TTC / m³ réel</span> : null}
+                {sellsByVolume ? <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>Facturé au m³ réel : {formatPrice(m3Price)} TTC / m³</span> : null}
                 <span style={{ ...mono, fontSize: 11, color: "#4E5647" }}>Total {qty} {quantityUnitLabel} · <span style={{ color: "#23291F" }}>{formatPrice(total)}</span> · tarifs TTC TVA 10 %</span>
               </div>
             </div>
             <div className="lbb-cta-grid" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 10 }}>
-              <button type="button" onClick={() => addToCart(activeProduct.id, qty, isAccessory || isService ? { unitPrice: activeUnitPrice } : { length, drying, unitPrice: activeUnitPrice })} className="lbb-btn lbb-btn-primary" style={{ width: "100%", justifyContent: "center" }}>Ajouter {qty} {quantityUnitLabel}</button>
+              <button type="button" onClick={() => addToCart(activeProduct.id, qty, isAccessory || isService ? { unitPrice: activeUnitPrice } : { length, drying, unitPrice: billedUnitPrice })} className="lbb-btn lbb-btn-primary" style={{ width: "100%", justifyContent: "center" }}>Ajouter {qty} {quantityUnitLabel}</button>
               {!isService ? <Link to="/estimation-consommation" className="lbb-btn lbb-btn-secondary" style={{ justifyContent: "center" }}>Estimer ma consommation</Link> : <Link to="/panier" className="lbb-btn lbb-btn-secondary" style={{ justifyContent: "center" }}>Voir mon panier</Link>}
             </div>
           </div>
