@@ -259,13 +259,13 @@ function estimateStorageRatio(length) {
   return 1;
 }
 
-// Un produit vendu au m3 saisit son prix au stere comme d'habitude; on calcule le prix reel au m3.
+// Un produit vendu au m3 saisit directement son prix reel au m3; on calcule le prix equivalent au stere pour l'affichage site.
 function isSoldByVolume(product) {
   return product?.sellUnit === "m3";
 }
 
-function getM3PriceFromSterePrice(product, pricePerStere) {
-  return Math.round((pricePerStere / Math.max(estimateStorageRatio(product?.length), 0.01)) * 100) / 100;
+function getSterePriceFromM3Price(product, pricePerM3) {
+  return Math.round((pricePerM3 * Math.max(estimateStorageRatio(product?.length), 0.01)) * 100) / 100;
 }
 
 // Libelle d'unite affiche dans le panier/commande : m3 pour les produits vendus au m3, sinon l'unite du produit
@@ -342,7 +342,7 @@ function buildConsumptionEstimate(input, siteProducts) {
       : "33 cm";
   const recommendedProduct = selectEstimatorProduct(siteProducts, preferredLength, input.essence);
   const storageVolume = roundToHalf(requiredSteres * estimateStorageRatio(recommendedProduct?.length || preferredLength));
-  const budget = Math.round(requiredSteres * Number(recommendedProduct?.price || 130));
+  const budget = Math.round(requiredSteres * Number(recommendedProduct?.displayPrice ?? recommendedProduct?.price ?? 130));
   const lots = requiredSteres >= 5 ? 2 : 1;
   const monthlyWeights = [0.08, 0.16, 0.24, 0.24, 0.18, 0.1];
   const monthlyPlan = ["Oct.", "Nov.", "Déc.", "Jan.", "Fév.", "Mars"].map((label, index) => ({
@@ -547,6 +547,17 @@ function getProductPriceForLength(product, selectedLength = "") {
   return Number(product?.price || 0);
 }
 
+// Prix affiche au stere (equivalent) pour un produit vendu au m3; identique au prix reel sinon.
+function getProductDisplayPriceForLength(product, selectedLength = "") {
+  const length = selectedLength || product?.length || "";
+  const mappedPrice = Number(product?.displayLengthPrices?.[length]);
+  if (Number.isFinite(mappedPrice) && mappedPrice > 0) {
+    return mappedPrice;
+  }
+
+  return Number(product?.displayPrice || 0);
+}
+
 function buildCartLineId(productId, options = {}) {
   return [productId, options.length || "", options.drying || ""].map((value) => encodeURIComponent(String(value))).join("::");
 }
@@ -700,6 +711,13 @@ function materializeStorefrontProduct(baseProducts, apiProduct) {
   const defaultPriceHt = getProductPriceForLength({ ...baseProduct, ...apiProduct, price: priceHt, lengthPrices: lengthPricesHt }, defaultLength);
   const availableDryingDurations = uniqueByValue(apiProduct.availableDryingDurations || [apiProduct.drying, optionFallbackProduct?.drying].filter(Boolean));
   const defaultDrying = apiProduct.drying || availableDryingDurations[0] || optionFallbackProduct?.drying || "";
+  // Vendu au m3: le prix HT saisi est le prix reel au m3 (facture), on derive un prix au stere pour l'affichage site.
+  const sellsByVolume = apiProduct.sellUnit === "m3";
+  const displayLengthPricesHt = sellsByVolume
+    ? Object.fromEntries(Object.entries(lengthPricesHt).map(([length, value]) => [length, getSterePriceFromM3Price({ length }, value)]))
+    : lengthPricesHt;
+  const displayPriceHt = sellsByVolume ? getSterePriceFromM3Price({ length: defaultLength }, defaultPriceHt) : defaultPriceHt;
+  const displayOldPriceHt = sellsByVolume && oldPriceHt != null ? getSterePriceFromM3Price({ length: defaultLength }, oldPriceHt) : oldPriceHt;
 
   return {
     ...baseProduct,
@@ -713,6 +731,9 @@ function materializeStorefrontProduct(baseProducts, apiProduct) {
     price: convertHtToTtc(defaultPriceHt),
     oldPriceHt,
     oldPrice: oldPriceHt == null ? null : convertHtToTtc(oldPriceHt),
+    displayPrice: convertHtToTtc(displayPriceHt),
+    displayOldPrice: displayOldPriceHt == null ? null : convertHtToTtc(displayOldPriceHt),
+    displayLengthPrices: convertPriceMapHtToTtc(displayLengthPricesHt),
     unit: stripDeliveredWording(apiProduct.unit) || stripDeliveredWording(baseProduct?.unit) || "/ stere",
     badge: apiProduct.badge || baseProduct?.badge || "Nouveau",
     badgeTone: apiProduct.badgeTone || baseProduct?.badgeTone || "green",
@@ -753,7 +774,7 @@ function buildStorefrontProducts(baseProducts, adminProducts) {
 function buildStorefrontCategories(categories, allProducts) {
   return categories.map((category) => {
     const categoryProducts = getCategoryProducts(allProducts, category).filter((product) => product.status !== "draft" && !isServiceProduct(product));
-    const minPrice = categoryProducts.length > 0 ? Math.min(...categoryProducts.map((product) => Number(product.price || 0))) : null;
+    const minPrice = categoryProducts.length > 0 ? Math.min(...categoryProducts.map((product) => Number(product.displayPrice || 0))) : null;
 
     return {
       ...category,
@@ -1197,10 +1218,10 @@ function StorefrontApp() {
     if (!productId) return;
     const product = siteProducts.find((item) => item.id === productId);
     const length = options.length || product?.length || "";
-    const sterePrice = Number.isFinite(Number(options.unitPrice)) ? Number(options.unitPrice) : getProductPriceForLength(product, length);
+    // Le prix stocke est deja le prix reellement facture (m3 si vendu au m3), aucune conversion necessaire ici.
+    const finalUnitPrice = Number.isFinite(Number(options.unitPrice)) ? Number(options.unitPrice) : getProductPriceForLength(product, length);
     const sellsByVolume = isSoldByVolume(product);
     const finalQuantity = sellsByVolume ? Math.max(1, Math.round(quantity * estimateStorageRatio(length))) : Math.max(1, Math.round(quantity));
-    const finalUnitPrice = sellsByVolume ? getM3PriceFromSterePrice(product, sterePrice) : sterePrice;
     const lineId = buildCartLineId(productId, options);
     setCart({ [lineId]: {
       productId,
@@ -1628,7 +1649,7 @@ function HomePage({ addToCart, categories, settings, siteProducts, defaultCatego
     const base = siteProducts;
     const filtered = chip === "Tous" ? base : getCategoryProducts(base, categories.find((category) => category.label === chip));
     const sorted = [...filtered];
-    if (sort === "price") sorted.sort((a, b) => a.price - b.price);
+    if (sort === "price") sorted.sort((a, b) => (a.displayPrice ?? a.price) - (b.displayPrice ?? b.price));
     if (sort === "stock") sorted.sort((a, b) => b.stockPct - a.stockPct);
     return sorted;
   }, [chip, sort, categories, siteProducts]);
@@ -1916,7 +1937,7 @@ function ConsumptionEstimatorPage({ siteProducts, defaultCategoryPath, onPrepare
                 <div style={{ display: "grid", gap: 6 }}>
                   <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#8A9180" }}>COUPE CONSEILLÉE</span>
                   <strong style={{ ...sans, fontWeight: 700, fontSize: 24 }}>{estimate.recommendedProduct?.name || `Bois ${estimate.preferredLength}`}</strong>
-                  <span style={{ fontSize: 16, lineHeight: 1.55, color: "#5B4A3F" }}>{estimate.recommendedProduct ? `${formatPrice(estimate.recommendedProduct.price)} ${estimate.recommendedProduct.unit}` : `Format ${estimate.preferredLength}`}</span>
+                  <span style={{ fontSize: 16, lineHeight: 1.55, color: "#5B4A3F" }}>{estimate.recommendedProduct ? `${formatPrice(estimate.recommendedProduct.displayPrice ?? estimate.recommendedProduct.price)} ${estimate.recommendedProduct.unit}` : `Format ${estimate.preferredLength}`}</span>
                   <span style={{ ...mono, fontSize: 10.5, color: "#A8501B" }}>Essence retenue : {estimate.chosenEssence}</span>
                 </div>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -2028,7 +2049,7 @@ function CategoryPage({ addToCart, categories, siteProducts, defaultCategoryPath
     const matchEssence = selectedEssences.length === 0 || selectedEssences.includes(product.essence);
     const matchLength = selectedLength.length === 0 || selectedLength.includes(product.length);
     const matchDrying = selectedDrying.length === 0 || selectedDrying.includes(product.drying);
-    const matchPrice = product.price <= priceMax;
+    const matchPrice = (product.displayPrice ?? product.price) <= priceMax;
     return matchEssence && matchLength && matchDrying && matchPrice;
   });
 
@@ -2183,7 +2204,7 @@ function CatalogPage({ addToCart, categories, siteProducts, defaultCategoryPath,
   }
 
   const catalogProducts = siteProducts.filter((product) => product.category === "bois-de-chauffage" || product.category === "accessoires" || product.category === "services");
-  const maxCatalogPrice = Math.max(140, ...catalogProducts.map((product) => product.price));
+  const maxCatalogPrice = Math.max(140, ...catalogProducts.map((product) => product.displayPrice ?? product.price));
   const visibleProducts = catalogProducts
     .filter((product) => {
       const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(getCategoryForProduct(categories, product.id)?.label);
@@ -2191,12 +2212,12 @@ function CatalogPage({ addToCart, categories, siteProducts, defaultCategoryPath,
       const essenceMatch = selectedEssences.length === 0 || selectedEssences.includes(product.essence);
       const lengthMatch = selectedLength.length === 0 || selectedLength.includes(product.length);
       const dryingMatch = selectedDrying.length === 0 || selectedDrying.includes(product.drying);
-      const priceMatch = product.price <= priceMax;
+      const priceMatch = (product.displayPrice ?? product.price) <= priceMax;
       return categoryMatch && typeMatch && essenceMatch && lengthMatch && dryingMatch && priceMatch;
     })
     .sort((left, right) => {
-      if (sort === "price-asc") return left.price - right.price;
-      if (sort === "price-desc") return right.price - left.price;
+      if (sort === "price-asc") return (left.displayPrice ?? left.price) - (right.displayPrice ?? right.price);
+      if (sort === "price-desc") return (right.displayPrice ?? right.price) - (left.displayPrice ?? left.price);
       if (sort === "alpha") return left.name.localeCompare(right.name, "fr");
       return (right.stockPct ?? 0) - (left.stockPct ?? 0);
     });
@@ -2317,15 +2338,17 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
   const activeProduct = isAccessory || isService || hasProductLevelOptions ? product : findMatchingVariant(variantProducts, length, drying) || product;
   const activeUnitPrice = getProductPriceForLength(activeProduct, length);
   const sellsByVolume = !isAccessory && !isService && isSoldByVolume(activeProduct);
-  const m3Price = sellsByVolume ? getM3PriceFromSterePrice(activeProduct, activeUnitPrice) : null;
-  const billedUnitPrice = sellsByVolume ? m3Price : activeUnitPrice;
+  // Le prix reellement facture (panier/commande) reste celui saisi en admin (m3 si vendu au m3); seul l'affichage montre l'equivalent stere.
+  const billedUnitPrice = activeUnitPrice;
+  const displayUnitPrice = sellsByVolume ? getProductDisplayPriceForLength(activeProduct, length) : activeUnitPrice;
   const total = billedUnitPrice * qty;
   const currentCategory = getCategoryForProduct(categories, activeProduct.id);
   const currentCategoryPath = currentCategory ? getCategoryHref(currentCategory.slug) : defaultCategoryPath;
   const related = siteProducts.filter((item) => item.category === activeProduct.category && item.id !== activeProduct.id).slice(0, 4);
   const tabData = activeProduct.tabs[tab];
   const badgeTone = tones[activeProduct.badgeTone] || tones.green;
-  const hasOldPrice = Number.isFinite(activeProduct.oldPrice) && activeProduct.oldPrice > activeUnitPrice;
+  const displayOldPrice = sellsByVolume ? activeProduct.displayOldPrice : activeProduct.oldPrice;
+  const hasOldPrice = Number.isFinite(displayOldPrice) && displayOldPrice > displayUnitPrice;
   const quantityUnitLabel = getProductQuantityUnitLabel(activeProduct);
   const optionTitle = isAccessory ? "CONDITIONNEMENT" : "LONGUEUR DE BÛCHE";
   const optionChoices = isAccessory
@@ -2362,7 +2385,7 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
     <main>
       <Seo
         title={`${activeProduct.name} - Livraison Toulouse | La Belle Bûche`}
-        description={`${activeProduct.desc || activeProduct.name} Livré à Toulouse et dans toute la Haute-Garonne, à partir de ${formatPrice(activeUnitPrice)}.`}
+        description={`${activeProduct.desc || activeProduct.name} Livré à Toulouse et dans toute la Haute-Garonne, à partir de ${formatPrice(displayUnitPrice)}.`}
         path={`/produit/${activeProduct.slug}`}
         image={activeProduct.gallery?.[0] || defaultOgImage}
         jsonLd={{
@@ -2376,7 +2399,7 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
           offers: {
             "@type": "Offer",
             priceCurrency: "EUR",
-            price: activeUnitPrice,
+            price: displayUnitPrice,
             availability: "https://schema.org/InStock",
             url: `${siteOrigin}/produit/${activeProduct.slug}`,
             areaServed: "Toulouse et Haute-Garonne"
@@ -2446,11 +2469,11 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
             <div style={{ display: "flex", alignItems: "end", justifyContent: "space-between", gap: 20, flexWrap: "wrap" }}>
               <div style={{ display: "grid", gap: 6 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                  <span style={{ ...sans, fontWeight: 700, fontSize: 40, letterSpacing: "-.035em", lineHeight: 1 }}>{formatPrice(activeUnitPrice)}</span>
-                  {hasOldPrice ? <span style={{ ...mono, fontSize: 11.5, color: "#A8AE9C", textDecoration: "line-through" }}>{formatPrice(activeProduct.oldPrice)}</span> : null}
+                  <span style={{ ...sans, fontWeight: 700, fontSize: 40, letterSpacing: "-.035em", lineHeight: 1 }}>{formatPrice(displayUnitPrice)}</span>
+                  {hasOldPrice ? <span style={{ ...mono, fontSize: 11.5, color: "#A8AE9C", textDecoration: "line-through" }}>{formatPrice(displayOldPrice)}</span> : null}
                   <span style={{ ...mono, fontSize: 11.5, color: "#8A9180" }}>{activeProduct.unit}</span>
                 </div>
-                {sellsByVolume ? <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>Facturé au m³ réel : {formatPrice(m3Price)} TTC / m³</span> : null}
+                {sellsByVolume ? <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>Facturé au m³ réel : {formatPrice(activeUnitPrice)} TTC / m³</span> : null}
                 <span style={{ ...mono, fontSize: 11, color: "#4E5647" }}>Total {qty} {quantityUnitLabel} · <span style={{ color: "#23291F" }}>{formatPrice(total)}</span> · tarifs TTC TVA 10 %</span>
               </div>
             </div>
@@ -3827,7 +3850,7 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
             </div>
             </div>
             <div style={{ display: "grid", gap: 10 }}>
-              <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>PRIX HT PAR TAILLE</span>
+              <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>PRIX HT PAR TAILLE{draft.sellUnit === "m3" ? " (au m³)" : ""}</span>
               {draft.availableLengths.length === 0 ? <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>Aucune taille selectionnee. Le prix de base sera utilise tel quel.</span> : null}
               {draft.availableLengths.map((lengthOption) => (
                 <label key={lengthOption} style={{ display: "grid", gap: 6 }}>
@@ -3869,8 +3892,8 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
           <label style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
             <input type="checkbox" checked={draft.sellUnit === "m3"} onChange={(event) => updateDraft("sellUnit", event.target.checked ? "m3" : "stere")} style={{ marginTop: 4 }} />
             <span style={{ display: "grid", gap: 4 }}>
-              <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>VENDU AU M³ (CALCUL AUTOMATIQUE DU PRIX AU M³)</span>
-              <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>Le prix HT saisi ci-dessus reste le prix au stère comme d'habitude. La fiche produit affiche aussi le prix équivalent au m³, calculé automatiquement selon la longueur des bûches.</span>
+              <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>VENDU AU M³ (CALCUL AUTOMATIQUE DU PRIX AU STÈRE)</span>
+              <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>Le prix HT saisi ci-dessus devient le prix reel au m³ (celui facture dans le panier et la commande). La fiche produit affiche un prix equivalent au stere, calcule automatiquement selon la longueur des bûches.</span>
             </span>
           </label>
         ) : null}
@@ -4923,7 +4946,9 @@ function AccountDeliveries({ account }) {
 
 function ProductCard({ product, addToCart, detailed = false, compact = false }) {
   const tone = tones[product.badgeTone] ?? tones.green;
-  const hasOldPrice = Number.isFinite(product.oldPrice) && product.oldPrice > product.price;
+  const displayPrice = product.displayPrice ?? product.price;
+  const displayOldPrice = product.displayOldPrice ?? product.oldPrice;
+  const hasOldPrice = Number.isFinite(displayOldPrice) && displayOldPrice > displayPrice;
 
   return (
     <article style={{ background: "#FFFFFF", border: "1px solid rgba(35,41,31,.08)", borderRadius: 26, padding: 20, display: "grid", gap: 16, alignContent: "start", boxShadow: "0 1px 2px rgba(35,41,31,.03)", gridTemplateColumns: compact ? "220px 1fr" : "1fr" }} className="lbb-product-card">
@@ -4964,8 +4989,8 @@ function ProductCard({ product, addToCart, detailed = false, compact = false }) 
           <span style={{ ...mono, fontSize: 10, color: product.stockPct < 45 ? "#C05621" : "#5B321D" }}>{product.stockLabel}</span>
         </div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 9, flexWrap: "wrap" }}>
-          <span style={{ ...sans, fontWeight: 700, fontSize: 25, letterSpacing: "-.025em", whiteSpace: "nowrap" }}>{formatPrice(product.price)}</span>
-          {hasOldPrice ? <span style={{ ...mono, fontSize: 10.5, color: "#A8AE9C", textDecoration: "line-through" }}>{formatPrice(product.oldPrice)}</span> : null}
+          <span style={{ ...sans, fontWeight: 700, fontSize: 25, letterSpacing: "-.025em", whiteSpace: "nowrap" }}>{formatPrice(displayPrice)}</span>
+          {hasOldPrice ? <span style={{ ...mono, fontSize: 10.5, color: "#A8AE9C", textDecoration: "line-through" }}>{formatPrice(displayOldPrice)}</span> : null}
           <span style={{ ...mono, fontSize: 10.5, color: "#8A9180", marginLeft: "auto" }}>{product.unit}</span>
         </div>
         <button type="button" onClick={() => addToCart(product.id)} className="lbb-btn lbb-btn-soft" style={{ width: "100%", justifyContent: "center" }}>Ajouter au panier</button>
