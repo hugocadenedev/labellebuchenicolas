@@ -268,6 +268,12 @@ function getM3PriceFromSterePrice(product, pricePerStere) {
   return Math.round((pricePerStere / Math.max(estimateStorageRatio(product?.length), 0.01)) * 100) / 100;
 }
 
+// Libelle d'unite affiche dans le panier/commande : m3 pour les produits vendus au m3, sinon l'unite du produit
+function getCartItemUnitLabel(item) {
+  if (isSoldByVolume(item)) return "m³";
+  return item.unit ? item.unit.replace("/ ", "") : "";
+}
+
 function selectEstimatorProduct(siteProducts, preferredLength, preferredEssence = "") {
   const woodProducts = siteProducts.filter((product) => product.category === "bois-de-chauffage");
   return woodProducts.find((product) => product.length === preferredLength && (!preferredEssence || product.family === preferredEssence || product.essence === preferredEssence))
@@ -1119,14 +1125,19 @@ function StorefrontApp() {
 
   function prepareEstimatedCart(productId, quantity, options = {}) {
     if (!productId) return;
-    const lineId = buildCartLineId(productId, options);
     const product = siteProducts.find((item) => item.id === productId);
+    const length = options.length || product?.length || "";
+    const sterePrice = Number.isFinite(Number(options.unitPrice)) ? Number(options.unitPrice) : getProductPriceForLength(product, length);
+    const sellsByVolume = isSoldByVolume(product);
+    const finalQuantity = sellsByVolume ? Math.max(1, Math.round(quantity * estimateStorageRatio(length))) : Math.max(1, Math.round(quantity));
+    const finalUnitPrice = sellsByVolume ? getM3PriceFromSterePrice(product, sterePrice) : sterePrice;
+    const lineId = buildCartLineId(productId, options);
     setCart({ [lineId]: {
       productId,
-      quantity: Math.max(1, Math.round(quantity)),
-      length: options.length || "",
+      quantity: finalQuantity,
+      length,
       drying: options.drying || "",
-      unitPrice: Number.isFinite(Number(options.unitPrice)) ? Number(options.unitPrice) : getProductPriceForLength(product, options.length || product?.length || "")
+      unitPrice: finalUnitPrice
     } });
     setCartDrawerOpen(false);
   }
@@ -1505,7 +1516,7 @@ function CartDrawer({ cartItems, setQuantity, isOpen, onClose, defaultCategoryPa
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start" }}>
                       <div style={{ minWidth: 0 }}>
                         <strong style={{ ...sans, display: "block", fontWeight: 700, fontSize: 18, lineHeight: 1.2, letterSpacing: "-.02em", color: "#5B321D" }}>{item.name}{item.isGift ? <span style={{ ...mono, fontSize: 9.5, letterSpacing: ".05em", color: "#5C7752", background: "#E6EFE4", borderRadius: 999, padding: "3px 8px", marginLeft: 8 }}>OFFERT</span> : null}</strong>
-                        <span style={{ display: "block", marginTop: 4, ...mono, fontSize: 10.5, lineHeight: 1.55, color: "#8A9180" }}>{item.isGift ? item.giftLabel : (isServiceProduct(item) ? [item.unit ? item.unit.replace("/ ", "") : ""] : [...([item.selectedLength, item.selectedDrying].filter(Boolean)), item.unit ? item.unit.replace("/ ", "") : ""]).filter(Boolean).join(" · ")}</span>
+                        <span style={{ display: "block", marginTop: 4, ...mono, fontSize: 10.5, lineHeight: 1.55, color: "#8A9180" }}>{item.isGift ? item.giftLabel : (isServiceProduct(item) ? [getCartItemUnitLabel(item)] : [...([item.selectedLength, item.selectedDrying].filter(Boolean)), getCartItemUnitLabel(item)]).filter(Boolean).join(" · ")}</span>
                       </div>
                       <span style={{ ...sans, fontWeight: 700, fontSize: 18, whiteSpace: "nowrap", color: "#55715B" }}>{formatPrice(item.price * item.quantity)}</span>
                     </div>
@@ -2484,7 +2495,7 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
                           <span style={{ minWidth: 30, textAlign: "center", ...sans, fontWeight: 700, fontSize: 13, color: "#23291F" }}>{item.quantity}</span>
                           <button type="button" onClick={() => setQuantity(item.lineId, item.quantity + 1)} style={{ border: 0, background: "transparent", cursor: "pointer", width: 34, height: 34, fontSize: 15, color: "#5B321D" }}>+</button>
                         </div>
-                        <span className="lbb-cart-item-unit" style={{ color: "#8A9180" }}>{formatPrice(item.price)} / unité</span>
+                        <span className="lbb-cart-item-unit" style={{ color: "#8A9180" }}>{formatPrice(item.price)} / {isSoldByVolume(item) ? "m³" : "unité"}</span>
                         <button type="button" onClick={() => setQuantity(item.lineId, 0)} style={{ border: 0, background: "transparent", cursor: "pointer", marginLeft: "auto", ...mono, fontSize: 10.5, letterSpacing: ".06em", color: "#A8AE9C", padding: 0 }}>Retirer</button>
                       </div>
                     ) : (
