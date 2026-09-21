@@ -274,6 +274,14 @@ function getCartItemUnitLabel(item) {
   return item.unit ? item.unit.replace("/ ", "") : "";
 }
 
+// Convertit une quantite panier (m3 ou stere) en equivalent steres, pour le calcul du poids/volume de livraison
+function getSterEquivalentQuantity(item) {
+  if (isSoldByVolume(item)) {
+    return item.quantity / Math.max(estimateStorageRatio(item.selectedLength || item.length), 0.01);
+  }
+  return item.quantity;
+}
+
 function selectEstimatorProduct(siteProducts, preferredLength, preferredEssence = "") {
   const woodProducts = siteProducts.filter((product) => product.category === "bois-de-chauffage");
   return woodProducts.find((product) => product.length === preferredLength && (!preferredEssence || product.family === preferredEssence || product.essence === preferredEssence))
@@ -2409,7 +2417,7 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
 function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCategoryPath, account, settings, promoCode, onApplyPromoCode, pickupAtDepot, onTogglePickup }) {
   const [promoInput, setPromoInput] = useState(promoCode || "");
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const woodVolume = cartItems.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + item.quantity, 0);
+  const woodVolume = cartItems.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + getSterEquivalentQuantity(item), 0);
   const rawShippingEstimate = subtotal === 0 ? { amount: 0, label: "", quoteRequired: false } : computeShipping({ woodVolume });
   const shippingEstimate = pickupAtDepot
     ? { amount: 0, label: "Retrait au dépôt — gratuit", quoteRequired: false, freeShipping: true }
@@ -2467,7 +2475,7 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
             <div style={{ background: "#FFFFFF", border: "1px solid rgba(35,41,31,.09)", borderRadius: 28, overflow: "hidden", boxShadow: "0 24px 54px -48px rgba(35,41,31,.6)" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, padding: "22px 28px", borderBottom: "1px solid rgba(35,41,31,.08)", ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>
                 <span>{cartItems.length} références dans la remorque</span>
-                <span>{woodVolume} stères — env. {woodVolume * 450} kg</span>
+                <span>{formatDecimal(woodVolume)} stères éq. — env. {Math.round(woodVolume * 450)} kg</span>
               </div>
               {cartItems.map((item) => (
                 <div key={item.lineId} className="lbb-cart-item" style={{ display: "flex", gap: 20, padding: "22px 28px", borderBottom: "1px solid rgba(35,41,31,.07)", alignItems: "flex-start" }}>
@@ -2482,10 +2490,11 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
                       <span className="lbb-cart-item-total" style={{ ...sans, fontWeight: 700, fontSize: 19, letterSpacing: "-.02em", whiteSpace: "nowrap" }}>{formatPrice(item.price * item.quantity)}</span>
                     </div>
                     <div className="lbb-cart-item-desc" style={{ fontSize: 14.5, lineHeight: 1.5, color: "#4E5647" }}>{item.desc}</div>
-                    {[item.selectedLength, item.selectedDrying].some(Boolean) ? (
+                    {[item.selectedLength, item.selectedDrying].some(Boolean) || isSoldByVolume(item) ? (
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", ...mono, fontSize: 9.5, letterSpacing: ".05em" }}>
                         {item.selectedLength ? <span style={{ background: "#F3E5D8", color: "#5B321D", borderRadius: 999, padding: "6px 11px" }}>{item.selectedLength}</span> : null}
                         {item.selectedDrying ? <span style={{ background: "#F5EFE2", color: "#8A6B3C", borderRadius: 999, padding: "6px 11px" }}>{item.selectedDrying}</span> : null}
+                        {isSoldByVolume(item) ? <span style={{ background: "#23291F", color: "#F4F7EC", borderRadius: 999, padding: "6px 11px" }}>Vendu au m³</span> : null}
                       </div>
                     ) : null}
                     {!item.isGift ? (
@@ -2623,7 +2632,7 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [promoInput, setPromoInput] = useState(promoCode || "");
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const woodVolume = cartItems.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + item.quantity, 0);
+  const woodVolume = cartItems.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + getSterEquivalentQuantity(item), 0);
   const rawShippingResult = computeShipping({ postcode: draft.deliveryAddress.postcode, woodVolume });
   const shippingResult = pickupAtDepot
     ? { amount: 0, label: "Retrait au dépôt — gratuit", quoteRequired: false, freeShipping: true }
