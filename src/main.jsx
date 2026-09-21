@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { HashRouter } from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./styles.css";
 import faviconUrl from "../logo-la-belle-buche-reel.png";
@@ -14,16 +14,16 @@ if (typeof document !== "undefined") {
   }
 }
 
-if (typeof window !== "undefined" && window.location.pathname.startsWith("/admin") && !window.location.hash) {
-  const normalizedPath = window.location.pathname.replace(/\/+$/, "") || "/admin";
-  const nextUrl = `${window.location.origin}/#${normalizedPath}${window.location.search}`;
-  window.location.replace(nextUrl);
+// Redirige les anciens liens en #/route (ex-HashRouter) vers l'URL propre equivalente pour ne pas casser les liens deja partages/indexes.
+if (typeof window !== "undefined" && window.location.hash.startsWith("#/")) {
+  const nextPath = window.location.hash.slice(1);
+  window.history.replaceState(null, "", `${window.location.origin}${nextPath}${window.location.search}`);
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <HashRouter>
+    <BrowserRouter>
       <App />
-    </HashRouter>
+    </BrowserRouter>
   </React.StrictMode>
 );

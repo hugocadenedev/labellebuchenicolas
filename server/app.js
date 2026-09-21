@@ -42,6 +42,39 @@ app.use(cors());
 app.post("/api/payments/stripe/webhook", express.raw({ type: "application/json" }), handleStripeWebhook);
 app.use(express.json({ limit: jsonBodyLimit }));
 
+const siteOrigin = "https://www.labellebuche.fr";
+
+function xmlEscape(value) {
+  return String(value ?? "").replace(/[<>&'"]/g, (char) => ({
+    "<": "&lt;",
+    ">": "&gt;",
+    "&": "&amp;",
+    "'": "&apos;",
+    "\"": "&quot;"
+  }[char]));
+}
+
+function buildSitemapUrl(loc, { changefreq = "weekly", priority = "0.7" } = {}) {
+  return `  <url>\n    <loc>${xmlEscape(loc)}</loc>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`;
+}
+
+// Sitemap genere depuis le catalogue reel (categories + produits) a chaque requete, pour rester a jour sans intervention manuelle.
+app.get("/sitemap.xml", async (_req, res, next) => {
+  try {
+    const { categories, products } = await getSiteBootstrap();
+    const entries = [
+      buildSitemapUrl(`${siteOrigin}/`, { changefreq: "weekly", priority: "1.0" }),
+      buildSitemapUrl(`${siteOrigin}/boutique`, { changefreq: "weekly", priority: "0.9" }),
+      buildSitemapUrl(`${siteOrigin}/estimation-consommation`, { changefreq: "monthly", priority: "0.5" }),
+      ...categories.filter((category) => category?.slug).map((category) => buildSitemapUrl(`${siteOrigin}/categorie/${category.slug}`, { changefreq: "weekly", priority: "0.8" })),
+      ...products.filter((product) => product?.slug).map((product) => buildSitemapUrl(`${siteOrigin}/produit/${product.slug}`, { changefreq: "weekly", priority: "0.7" }))
+    ];
+    res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join("\n")}\n</urlset>\n`);
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
 });

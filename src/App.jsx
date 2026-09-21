@@ -942,6 +942,68 @@ function buildOrderRequest(draft, customerId, cartItems, shippingAmount) {
   };
 }
 
+const siteOrigin = "https://www.labellebuche.fr";
+const defaultOgImage = `${siteOrigin}/logo-la-belle-buche-reel.png`;
+
+function setMetaTag(attr, key, content) {
+  if (!content) return;
+  let tag = document.head.querySelector(`meta[${attr}="${key}"]`);
+  if (!tag) {
+    tag = document.createElement("meta");
+    tag.setAttribute(attr, key);
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute("content", content);
+}
+
+function setCanonical(path) {
+  let link = document.head.querySelector("link[rel='canonical']");
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "canonical";
+    document.head.appendChild(link);
+  }
+  link.href = `${siteOrigin}${path}`;
+}
+
+function setJsonLd(id, data) {
+  let script = document.getElementById(id);
+  if (!data) {
+    if (script) script.remove();
+    return;
+  }
+  if (!script) {
+    script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.id = id;
+    document.head.appendChild(script);
+  }
+  script.textContent = JSON.stringify(data);
+}
+
+// Met a jour les balises SEO (title, description, canonical, OG/Twitter, robots, JSON-LD) a chaque changement de page, sans dependance externe type react-helmet.
+function Seo({ title, description, path = "/", image = defaultOgImage, noindex = false, jsonLd = null }) {
+  const location = useLocation();
+  const canonicalPath = path || location.pathname;
+
+  useEffect(() => {
+    if (title) document.title = title;
+    setMetaTag("name", "description", description);
+    setMetaTag("name", "robots", noindex ? "noindex, nofollow" : "index, follow");
+    setCanonical(canonicalPath);
+    setMetaTag("property", "og:title", title);
+    setMetaTag("property", "og:description", description);
+    setMetaTag("property", "og:url", `${siteOrigin}${canonicalPath}`);
+    setMetaTag("property", "og:image", image);
+    setMetaTag("name", "twitter:title", title);
+    setMetaTag("name", "twitter:description", description);
+    setMetaTag("name", "twitter:image", image);
+    setJsonLd("lbb-page-jsonld", jsonLd);
+  }, [title, description, canonicalPath, image, noindex, jsonLd]);
+
+  return null;
+}
+
 function App() {
   const location = useLocation();
 
@@ -1575,6 +1637,11 @@ function HomePage({ addToCart, categories, settings, siteProducts, defaultCatego
     <main>
       {!showOnlyCatalogue && (
         <>
+          <Seo
+            title="Bois de chauffage à Toulouse et alentours | La Belle Bûche"
+            description="Bûches sèches de chêne, hêtre, charme et châtaignier livrées à Toulouse, Blagnac, Colomiers, Muret, Balma et dans toute la Haute-Garonne. Tarifs TTC clairs, commande en ligne."
+            path="/"
+          />
           <section className="lbb-hero-banner">
             <img className="lbb-hero-bg-image" src={brand.heroImage} alt="" aria-hidden="true" />
             <div className="lbb-hero-overlay" style={{ backgroundImage: "linear-gradient(90deg, rgba(20, 14, 10, .76) 0%, rgba(42, 28, 17, .58) 34%, rgba(64, 42, 24, .34) 56%, rgba(96, 62, 32, .18) 100%), linear-gradient(180deg, rgba(20, 14, 9, .05) 0%, rgba(20, 14, 9, .55) 55%, rgba(15, 10, 6, .86) 100%)" }} />
@@ -1788,6 +1855,11 @@ function ConsumptionEstimatorPage({ siteProducts, defaultCategoryPath, onPrepare
 
   return (
     <main>
+      <Seo
+        title="Estimer sa consommation de bois de chauffage à Toulouse | La Belle Bûche"
+        description="Calculez le nombre de stères de bois nécessaires pour votre logement à Toulouse et en Haute-Garonne selon votre isolation, votre appareil de chauffage et vos habitudes."
+        path="/estimation-consommation"
+      />
       <div style={{ ...pageShell, paddingTop: 22, ...mono, fontSize: 11, letterSpacing: ".06em", color: "#8A9180", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <Link to="/">Accueil</Link><span>/</span><span style={{ color: "#23291F" }}>Estimation de consommation</span>
       </div>
@@ -1968,6 +2040,20 @@ function CategoryPage({ addToCart, categories, siteProducts, defaultCategoryPath
 
   return (
     <main>
+      <Seo
+        title={`${currentCategory.label} : bois de chauffage à Toulouse | La Belle Bûche`}
+        description={`${currentCategory.description || currentCategory.heading} Livraison à Toulouse et dans toute la Haute-Garonne.`}
+        path={getCategoryHref(currentCategory.slug)}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Accueil", item: siteOrigin + "/" },
+            { "@type": "ListItem", position: 2, name: "Boutique", item: `${siteOrigin}/boutique` },
+            { "@type": "ListItem", position: 3, name: currentCategory.label, item: siteOrigin + getCategoryHref(currentCategory.slug) }
+          ]
+        }}
+      />
       <div style={{ ...pageShell, paddingTop: 22, ...mono, fontSize: 11, letterSpacing: ".06em", color: "#8A9180", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <Link to="/">Accueil</Link><span>/</span><Link to="/boutique">Boutique</Link><span>/</span><span style={{ color: "#23291F" }}>{currentCategory.label}</span>
       </div>
@@ -2125,6 +2211,11 @@ function CatalogPage({ addToCart, categories, siteProducts, defaultCategoryPath,
 
   return (
     <main>
+      <Seo
+        title="Boutique bois de chauffage Toulouse | La Belle Bûche"
+        description="Toute la boutique de bois de chauffage La Belle Bûche : chêne, hêtre, charme, châtaignier et allume-feux, livrés à Toulouse et dans toute la Haute-Garonne."
+        path="/boutique"
+      />
       <div style={{ ...pageShell, paddingTop: 22, ...mono, fontSize: 11, letterSpacing: ".06em", color: "#8A9180", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <Link to="/">Accueil</Link><span>/</span><span style={{ color: "#23291F" }}>Catalogue</span>
       </div>
@@ -2269,6 +2360,29 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
 
   return (
     <main>
+      <Seo
+        title={`${activeProduct.name} - Livraison Toulouse | La Belle Bûche`}
+        description={`${activeProduct.desc || activeProduct.name} Livré à Toulouse et dans toute la Haute-Garonne, à partir de ${formatPrice(activeUnitPrice)}.`}
+        path={`/produit/${activeProduct.slug}`}
+        image={activeProduct.gallery?.[0] || defaultOgImage}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: activeProduct.name,
+          description: activeProduct.desc || activeProduct.name,
+          image: activeProduct.gallery,
+          sku: activeProduct.id,
+          brand: { "@type": "Brand", name: "La Belle Bûche" },
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "EUR",
+            price: activeUnitPrice,
+            availability: "https://schema.org/InStock",
+            url: `${siteOrigin}/produit/${activeProduct.slug}`,
+            areaServed: "Toulouse et Haute-Garonne"
+          }
+        }}
+      />
       <div style={{ ...pageShell, paddingTop: 22, ...mono, fontSize: 11, letterSpacing: ".06em", color: "#8A9180", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <Link to="/">Accueil</Link><span>/</span><Link to={currentCategoryPath}>{currentCategory?.label || "Categorie"}</Link><span>/</span><span style={{ color: "#23291F" }}>{activeProduct.name}</span><Link to={currentCategoryPath} style={{ marginLeft: "auto" }}>← Retour à la catégorie</Link>
       </div>
@@ -2439,6 +2553,7 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
 
   return (
     <main>
+      <Seo title="Votre panier | La Belle Bûche" description="Panier de commande de bois de chauffage La Belle Bûche." path="/panier" noindex />
       <div style={{ ...pageShell, paddingTop: 22, ...mono, fontSize: 11, letterSpacing: ".06em", color: "#8A9180", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <Link to="/">Accueil</Link><span>/</span><span style={{ color: "#23291F" }}>Panier</span><Link to={defaultCategoryPath} style={{ marginLeft: "auto" }}>← Continuer mes achats</Link>
       </div>
@@ -2718,6 +2833,7 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
 
   return (
     <main>
+      <Seo title="Finaliser ma commande | La Belle Bûche" description="Tunnel de commande de bois de chauffage La Belle Bûche." path="/commande" noindex />
       <section style={{ ...pageShell, paddingTop: 30, paddingBottom: 90 }}>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 28 }}>
           <div>
@@ -2857,6 +2973,7 @@ function StripeCheckoutConfirmationPage({ onConfirmStripeCheckout }) {
 
   return (
     <main>
+      <Seo title="Validation du paiement | La Belle Bûche" description="Confirmation du paiement Stripe." path="/commande/confirmation/stripe" noindex />
       <section style={{ ...pageShell, paddingTop: 44, paddingBottom: 100 }}>
         <div style={{ background: "#FFFFFF", border: "1px solid rgba(35,41,31,.09)", borderRadius: 32, padding: "48px 42px", display: "grid", gap: 18, boxShadow: "0 24px 54px -46px rgba(35,41,31,.5)" }}>
           <div style={{ ...mono, fontSize: 11, letterSpacing: ".08em", color: "#C05621" }}>Paiement Stripe</div>
@@ -2877,6 +2994,7 @@ function CheckoutConfirmationPage({ account, defaultCategoryPath }) {
 
   return (
     <main>
+      <Seo title="Commande confirmée | La Belle Bûche" description="Confirmation de commande La Belle Bûche." path={`/commande/confirmation/${orderId}`} noindex />
       <section style={{ ...pageShell, paddingTop: 44, paddingBottom: 100 }}>
         <div style={{ background: "#FFFFFF", border: "1px solid rgba(35,41,31,.09)", borderRadius: 32, padding: "48px 42px", display: "grid", gap: 18, boxShadow: "0 24px 54px -46px rgba(35,41,31,.5)" }}>
           <div style={{ ...mono, fontSize: 11, letterSpacing: ".08em", color: "#C05621" }}>Commande confirmée</div>
@@ -2909,6 +3027,7 @@ function AccountPage({ account, accountStatus, onLogin, onRegister, onLogout }) 
   if (!account) {
     return (
       <main>
+        <Seo title="Espace client | La Belle Bûche" description="Connectez-vous à votre espace client La Belle Bûche." path="/compte" noindex />
         <section style={{ ...pageShell, paddingTop: 40, paddingBottom: 90 }}>
           <CustomerAuthCard title="Espace client" description="Connectez-vous pour suivre vos commandes, revoir vos créneaux et retrouver vos informations de livraison." onLogin={onLogin} onRegister={onRegister} />
         </section>
@@ -2918,6 +3037,7 @@ function AccountPage({ account, accountStatus, onLogin, onRegister, onLogout }) 
 
   return (
     <main>
+      <Seo title="Mon espace client | La Belle Bûche" description="Espace client La Belle Bûche : commandes, livraisons et informations personnelles." path="/compte" noindex />
       <section className="lbb-account-layout" style={{ ...pageShell, paddingTop: 34, paddingBottom: 90, alignItems: "start" }}>
         <aside className="lbb-sticky-panel" style={{ maxWidth: 300, minWidth: 0, display: "grid", gap: 14, position: "sticky", top: 140 }}>
           <div style={{ background: "#23291F", color: "#E7EBDD", borderRadius: 26, padding: "24px 24px 22px" }}>
@@ -3000,6 +3120,7 @@ function AdminLoginPage() {
 
   return (
     <main className="lbb-admin-auth-shell">
+      <Seo title="Connexion admin | La Belle Bûche" description="Espace d'administration privé." path="/admin/login" noindex />
       <section className="lbb-admin-auth-card">
         <div style={{ display: "grid", gap: 16 }}>
           <span style={{ ...mono, fontSize: 11, letterSpacing: ".12em", color: "#C05621" }}>BACK OFFICE PRIVE</span>
@@ -3337,6 +3458,7 @@ function AdminPage() {
 
   return (
     <main className="lbb-admin-shell">
+      <Seo title="Administration | La Belle Bûche" description="Back office privé La Belle Bûche." path="/admin" noindex />
       <section className="lbb-admin-topbar">
         <div className="lbb-admin-topbar-inner" style={{ ...adminShell, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 18, paddingTop: 18, paddingRight: 24, paddingBottom: 18, paddingLeft: 24, flexWrap: "wrap" }}>
           <div style={{ display: "grid", gap: 5 }}>
