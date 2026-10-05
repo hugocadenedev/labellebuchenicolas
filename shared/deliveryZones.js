@@ -27,7 +27,9 @@ export function resolveDeliveryZone(postcode) {
 }
 
 // Sans code postal connu, on affiche une estimation locale par defaut (majorite des clients).
-export function computeShipping({ postcode, woodVolume = 0 }) {
+// hasActiveOffer : une remise automatique (achete/offert) ou un code promo est appliquee sur la commande,
+// auquel cas la livraison gratuite au volume n'est plus cumulable.
+export function computeShipping({ postcode, woodVolume = 0, hasActiveOffer = false }) {
   const zone = resolveDeliveryZone(postcode);
   const rule = ZONE_RULES[zone === "unknown" ? "local" : zone];
 
@@ -35,7 +37,7 @@ export function computeShipping({ postcode, woodVolume = 0 }) {
     return { zone, amount: 0, quoteRequired: true, label: rule.label };
   }
 
-  const freeShipping = zone !== "far" && (zone === "local" || zone === "unknown") && Number(woodVolume) >= FREE_SHIPPING_MIN_STERES;
+  const freeShipping = !hasActiveOffer && zone !== "far" && (zone === "local" || zone === "unknown") && Number(woodVolume) >= FREE_SHIPPING_MIN_STERES;
   const amount = freeShipping ? 0 : rule.amount;
   return { zone, amount, quoteRequired: false, label: rule.label, freeShipping };
 }

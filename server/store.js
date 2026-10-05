@@ -1063,7 +1063,9 @@ export async function createOrder(input) {
     : { ...deliveryAddress };
   const woodVolume = items.filter((item) => item.product.category === "bois-de-chauffage").reduce((sum, item) => sum + item.quantity, 0);
   const pickupAtDepot = Boolean(input.pickupAtDepot);
-  const shippingResult = computeShipping({ postcode: deliveryAddress.postcode, woodVolume });
+  // Une remise achete/offert ou un code promo exclut la livraison gratuite au volume.
+  const hasActiveOffer = volumeDiscount.amount > 0 || promoResult.amount > 0;
+  const shippingResult = computeShipping({ postcode: deliveryAddress.postcode, woodVolume, hasActiveOffer });
   if (!pickupAtDepot && shippingResult.quoteRequired) {
     throw httpError(400, "Cette adresse est hors zone de livraison automatique. Contactez-nous pour établir un devis.");
   }

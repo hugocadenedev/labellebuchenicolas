@@ -2555,13 +2555,15 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
   const [promoInput, setPromoInput] = useState(promoCode || "");
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const woodVolume = cartItems.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + getSterEquivalentQuantity(item), 0);
-  const rawShippingEstimate = subtotal === 0 ? { amount: 0, label: "", quoteRequired: false } : computeShipping({ woodVolume });
+  const promoResult = promoCode ? validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes) : { valid: false, amount: 0, message: "" };
+  const discountAmount = promoResult.valid ? promoResult.amount : 0;
+  // Une remise achete/offert ou un code promo exclut la livraison gratuite au volume.
+  const hasActiveOffer = cartItems.some((item) => item.isGift) || discountAmount > 0;
+  const rawShippingEstimate = subtotal === 0 ? { amount: 0, label: "", quoteRequired: false } : computeShipping({ woodVolume, hasActiveOffer });
   const shippingEstimate = pickupAtDepot
     ? { amount: 0, label: "Retrait au dépôt — gratuit", quoteRequired: false, freeShipping: true }
     : rawShippingEstimate;
   const shipping = shippingEstimate.amount;
-  const promoResult = promoCode ? validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes) : { valid: false, amount: 0, message: "" };
-  const discountAmount = promoResult.valid ? promoResult.amount : 0;
   const totals = buildVatBreakdown(Math.max(0, subtotal - discountAmount), shipping);
 
   function handleApplyPromo(event) {
@@ -2771,13 +2773,15 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
   const [promoInput, setPromoInput] = useState(promoCode || "");
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const woodVolume = cartItems.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + getSterEquivalentQuantity(item), 0);
-  const rawShippingResult = computeShipping({ postcode: draft.deliveryAddress.postcode, woodVolume });
+  const promoResult = promoCode ? validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes) : { valid: false, amount: 0, message: "" };
+  const discountAmount = promoResult.valid ? promoResult.amount : 0;
+  // Une remise achete/offert ou un code promo exclut la livraison gratuite au volume.
+  const hasActiveOffer = cartItems.some((item) => item.isGift) || discountAmount > 0;
+  const rawShippingResult = computeShipping({ postcode: draft.deliveryAddress.postcode, woodVolume, hasActiveOffer });
   const shippingResult = pickupAtDepot
     ? { amount: 0, label: "Retrait au dépôt — gratuit", quoteRequired: false, freeShipping: true }
     : rawShippingResult;
   const shipping = shippingResult.amount;
-  const promoResult = promoCode ? validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes) : { valid: false, amount: 0, message: "" };
-  const discountAmount = promoResult.valid ? promoResult.amount : 0;
   const totals = buildVatBreakdown(Math.max(0, subtotal - discountAmount), shipping);
   const searchParams = new URLSearchParams(location.search);
   const stripeCancelled = searchParams.get("payment") === "cancelled";

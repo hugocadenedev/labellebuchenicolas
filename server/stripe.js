@@ -123,11 +123,6 @@ export async function createStripeCheckoutSession(req, res, next) {
 
     const subtotal = items.reduce((sum, item) => sum + Number(item.unitPrice || 0) * Number(item.quantity || 0), 0);
     const woodVolume = items.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + Number(item.quantity || 0), 0);
-    const shippingResult = computeShipping({ postcode: deliveryAddress?.postcode, woodVolume });
-    if (!pickupAtDepot && shippingResult.quoteRequired) {
-      return res.status(400).json({ message: "Cette adresse est hors zone de livraison automatique. Contactez-nous pour établir un devis." });
-    }
-    const shippingAmount = pickupAtDepot ? 0 : shippingResult.amount;
 
     const settings = await getSettings();
     const volumeDiscount = computeVolumeDiscount(items, settings?.promotions?.volumeDiscounts);
@@ -136,6 +131,13 @@ export async function createStripeCheckoutSession(req, res, next) {
       return res.status(400).json({ message: promoResult.message || "Code promo invalide." });
     }
     const discountAmount = roundCurrency(volumeDiscount.amount + promoResult.amount);
+    // Une remise achete/offert ou un code promo exclut la livraison gratuite au volume.
+    const hasActiveOffer = volumeDiscount.amount > 0 || promoResult.amount > 0;
+    const shippingResult = computeShipping({ postcode: deliveryAddress?.postcode, woodVolume, hasActiveOffer });
+    if (!pickupAtDepot && shippingResult.quoteRequired) {
+      return res.status(400).json({ message: "Cette adresse est hors zone de livraison automatique. Contactez-nous pour établir un devis." });
+    }
+    const shippingAmount = pickupAtDepot ? 0 : shippingResult.amount;
 
     let discounts;
     if (discountAmount > 0) {
