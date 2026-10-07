@@ -736,6 +736,7 @@ async function readSqlState() {
       c.image_url,
       c.cover_product_external_id,
       c.essences_json,
+      c.is_simple_category,
       p.external_id AS product_external_id
     FROM categories c
     LEFT JOIN product_categories pc ON pc.category_id = c.id
@@ -757,6 +758,7 @@ async function readSqlState() {
         imageUrl: row.image_url || "",
         coverProductId: row.cover_product_external_id || "",
         essences: parseJson(row.essences_json, []) || [],
+        isSimpleCategory: Boolean(row.is_simple_category),
         productIds: []
       });
     }
@@ -1090,8 +1092,8 @@ export async function replaceAllDataFromSnapshot(snapshot) {
     for (const category of normalized.categories) {
       await connection.query(
         `INSERT INTO categories
-          (external_id, name, label, slug, kicker, heading, description, short_description, image_url, cover_product_external_id, essences_json)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (external_id, name, label, slug, kicker, heading, description, short_description, image_url, cover_product_external_id, essences_json, is_simple_category)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           category.id,
           category.label || category.slug || category.id,
@@ -1103,7 +1105,8 @@ export async function replaceAllDataFromSnapshot(snapshot) {
           category.shortDescription || null,
           category.imageUrl || null,
           category.coverProductId || null,
-          toJson(uniqueValues(category.essences || []))
+          toJson(uniqueValues(category.essences || [])),
+          category.isSimpleCategory ? 1 : 0
         ]
       );
     }
@@ -1452,6 +1455,7 @@ export async function createCategory(input) {
     imageUrl: input.imageUrl || "",
     coverProductId: input.coverProductId,
     essences: Array.isArray(input.essences) ? input.essences : [],
+    isSimpleCategory: Boolean(input.isSimpleCategory),
     productIds: Array.isArray(input.productIds) ? input.productIds : []
   };
   data.categories.unshift(category);
@@ -1467,6 +1471,7 @@ export async function updateCategory(id, input) {
     ...data.categories[index],
     ...input,
     essences: Array.isArray(input.essences) ? input.essences : data.categories[index].essences,
+    isSimpleCategory: input.isSimpleCategory !== undefined ? Boolean(input.isSimpleCategory) : data.categories[index].isSimpleCategory,
     productIds: Array.isArray(input.productIds) ? input.productIds : data.categories[index].productIds
   };
   await writeStore(data);

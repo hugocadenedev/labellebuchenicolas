@@ -504,6 +504,14 @@ function isAccessoryProduct(product) {
   return product?.category === "accessoires";
 }
 
+// Une categorie "produit simple" (accessoires, consommables, ...) n'a pas de systeme stere/m3 :
+// pilotee par le toggle admin isSimpleCategory, avec un repli sur le slug pour les categories existantes non encore basculees.
+function isSimpleProductCategory(category) {
+  if (category?.isSimpleCategory) return true;
+  const slug = String(category?.slug || "").toLowerCase();
+  return slug.includes("accessoire") || slug.includes("consommable");
+}
+
 function isServiceProduct(product) {
   return product?.category === "services";
 }
@@ -3249,6 +3257,7 @@ function createCategoryDraft(productOptions) {
     imageUrl: "",
     coverProductId: "",
     essences: [],
+    isSimpleCategory: false,
     productIds: []
   };
 }
@@ -3670,7 +3679,7 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
   const [draft, setDraft] = useState(() => initialProduct ? createProductDraftFromProduct(categories, initialProduct, productSettings) : createProductDraft(categories, productSettings, creationMode));
   const [feedback, setFeedback] = useState("");
   const selectedCategory = categories.find((category) => category.id === draft.categoryId) || null;
-  const isAccessoryCategory = selectedCategory?.slug === "accessoires";
+  const isAccessoryCategory = isSimpleProductCategory(selectedCategory);
   const isServiceCategory = selectedCategory?.slug === "services";
   const isServiceCreation = !initialProduct && creationMode === "service";
   const configuredLengths = uniqueByValue([draft.length, ...productSettings.productOptions.lengths]);
@@ -4033,6 +4042,7 @@ function AdminCategoryCreatePage({ products: productOptions, onCreateCategory })
       shortDescription: draft.shortDescription || `${selectedProducts.length} produit(s) relies`,
       coverProductId: draft.coverProductId,
       essences: uniqueByValue(selectedProducts.map((product) => product.family || product.essence).filter(Boolean)),
+      isSimpleCategory: draft.isSimpleCategory,
       productIds: draft.productIds
     });
   }
@@ -4051,6 +4061,13 @@ function AdminCategoryCreatePage({ products: productOptions, onCreateCategory })
             <label style={{ display: "grid", gap: 6 }}>
               <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>DESCRIPTION</span>
               <textarea value={draft.description} onChange={(event) => updateDraft("description", event.target.value)} placeholder="Quelques mots pour decrire la categorie" className="lbb-admin-input" style={{ minHeight: 110, resize: "vertical" }} />
+            </label>
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <input type="checkbox" checked={draft.isSimpleCategory} onChange={(event) => updateDraft("isSimpleCategory", event.target.checked)} style={{ marginTop: 4 }} />
+              <span style={{ display: "grid", gap: 4 }}>
+                <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>CATEGORIE DE PRODUITS SIMPLES</span>
+                <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>Les produits de cette categorie n'auront ni longueur de buche, ni sechage, ni vente au m³ : juste nom, prix et stock (ex: consommables, accessoires).</span>
+              </span>
             </label>
           </div>
           <div style={{ display: "grid", gap: 12 }}>
@@ -4147,7 +4164,7 @@ function AdminCategoriesIndex({ categories, products: productOptions, onUpdateCa
       <div className="lbb-admin-surface" style={{ display: "grid", gap: 18 }}>
         <div className="lbb-admin-toolbar"><span style={{ ...sans, fontWeight: 700, fontSize: 21, letterSpacing: "-.024em", color: "#2C241D" }}>Pages categories publiees</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher une categorie..." className="lbb-admin-search" /></div>
         <div className="lbb-admin-table lbb-admin-table-categories-cms">
-          <div className="lbb-admin-table-head">Categorie</div><div className="lbb-admin-table-head">Slug</div><div className="lbb-admin-table-head">Titre (page)</div><div className="lbb-admin-table-head">Description</div><div className="lbb-admin-table-head">Photo</div><div className="lbb-admin-table-head">Produits</div><div className="lbb-admin-table-head">Apercu</div><div className="lbb-admin-table-head">Action</div>
+          <div className="lbb-admin-table-head">Categorie</div><div className="lbb-admin-table-head">Slug</div><div className="lbb-admin-table-head">Titre (page)</div><div className="lbb-admin-table-head">Description</div><div className="lbb-admin-table-head">Photo</div><div className="lbb-admin-table-head">Produits</div><div className="lbb-admin-table-head">Type</div><div className="lbb-admin-table-head">Apercu</div><div className="lbb-admin-table-head">Action</div>
           {filteredCategories.map((category) => <AdminRow key={category.id} className="lbb-admin-table-categories-cms" cells={[
             <span style={{ display: "grid", gap: 3 }}><strong style={{ ...sans, fontSize: 15 }}>{category.label}</strong><span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>{category.heading}</span></span>,
             <input value={edits[category.id]?.slug || ""} onChange={(event) => updateEdit(category.id, "slug", event.target.value)} className="lbb-admin-input" style={{ minHeight: 40 }} />,
@@ -4158,6 +4175,10 @@ function AdminCategoriesIndex({ categories, products: productOptions, onUpdateCa
               <input type="file" accept="image/*" onChange={(event) => handleImageUpload(category.id, event)} className="lbb-admin-input" style={{ minHeight: 36, fontSize: 10.5 }} />
             </span>,
             <span style={{ display: "grid", gap: 6 }}>{productOptions.filter((product) => category.productIds.includes(product.id)).slice(0, 3).map((product) => <span key={product.id} style={{ fontSize: 14.5, color: "#4E5647" }}>{product.name}</span>)}<span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>{category.productIds.length} produit(s) relies</span></span>,
+            <span style={{ display: "grid", gap: 6 }}>
+              <AdminPill tone={category.isSimpleCategory ? "dark" : "neutral"}>{category.isSimpleCategory ? "Produit simple" : "Bois / stere"}</AdminPill>
+              <button type="button" className="lbb-btn lbb-btn-small lbb-btn-secondary" onClick={() => onUpdateCategory(category.id, { ...category, isSimpleCategory: !category.isSimpleCategory })}>{category.isSimpleCategory ? "Repasser en bois" : "Passer en simple"}</button>
+            </span>,
             <Link to={getCategoryHref(category.slug)} className="lbb-btn lbb-btn-secondary lbb-btn-small">Voir page</Link>,
             <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <button type="button" className="lbb-btn lbb-btn-small lbb-btn-primary" onClick={() => onUpdateCategory(category.id, { ...category, slug: edits[category.id]?.slug || category.slug, imageUrl: edits[category.id]?.imageUrl ?? category.imageUrl, description: edits[category.id]?.description ?? category.description, heading: edits[category.id]?.heading || category.heading })}>Sauver</button>

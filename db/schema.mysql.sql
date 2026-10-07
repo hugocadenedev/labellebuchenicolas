@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS categories (
   essences_json JSON NULL,
   sort_order INT NOT NULL DEFAULT 0,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
+  is_simple_category TINYINT(1) NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -51,6 +52,9 @@ CREATE TABLE IF NOT EXISTS categories (
     ON DELETE SET NULL
     ON UPDATE CASCADE
 ) ENGINE=InnoDB;
+
+-- Ajout retroactif pour les bases deja migrees avant l'introduction du toggle "produit simple".
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS is_simple_category TINYINT(1) NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS products (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

@@ -752,6 +752,7 @@ export async function createCategory(input) {
     imageUrl: input.imageUrl || "",
     coverProductId: input.coverProductId,
     essences: Array.isArray(input.essences) ? input.essences : [],
+    isSimpleCategory: Boolean(input.isSimpleCategory),
     productIds: Array.isArray(input.productIds) ? input.productIds : []
   };
   data.categories.unshift(category);
@@ -767,6 +768,7 @@ export async function updateCategory(id, input) {
     ...data.categories[index],
     ...input,
     essences: Array.isArray(input.essences) ? input.essences : data.categories[index].essences,
+    isSimpleCategory: input.isSimpleCategory !== undefined ? Boolean(input.isSimpleCategory) : data.categories[index].isSimpleCategory,
     productIds: Array.isArray(input.productIds) ? input.productIds : data.categories[index].productIds
   };
   await writeStore(data);
