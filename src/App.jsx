@@ -3862,11 +3862,11 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
           <>
             <label style={{ display: "grid", gap: 6 }}>
               <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>TAILLE</span>
-              <input value={draft.length} onChange={(event) => updateDraft("length", event.target.value)} placeholder="Ex: 33 cm" className="lbb-admin-input" required />
+              <input value={draft.length} onChange={(event) => updateDraft("length", event.target.value)} placeholder="Ex: 33 cm" className="lbb-admin-input" />
             </label>
             <label style={{ display: "grid", gap: 6 }}>
               <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>DUREE DE SECHAGE</span>
-              <input value={draft.drying} onChange={(event) => updateDraft("drying", event.target.value)} placeholder="Ex: Seche 18 mois" className="lbb-admin-input" required />
+              <input value={draft.drying} onChange={(event) => updateDraft("drying", event.target.value)} placeholder="Ex: Seche 18 mois" className="lbb-admin-input" />
             </label>
           </>
         ) : null}
