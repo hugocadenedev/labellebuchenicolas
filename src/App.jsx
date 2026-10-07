@@ -772,11 +772,19 @@ function materializeStorefrontProduct(baseProducts, apiProduct) {
   };
 }
 
-function buildStorefrontProducts(baseProducts, adminProducts) {
+function buildStorefrontProducts(baseProducts, adminProducts, categories = []) {
   if (!adminProducts || adminProducts.length === 0) return [];
 
   const normalizedAdminProducts = adminProducts.map((product) => materializeStorefrontProduct(baseProducts, product));
-  return normalizedAdminProducts.filter((product) => product.status !== "draft");
+  return normalizedAdminProducts
+    .filter((product) => product.status !== "draft")
+    // Une categorie basculee en "produit simple" doit s'appliquer tout de suite a ses produits,
+    // sans attendre un re-enregistrement individuel de chaque produit en admin.
+    .map((product) => {
+      if (isServiceProduct(product)) return product;
+      const assignedCategory = categories.find((category) => Array.isArray(category.productIds) && category.productIds.includes(product.id));
+      return isSimpleProductCategory(assignedCategory) ? { ...product, category: "accessoires" } : product;
+    });
 }
 
 function buildStorefrontCategories(categories, allProducts) {
@@ -1148,7 +1156,7 @@ function StorefrontApp() {
 
   const siteCategories = siteData.categories;
   const siteSettings = normalizeProductOptionSettings(siteData.settings);
-  const siteProducts = useMemo(() => buildStorefrontProducts(products, siteData.products), [siteData.products]);
+  const siteProducts = useMemo(() => buildStorefrontProducts(products, siteData.products, siteCategories), [siteData.products, siteCategories]);
   const storefrontCategories = useMemo(() => buildStorefrontCategories(siteCategories.filter((category) => category.slug !== "services"), siteProducts), [siteCategories, siteProducts]);
   const storefrontProducts = useMemo(() => siteProducts.filter((product) => !isServiceProduct(product)), [siteProducts]);
   const activeAccount = useMemo(() => (customerAccount ? normalizeAccountView(customerAccount) : null), [customerAccount]);
