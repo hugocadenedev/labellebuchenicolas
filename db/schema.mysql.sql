@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS products (
   description LONGTEXT NULL,
   unit_label VARCHAR(100) NULL,
   sell_unit VARCHAR(10) NOT NULL DEFAULT 'stere',
+  vat_rate DECIMAL(5,2) NOT NULL DEFAULT 10.00,
   badge VARCHAR(100) NULL,
   badge_tone VARCHAR(50) NULL,
   rating_label VARCHAR(50) NULL,
@@ -103,6 +104,9 @@ CREATE TABLE IF NOT EXISTS products (
   UNIQUE KEY uq_products_sku (sku),
   KEY idx_products_status (status)
 ) ENGINE=InnoDB;
+
+-- Ajout retroactif pour les bases deja migrees avant l'introduction du taux de TVA par produit (10% par defaut, 20% pour certains produits).
+ALTER TABLE products ADD COLUMN IF NOT EXISTS vat_rate DECIMAL(5,2) NOT NULL DEFAULT 10.00;
 
 CREATE TABLE IF NOT EXISTS product_categories (
   product_id BIGINT UNSIGNED NOT NULL,

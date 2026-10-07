@@ -123,6 +123,26 @@ function roundCurrency(value) {
   return Math.round(Number(value || 0) * 100) / 100;
 }
 
+// Taux de TVA (ratio) d'un produit: 10% par defaut, 20% si configure en admin.
+function getProductVatRatio(product) {
+  const rate = Number(product?.vatRate);
+  return Number.isFinite(rate) && rate > 0 ? rate / 100 : 0.1;
+}
+
+// Taux de TVA moyen pondere par le montant TTC de chaque ligne de commande, pour gerer les paniers
+// qui melangent des produits a 10% et 20% de TVA.
+function computeOrderItemsVatRatio(items = []) {
+  const totalTtc = items.reduce((sum, item) => sum + item.total, 0);
+  if (totalTtc <= 0) return 0.1;
+  const weighted = items.reduce((sum, item) => sum + item.total * getProductVatRatio(item.product), 0);
+  return weighted / totalTtc;
+}
+
+// Extrait le montant de TVA contenu dans un montant TTC, pour un taux donne.
+function extractVatPortion(amountTtc, ratio) {
+  return roundCurrency(Number(amountTtc || 0) - Number(amountTtc || 0) / (1 + ratio));
+}
+
 function normalizeOptionList(values, fallback = []) {
   const normalized = uniqueValues((Array.isArray(values) ? values : []).map(normalizeText));
   return normalized.length > 0 ? normalized : [...fallback];
@@ -576,6 +596,7 @@ function normalizeProductInput(input) {
     oldPrice: Number.isFinite(oldPrice) ? oldPrice : null,
     unit: stripDeliveredWording(input.unit) || "/ stere",
     sellUnit: input.sellUnit === "m3" ? "m3" : "stere",
+    vatRate: Number(input.vatRate) === 20 ? 20 : 10,
     badge: input.badge || "Nouveau",
     badgeTone: input.badgeTone || "green",
     rating: input.rating || "★★★★★",
@@ -789,6 +810,7 @@ async function readSqlState() {
       p.old_price,
       p.unit_label,
       p.sell_unit,
+      p.vat_rate,
       p.badge,
       p.badge_tone,
       p.rating_label,
@@ -831,6 +853,7 @@ async function readSqlState() {
     oldPrice: row.old_price === null ? null : Number(row.old_price),
     unit: stripDeliveredWording(row.unit_label) || "/ stere",
     sellUnit: row.sell_unit === "m3" ? "m3" : "stere",
+    vatRate: Number(row.vat_rate) === 20 ? 20 : 10,
     badge: row.badge || "Nouveau",
     badgeTone: row.badge_tone || "green",
     rating: row.rating_label || "",
@@ -1119,8 +1142,8 @@ export async function replaceAllDataFromSnapshot(snapshot) {
       const productType = String(product.family || "").toLowerCase().includes("service") ? "service" : "physical";
       await connection.query(
         `INSERT INTO products
-          (external_id, template_product_external_id, name, slug, sku, cat_label, essence_name, family_name, legacy_category_slug, short_description, description, unit_label, sell_unit, badge, badge_tone, rating_label, reviews_label, default_length, available_lengths_json, length_prices_json, default_drying, available_drying_durations_json, humidity_label, origin_label, calorific_value_label, image_key, image_url, gallery_keys_json, gallery_urls_json, specs_json, tabs_json, old_price, status, product_type)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (external_id, template_product_external_id, name, slug, sku, cat_label, essence_name, family_name, legacy_category_slug, short_description, description, unit_label, sell_unit, vat_rate, badge, badge_tone, rating_label, reviews_label, default_length, available_lengths_json, length_prices_json, default_drying, available_drying_durations_json, humidity_label, origin_label, calorific_value_label, image_key, image_url, gallery_keys_json, gallery_urls_json, specs_json, tabs_json, old_price, status, product_type)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           product.id,
           product.templateProductId || null,
@@ -1135,6 +1158,7 @@ export async function replaceAllDataFromSnapshot(snapshot) {
           product.desc || null,
           product.unit || null,
           product.sellUnit === "m3" ? "m3" : "stere",
+          Number(product.vatRate) === 20 ? 20 : 10,
           product.badge || null,
           product.badgeTone || null,
           product.rating || null,
@@ -1784,7 +1808,8 @@ export async function createOrder(input) {
   }
   const shippingAmount = pickupAtDepot ? 0 : shippingResult.amount;
   const total = roundCurrency(subtotal - discountAmount + shippingAmount);
-  const taxAmount = roundCurrency(total / 6);
+  const productsVatRatio = computeOrderItemsVatRatio(items);
+  const taxAmount = roundCurrency(extractVatPortion(Math.max(0, subtotal - discountAmount), productsVatRatio) + extractVatPortion(shippingAmount, 0.1));
   const now = new Date().toISOString();
   const status = normalizeText(input.status) || (paymentMethod === "Paiement à la livraison" ? "pending" : "paid");
   const statusLabel = normalizeText(input.statusLabel) || (status === "paid" ? "Paiement accepté" : "En attente");

@@ -213,30 +213,45 @@ function roundMoney(value) {
   return Math.round(Number(value || 0) * 100) / 100;
 }
 
-function convertHtToTtc(value) {
-  return roundMoney(Number(value || 0) * (1 + vatRate));
+function convertHtToTtc(value, rate = vatRate) {
+  return roundMoney(Number(value || 0) * (1 + rate));
 }
 
-function extractHtFromTtc(value) {
-  return roundMoney(Number(value || 0) / (1 + vatRate));
+function extractHtFromTtc(value, rate = vatRate) {
+  return roundMoney(Number(value || 0) / (1 + rate));
 }
 
-function extractVatFromTtc(value) {
-  return roundMoney(Number(value || 0) - extractHtFromTtc(value));
+function extractVatFromTtc(value, rate = vatRate) {
+  return roundMoney(Number(value || 0) - extractHtFromTtc(value, rate));
 }
 
-function convertPriceMapHtToTtc(priceMap = {}) {
+function convertPriceMapHtToTtc(priceMap = {}, rate = vatRate) {
   return Object.fromEntries(
-    Object.entries(priceMap).map(([key, value]) => [key, convertHtToTtc(value)])
+    Object.entries(priceMap).map(([key, value]) => [key, convertHtToTtc(value, rate)])
   );
 }
 
-function buildVatBreakdown(subtotalTtc, shippingTtc = 0) {
+// Taux de TVA d'un produit (10% par defaut, 20% si configure en admin), en ratio (0.1 / 0.2).
+function getProductVatRatio(product) {
+  const rate = Number(product?.vatRate);
+  return Number.isFinite(rate) && rate > 0 ? rate / 100 : vatRate;
+}
+
+// Taux de TVA moyen pondere par le montant TTC de chaque ligne, pour une repartition HT/TVA correcte
+// meme quand le panier melange des produits a 10% et 20%.
+function computeCartVatRatio(cartItems = []) {
+  const totalTtc = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  if (totalTtc <= 0) return vatRate;
+  const weighted = cartItems.reduce((sum, item) => sum + item.price * item.quantity * getProductVatRatio(item), 0);
+  return weighted / totalTtc;
+}
+
+function buildVatBreakdown(subtotalTtc, shippingTtc = 0, productsVatRatio = vatRate) {
   const productsTtc = roundMoney(subtotalTtc);
   const shipping = roundMoney(shippingTtc);
-  const productsHt = extractHtFromTtc(productsTtc);
+  const productsHt = extractHtFromTtc(productsTtc, productsVatRatio);
   const shippingHt = extractHtFromTtc(shipping);
-  const productsVat = extractVatFromTtc(productsTtc);
+  const productsVat = extractVatFromTtc(productsTtc, productsVatRatio);
   const shippingVat = extractVatFromTtc(shipping);
 
   return {
@@ -248,8 +263,16 @@ function buildVatBreakdown(subtotalTtc, shippingTtc = 0) {
     shippingTtc: shipping,
     totalHt: roundMoney(productsHt + shippingHt),
     totalVat: roundMoney(productsVat + shippingVat),
-    totalTtc: roundMoney(productsTtc + shipping)
+    totalTtc: roundMoney(productsTtc + shipping),
+    productsVatRate: Math.round(productsVatRatio * 1000) / 10
   };
+}
+
+function formatVatRateLabel(rate) {
+  const value = Number(rate);
+  const rounded = Number.isFinite(value) ? Math.round(value * 10) / 10 : 10;
+  const text = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1).replace(".", ",");
+  return `${text} %`;
 }
 
 function estimateStorageRatio(length) {
@@ -726,6 +749,7 @@ function materializeStorefrontProduct(baseProducts, apiProduct) {
     : lengthPricesHt;
   const displayPriceHt = sellsByVolume ? getSterePriceFromM3Price({ length: defaultLength }, defaultPriceHt) : defaultPriceHt;
   const displayOldPriceHt = sellsByVolume && oldPriceHt != null ? getSterePriceFromM3Price({ length: defaultLength }, oldPriceHt) : oldPriceHt;
+  const vatRatio = getProductVatRatio(apiProduct);
 
   return {
     ...baseProduct,
@@ -735,13 +759,14 @@ function materializeStorefrontProduct(baseProducts, apiProduct) {
     essence: apiProduct.essence || apiProduct.family || baseProduct?.essence || "Bois",
     category: apiProduct.category || baseProduct?.category || "bois-de-chauffage",
     family: apiProduct.family || baseProduct?.family || "Bois",
+    vatRate: Number(apiProduct.vatRate) === 20 ? 20 : 10,
     priceHt: defaultPriceHt,
-    price: convertHtToTtc(defaultPriceHt),
+    price: convertHtToTtc(defaultPriceHt, vatRatio),
     oldPriceHt,
-    oldPrice: oldPriceHt == null ? null : convertHtToTtc(oldPriceHt),
-    displayPrice: convertHtToTtc(displayPriceHt),
-    displayOldPrice: displayOldPriceHt == null ? null : convertHtToTtc(displayOldPriceHt),
-    displayLengthPrices: convertPriceMapHtToTtc(displayLengthPricesHt),
+    oldPrice: oldPriceHt == null ? null : convertHtToTtc(oldPriceHt, vatRatio),
+    displayPrice: convertHtToTtc(displayPriceHt, vatRatio),
+    displayOldPrice: displayOldPriceHt == null ? null : convertHtToTtc(displayOldPriceHt, vatRatio),
+    displayLengthPrices: convertPriceMapHtToTtc(displayLengthPricesHt, vatRatio),
     unit: stripDeliveredWording(apiProduct.unit) || stripDeliveredWording(baseProduct?.unit) || "/ stere",
     badge: apiProduct.badge || baseProduct?.badge || "Nouveau",
     badgeTone: apiProduct.badgeTone || baseProduct?.badgeTone || "green",
@@ -752,7 +777,7 @@ function materializeStorefrontProduct(baseProducts, apiProduct) {
     availableLengths,
     availableDryingDurations,
     lengthPricesHt,
-    lengthPrices: convertPriceMapHtToTtc(lengthPricesHt),
+    lengthPrices: convertPriceMapHtToTtc(lengthPricesHt, vatRatio),
     humidity: apiProduct.humidity || "",
     desc: apiProduct.desc || baseProduct?.desc || "",
     image,
@@ -2323,14 +2348,14 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
   const productSettings = useMemo(() => normalizeProductOptionSettings(settings), [settings]);
   const variantProducts = useMemo(() => getProductVariantFamily(siteProducts, product), [siteProducts, product]);
   const [shotIndex, setShotIndex] = useState(0);
-  const [qty, setQty] = useState(4);
+  const [qty, setQty] = useState(1);
   const [tab, setTab] = useState("overview");
   const [length, setLength] = useState(product?.length ?? "");
   const [drying, setDrying] = useState(product?.drying ?? "");
 
   useEffect(() => {
     setShotIndex(0);
-    setQty(4);
+    setQty(1);
     setTab("overview");
     setLength(product?.length ?? "");
     setDrying(product?.drying ?? "");
@@ -2490,7 +2515,7 @@ function ProductPage({ addToCart, categories, settings, siteProducts, defaultCat
                   <span style={{ ...mono, fontSize: 11.5, color: "#8A9180" }}>{activeProduct.unit}</span>
                 </div>
                 {sellsByVolume ? <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>Facturé au m³ réel : {formatPrice(activeUnitPrice)} TTC / m³</span> : null}
-                <span style={{ ...mono, fontSize: 11, color: "#4E5647" }}>Total {qty} {quantityUnitLabel} · <span style={{ color: "#23291F" }}>{formatPrice(total)}</span> · tarifs TTC TVA 10 %</span>
+                <span style={{ ...mono, fontSize: 11, color: "#4E5647" }}>Total {qty} {quantityUnitLabel} · <span style={{ color: "#23291F" }}>{formatPrice(total)}</span> · tarifs TTC TVA {formatVatRateLabel(getProductVatRatio(activeProduct) * 100)}</span>
               </div>
             </div>
             <div className="lbb-cta-grid" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 10 }}>
@@ -2580,7 +2605,8 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
     ? { amount: 0, label: "Retrait au dépôt — gratuit", quoteRequired: false, freeShipping: true }
     : rawShippingEstimate;
   const shipping = shippingEstimate.amount;
-  const totals = buildVatBreakdown(Math.max(0, subtotal - discountAmount), shipping);
+  const productsVatRatio = computeCartVatRatio(cartItems);
+  const totals = buildVatBreakdown(Math.max(0, subtotal - discountAmount), shipping, productsVatRatio);
 
   function handleApplyPromo(event) {
     event.preventDefault();
@@ -2681,10 +2707,10 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
               <div className="lbb-cart-summary-lines" style={{ display: "grid", gap: 13, fontSize: 17, color: "#4E5647" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Sous-total produits HT</span><span style={{ color: "#23291F" }}>{formatPrice(totals.productsHt)}</span></div>
                 {promoResult.valid ? <div style={{ display: "flex", justifyContent: "space-between", gap: 16, color: "#5C7752" }}><span>Code {promoResult.code}</span><span>−{formatPrice(promoResult.amount)}</span></div> : null}
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA produits 10 %</span><span style={{ color: "#23291F" }}>{formatPrice(totals.productsVat)}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA produits {formatVatRateLabel(totals.productsVatRate)}</span><span style={{ color: "#23291F" }}>{formatPrice(totals.productsVat)}</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Livraison HT (estimation)</span><span style={{ color: "#23291F" }}>{shippingEstimate.quoteRequired ? "Sur devis" : shippingEstimate.freeShipping ? "Offerte" : formatPrice(totals.shippingHt)}</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA livraison 10 %</span><span style={{ color: "#23291F" }}>{shippingEstimate.quoteRequired ? "Sur devis" : shippingEstimate.freeShipping ? "Offerte" : formatPrice(totals.shippingVat)}</span></div>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 16, ...mono, fontSize: 11, letterSpacing: ".05em", color: "#8A9180" }}><span>Total TVA 10 %</span><span>{formatPrice(totals.totalVat)}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 16, ...mono, fontSize: 11, letterSpacing: ".05em", color: "#8A9180" }}><span>Total TVA</span><span>{formatPrice(totals.totalVat)}</span></div>
               </div>
               <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14.5, color: "#4E5647", marginTop: 16 }}>
                 <input type="checkbox" checked={pickupAtDepot} onChange={(event) => onTogglePickup(event.target.checked)} />
@@ -2798,7 +2824,8 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
     ? { amount: 0, label: "Retrait au dépôt — gratuit", quoteRequired: false, freeShipping: true }
     : rawShippingResult;
   const shipping = shippingResult.amount;
-  const totals = buildVatBreakdown(Math.max(0, subtotal - discountAmount), shipping);
+  const productsVatRatio = computeCartVatRatio(cartItems);
+  const totals = buildVatBreakdown(Math.max(0, subtotal - discountAmount), shipping, productsVatRatio);
   const searchParams = new URLSearchParams(location.search);
   const stripeCancelled = searchParams.get("payment") === "cancelled";
 
@@ -2900,7 +2927,7 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
               {cartItems.map((item) => <div key={item.lineId} style={{ display: "flex", justifyContent: "space-between", gap: 16, fontSize: 16, color: "#4E5647" }}><span>{item.quantity} × {item.name}{item.isGift ? " · OFFERT" : [item.selectedLength, item.selectedDrying].filter(Boolean).length ? ` · ${[item.selectedLength, item.selectedDrying].filter(Boolean).join(" · ")}` : ""}</span><strong style={{ color: "#23291F" }}>{formatPrice(item.price * item.quantity)}</strong></div>)}
               <div style={{ height: 1, background: "rgba(35,41,31,.08)" }} />
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Sous-total HT</span><strong>{formatPrice(totals.totalHt)}</strong></div>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA 10 %</span><strong>{formatPrice(totals.totalVat)}</strong></div>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA {formatVatRateLabel(totals.productsVatRate)}</span><strong>{formatPrice(totals.totalVat)}</strong></div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "baseline" }}><span style={{ ...sans, fontWeight: 700, fontSize: 18 }}>Total TTC</span><strong style={{ ...sans, fontWeight: 700, fontSize: 28 }}>{formatPrice(totals.totalTtc)}</strong></div>
               <ServiceUpsellSection siteProducts={siteProducts} cartItems={cartItems} addToCart={addToCart} title="Ajoutez vos services avant connexion" description="Ces services seront repris dans la commande dès que vous validez votre panier." />
             </div>
@@ -2968,10 +2995,10 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
               <div style={{ height: 1, background: "rgba(35,41,31,.08)" }} />
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Sous-total produits HT</span><strong>{formatPrice(totals.productsHt)}</strong></div>
               {promoResult.valid ? <div style={{ display: "flex", justifyContent: "space-between", gap: 16, color: "#5C7752" }}><span>Code {promoResult.code}</span><span>−{formatPrice(promoResult.amount)}</span></div> : null}
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA produits 10 %</span><strong>{formatPrice(totals.productsVat)}</strong></div>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA produits {formatVatRateLabel(totals.productsVatRate)}</span><strong>{formatPrice(totals.productsVat)}</strong></div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Livraison HT</span><strong>{shippingResult.quoteRequired ? "Sur devis" : shippingResult.freeShipping ? "Offerte" : formatPrice(totals.shippingHt)}</strong></div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA livraison 10 %</span><strong>{shippingResult.quoteRequired ? "Sur devis" : shippingResult.freeShipping ? "Offerte" : formatPrice(totals.shippingVat)}</strong></div>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 16, ...mono, fontSize: 11, color: "#8A9180" }}><span>Total TVA 10 %</span><span>{formatPrice(totals.totalVat)}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 16, ...mono, fontSize: 11, color: "#8A9180" }}><span>Total TVA</span><span>{formatPrice(totals.totalVat)}</span></div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "baseline" }}><span style={{ ...sans, fontWeight: 700, fontSize: 18 }}>Total TTC</span><strong style={{ ...sans, fontWeight: 700, fontSize: 30 }}>{formatPrice(totals.totalTtc)}</strong></div>
               <form onSubmit={handleApplyPromo} style={{ display: "flex", gap: 8 }}>
                 <input value={promoInput} onChange={(event) => setPromoInput(event.target.value)} placeholder="Code promo" className="lbb-admin-input" style={{ flex: 1, minHeight: 40 }} />
@@ -3224,6 +3251,7 @@ function createProductDraft(categories, settings, creationMode = "product") {
     imageUrl: "",
     unit: "",
     sellUnit: "stere",
+    vatRate: 10,
     status: "active"
   };
 }
@@ -3249,6 +3277,7 @@ function createProductDraftFromProduct(categories, product, settings) {
     imageUrl: product?.imageUrl || "",
     unit: product?.unit || "",
     sellUnit: product?.sellUnit === "m3" ? "m3" : "stere",
+    vatRate: Number(product?.vatRate) === 20 ? 20 : 10,
     status: product?.status || "active"
   };
 }
@@ -3788,6 +3817,7 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
         imageUrl: isServiceCategory ? "" : draft.imageUrl,
         unit: draft.unit,
         sellUnit: !isAccessoryCategory && !isServiceCategory && draft.sellUnit === "m3" ? "m3" : "stere",
+        vatRate: Number(draft.vatRate) === 20 ? 20 : 10,
         category: categoryType,
         categoryId: draft.categoryId,
         family: familyLabel,
@@ -3891,6 +3921,13 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
           <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>PRIX HT</span>
           <input value={draft.price} onChange={(event) => updateDraft("price", event.target.value)} placeholder="Ex: 119" type="number" step="0.01" min="0" className="lbb-admin-input" required />
         </label> : null}
+        <label style={{ display: "grid", gap: 6 }}>
+          <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>TAUX DE TVA</span>
+          <select value={draft.vatRate} onChange={(event) => updateDraft("vatRate", Number(event.target.value))} className="lbb-admin-select">
+            <option value={10}>10 % (taux par defaut)</option>
+            <option value={20}>20 %</option>
+          </select>
+        </label>
         {!isServiceCategory ? <label style={{ display: "grid", gap: 6 }}>
           <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>PRIX REMISE HT</span>
           <input value={draft.oldPrice} onChange={(event) => updateDraft("oldPrice", event.target.value)} placeholder="Ex: 139" type="number" step="0.01" min="0" className="lbb-admin-input" />
@@ -3978,7 +4015,7 @@ function AdminProductsIndex({ products: adminProducts, categories, onStockUpdate
           {filteredProducts.map((product) => <AdminRow key={product.id} className="lbb-admin-table-products-cms" cells={[
             <span style={{ display: "flex", alignItems: "center", gap: 12 }}>{product.image ? <img src={product.image} alt={product.name} style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 12, background: "#F3EEE4" }} /> : <span style={{ width: 44, height: 44, borderRadius: 12, border: "1px dashed rgba(35,41,31,.18)", background: "#FBFAF5", display: "grid", placeItems: "center", ...mono, fontSize: 9, color: "#8A9180" }}>PHOTO</span>}<span style={{ display: "grid", gap: 3 }}><strong style={{ ...sans, fontSize: 15, color: "#2C241D" }}>{product.name}</strong><span style={{ ...mono, fontSize: 10, color: "#A0917E" }}>{product.sku}</span></span></span>,
             <AdminPill>{getCategoryLabel(product.id)}</AdminPill>,
-            <strong style={{ ...sans, fontSize: 15, color: "#2C241D" }}>{formatPrice(product.price)}</strong>,
+            <span style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}><strong style={{ ...sans, fontSize: 15, color: "#2C241D" }}>{formatPrice(product.price)}</strong><AdminPill tone={Number(product.vatRate) === 20 ? "warning" : "neutral"}>TVA {Number(product.vatRate) === 20 ? 20 : 10} %</AdminPill></span>,
             <span style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}><AdminPill tone={product.isLowStock ? "warning" : "success"}>{product.stockLabel}</AdminPill><button type="button" className="lbb-btn lbb-btn-small lbb-btn-secondary" onClick={() => onStockUpdate(product.id, product.stockQty + 10)}>+10</button></span>,
             <AdminPill tone={product.isLowStock ? "warning" : "success"}>{product.isLowStock ? "Stock bas" : product.status === "active" ? "Publie" : "Brouillon"}</AdminPill>,
             <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><Link to={product.slug ? `/produit/${product.slug}` : "/admin/products"} className="lbb-btn lbb-btn-secondary lbb-btn-small">Voir</Link><Link to={`/admin/products/${product.id}/edit`} className="lbb-btn lbb-btn-small lbb-btn-primary">Modifier</Link><button type="button" className="lbb-btn lbb-btn-small lbb-btn-secondary" onClick={() => handleDeleteClick(product)}>Supprimer</button></span>
@@ -5026,6 +5063,7 @@ function ProductCard({ product, addToCart, detailed = false, compact = false }) 
           {hasOldPrice ? <span style={{ ...mono, fontSize: 10.5, color: "#A8AE9C", textDecoration: "line-through" }}>{formatPrice(displayOldPrice)}</span> : null}
           <span style={{ ...mono, fontSize: 10.5, color: "#8A9180", marginLeft: "auto" }}>{product.unit}</span>
         </div>
+        {isSoldByVolume(product) ? <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>Facture au m³ reel : {formatPrice(product.price)} TTC / m³</span> : null}
         <button type="button" onClick={() => addToCart(product.id)} className="lbb-btn lbb-btn-soft" style={{ width: "100%", justifyContent: "center" }}>Ajouter au panier</button>
       </div>
     </article>
