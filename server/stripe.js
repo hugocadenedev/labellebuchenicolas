@@ -1,8 +1,8 @@
 import Stripe from "stripe";
 import { appConfig, isStripeEnabled, isStripeWebhookEnabled } from "./config.js";
-import { createOrder, getSettings } from "./dataStore.js";
+import { createOrder, getSettings, listProducts } from "./dataStore.js";
 import { computeShipping } from "../shared/deliveryZones.js";
-import { computeVolumeDiscount, validatePromoCode } from "../shared/promotions.js";
+import { computeVolumeDiscount, validatePromoCode, getSterEquivalentQuantity } from "../shared/promotions.js";
 import {
   clearPendingStripeCheckout,
   readPendingStripeCheckout,
@@ -122,10 +122,19 @@ export async function createStripeCheckoutSession(req, res, next) {
     }
 
     const subtotal = items.reduce((sum, item) => sum + Number(item.unitPrice || 0) * Number(item.quantity || 0), 0);
-    const woodVolume = items.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+
+    const products = await listProducts();
+    const productById = new Map(products.map((product) => [product.id, product]));
+    const discountItems = items.map((item) => ({
+      ...item,
+      price: Number(item.unitPrice || 0),
+      sellUnit: productById.get(item.productId)?.sellUnit,
+      length: item.length || productById.get(item.productId)?.length
+    }));
+    const woodVolume = discountItems.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + getSterEquivalentQuantity(item), 0);
 
     const settings = await getSettings();
-    const volumeDiscount = computeVolumeDiscount(items, settings?.promotions?.volumeDiscounts);
+    const volumeDiscount = computeVolumeDiscount(discountItems, settings?.promotions?.volumeDiscounts);
     const promoResult = validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes);
     if (promoCode && !promoResult.valid) {
       return res.status(400).json({ message: promoResult.message || "Code promo invalide." });

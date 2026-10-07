@@ -4,6 +4,32 @@ function roundToCents(value) {
   return Math.round(Number(value || 0) * 100) / 100;
 }
 
+function estimateStorageRatio(length) {
+  if (String(length).includes("25")) return 0.65;
+  if (String(length).includes("33")) return 0.7;
+  if (String(length).includes("50")) return 0.8;
+  return 1;
+}
+
+// Un produit "vendu au m3" saisit sa quantite en m3 apparents : on la convertit en steres reels
+// pour que les seuils de remise (ex: 4 steres achetes = le 5e offert) restent corrects quelle que soit l'unite de vente.
+export function getSterEquivalentQuantity(item) {
+  const quantity = Number(item?.quantity || 0);
+  if (item?.sellUnit === "m3") {
+    return quantity / Math.max(estimateStorageRatio(item.selectedLength || item.length), 0.01);
+  }
+  return quantity;
+}
+
+// Prix equivalent au stere reel pour un produit vendu au m3 (inverse de getSterEquivalentQuantity), sinon prix inchange.
+function getSterEquivalentPrice(item) {
+  const price = Number(item?.price || 0);
+  if (item?.sellUnit === "m3") {
+    return price * Math.max(estimateStorageRatio(item.selectedLength || item.length), 0.01);
+  }
+  return price;
+}
+
 // Les remises par volume ciblent les categories du back-office (assignation par produit),
 // pas le champ generique "category" (bois-de-chauffage / accessoires / services).
 export function getCategorySlugsForProduct(categories = [], product) {
@@ -61,7 +87,7 @@ export function computeVolumeDiscount(cartItems = [], rules = []) {
 
   activeRules.forEach((rule) => {
     const matching = cartItems.filter((item) => itemMatchesRuleCategories(item, rule));
-    const totalQuantity = matching.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+    const totalQuantity = matching.reduce((sum, item) => sum + getSterEquivalentQuantity(item), 0);
     const bundleSize = rule.buyQuantity + rule.freeQuantity;
     if (totalQuantity < bundleSize) return;
 
@@ -70,7 +96,7 @@ export function computeVolumeDiscount(cartItems = [], rules = []) {
     if (freeUnits <= 0) return;
 
     const unitPrices = matching
-      .flatMap((item) => Array(Math.max(0, Math.round(Number(item.quantity || 0)))).fill(Number(item.price || 0)))
+      .flatMap((item) => Array(Math.max(0, Math.round(getSterEquivalentQuantity(item)))).fill(getSterEquivalentPrice(item)))
       .sort((a, b) => a - b);
     const ruleAmount = roundToCents(unitPrices.slice(0, freeUnits).reduce((sum, price) => sum + price, 0));
     if (ruleAmount <= 0) return;
@@ -95,15 +121,20 @@ export function applyAutomaticGifts(cartItems = [], rules = []) {
 
   activeRules.forEach((rule) => {
     const matching = cartItems.filter((item) => !item.isGift && itemMatchesRuleCategories(item, rule));
-    const paidQuantity = matching.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+    const paidQuantity = matching.reduce((sum, item) => sum + getSterEquivalentQuantity(item), 0);
     if (paidQuantity < rule.buyQuantity) return;
 
     const bundles = Math.floor(paidQuantity / rule.buyQuantity);
-    const giftQuantity = bundles * rule.freeQuantity;
-    if (giftQuantity <= 0) return;
+    const giftQuantitySteres = bundles * rule.freeQuantity;
+    if (giftQuantitySteres <= 0) return;
 
-    const cheapest = [...matching].sort((a, b) => Number(a.price || 0) - Number(b.price || 0))[0];
+    const cheapest = [...matching].sort((a, b) => getSterEquivalentPrice(a) - getSterEquivalentPrice(b))[0];
     if (!cheapest) return;
+
+    // L'article offert garde l'unite de vente du produit (m3 ou stere), on reconvertit donc le nombre de steres offerts.
+    const giftQuantity = cheapest.sellUnit === "m3"
+      ? giftQuantitySteres * Math.max(estimateStorageRatio(cheapest.selectedLength || cheapest.length), 0.01)
+      : giftQuantitySteres;
 
     giftLines.push({
       ...cheapest,
