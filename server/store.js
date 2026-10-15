@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import bcrypt from "bcryptjs";
 import { appConfig } from "./config.js";
 import { computeShipping } from "../shared/deliveryZones.js";
-import { normalizeVolumeDiscounts, normalizePromoCodes, computeVolumeDiscount, validatePromoCode, getCategorySlugsForProduct, getSterEquivalentQuantity } from "../shared/promotions.js";
+import { normalizeVolumeDiscounts, normalizePromoCodes, normalizeFreeShippingRules, computeVolumeDiscount, validatePromoCode, getPromoEligibleSubtotal, getCategorySlugsForProduct, getSterEquivalentQuantity } from "../shared/promotions.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -188,7 +188,8 @@ function normalizeSettings(input = {}) {
     deliverySlots: normalizeOptionList(input?.deliverySlots, []),
     promotions: {
       volumeDiscounts: normalizeVolumeDiscounts(promotions.volumeDiscounts),
-      promoCodes: normalizePromoCodes(promotions.promoCodes)
+      promoCodes: normalizePromoCodes(promotions.promoCodes),
+      freeShippingRules: normalizeFreeShippingRules(promotions.freeShippingRules)
     },
     announcementBar: {
       primaryText: normalizeAnnouncementText(announcementBar.primaryText, "Tarifs TTC · TVA 10 %"),
@@ -626,6 +627,7 @@ function normalizeProductInput(input) {
     unit: stripDeliveredWording(input.unit) || "/ stere",
     sellUnit: input.sellUnit === "m3" ? "m3" : "stere",
     vatRate: Number(input.vatRate) === 20 ? 20 : 10,
+    excludeFromPromotions: input.excludeFromPromotions === true,
     badge: input.badge || "Nouveau",
     badgeTone: input.badgeTone || "green",
     rating: input.rating || "★★★★★",
@@ -749,6 +751,10 @@ export async function updateSettings(input) {
     productOptions: {
       ...data.settings?.productOptions,
       ...input?.productOptions
+    },
+    promotions: {
+      ...data.settings?.promotions,
+      ...input?.promotions
     }
   });
   await writeStore(data);
@@ -1067,9 +1073,9 @@ export async function createOrder(input) {
   });
 
   const subtotal = roundCurrency(items.reduce((sum, item) => sum + item.total, 0));
-  const discountItems = items.map((item) => ({ categorySlugs: getCategorySlugsForProduct(data.categories, item.product), price: item.unitPrice, quantity: item.quantity, sellUnit: item.product.sellUnit, length: item.selectedLength }));
+  const discountItems = items.map((item) => ({ categorySlugs: getCategorySlugsForProduct(data.categories, item.product), price: item.unitPrice, quantity: item.quantity, sellUnit: item.product.sellUnit, length: item.selectedLength, category: item.product.category, excludeFromPromotions: item.product.excludeFromPromotions === true }));
   const volumeDiscount = computeVolumeDiscount(discountItems, data.settings?.promotions?.volumeDiscounts);
-  const promoResult = validatePromoCode(input.promoCode, subtotal, data.settings?.promotions?.promoCodes);
+  const promoResult = validatePromoCode(input.promoCode, subtotal, data.settings?.promotions?.promoCodes, getPromoEligibleSubtotal(discountItems));
   if (input.promoCode && !promoResult.valid) {
     throw httpError(400, promoResult.message || "Code promo invalide.");
   }
@@ -1084,11 +1090,10 @@ export async function createOrder(input) {
   const billingAddress = input.billingSameAsDelivery === false
     ? normalizeAddress(input.billingAddress, customerName)
     : { ...deliveryAddress };
-  const woodVolume = items.filter((item) => item.product.category === "bois-de-chauffage").reduce((sum, item) => sum + getSterEquivalentQuantity({ quantity: item.quantity, sellUnit: item.product.sellUnit, length: item.selectedLength }), 0);
   const pickupAtDepot = Boolean(input.pickupAtDepot);
-  // Une remise achete/offert ou un code promo exclut la livraison gratuite au volume.
+  // Une remise achete/offert ou un code promo n'autorise que les promos livraison offerte cumulables.
   const hasActiveOffer = volumeDiscount.amount > 0 || promoResult.amount > 0;
-  const shippingResult = computeShipping({ postcode: deliveryAddress.postcode, woodVolume, hasActiveOffer });
+  const shippingResult = computeShipping({ postcode: deliveryAddress.postcode, cartItems: discountItems, freeShippingRules: data.settings?.promotions?.freeShippingRules, hasActiveOffer });
   if (!pickupAtDepot && shippingResult.quoteRequired) {
     throw httpError(400, "Cette adresse est hors zone de livraison automatique. Contactez-nous pour établir un devis.");
   }

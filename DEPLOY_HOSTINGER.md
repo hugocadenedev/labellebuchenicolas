@@ -143,6 +143,17 @@ Important:
 
 - les produits déjà enregistrés avec une image tronquée doivent être ré-enregistrés depuis l'admin pour réécrire la vraie image complète en base
 
+### 5. Colonnes ajoutees apres coup sur `products`
+
+Le serveur ne cree pas les colonnes manquantes au demarrage : si le code lit une colonne absente de la base de prod, tout le site tombe en `503`. Appliquer la migration **avant** de pousser le code qui l'utilise.
+
+Migration prod Hostinger (deja appliquee le 16/10/2026 pour `exclude_from_promotions`) :
+
+```sql
+ALTER TABLE products ADD COLUMN IF NOT EXISTS vat_rate DECIMAL(5,2) NOT NULL DEFAULT 10.00;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS exclude_from_promotions TINYINT(1) NOT NULL DEFAULT 0;
+```
+
 ## Verification de la base en SSH
 
 Connexion SSH Hostinger utilisee:

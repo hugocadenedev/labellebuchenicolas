@@ -18,8 +18,8 @@ import {
   products,
   reviews,
 } from "./catalog";
-import { computeShipping, FREE_SHIPPING_MIN_STERES } from "../shared/deliveryZones.js";
-import { validatePromoCode, normalizeVolumeDiscounts, normalizePromoCodes, applyAutomaticGifts, getCategorySlugsForProduct } from "../shared/promotions.js";
+import { computeShipping } from "../shared/deliveryZones.js";
+import { validatePromoCode, getPromoEligibleSubtotal, normalizeVolumeDiscounts, normalizePromoCodes, normalizeFreeShippingRules, FREE_SHIPPING_ZONES, applyAutomaticGifts, getCategorySlugsForProduct } from "../shared/promotions.js";
 
 const tones = {
   dark: { background: "#23291F", color: "#F4F7EC" },
@@ -78,7 +78,8 @@ const defaultProductOptionSettings = {
   deliverySlots: [],
   promotions: {
     volumeDiscounts: [],
-    promoCodes: []
+    promoCodes: [],
+    freeShippingRules: []
   },
   announcementBar: {
     primaryText: "Tarifs TTC · TVA 10 %",
@@ -480,7 +481,8 @@ function normalizeProductOptionSettings(settings) {
     deliverySlots,
     promotions: {
       volumeDiscounts: normalizeVolumeDiscounts(promotions.volumeDiscounts),
-      promoCodes: normalizePromoCodes(promotions.promoCodes)
+      promoCodes: normalizePromoCodes(promotions.promoCodes),
+      freeShippingRules: normalizeFreeShippingRules(promotions.freeShippingRules)
     },
     announcementBar: {
       primaryText: normalizeAnnouncementText(announcementBar.primaryText, defaultProductOptionSettings.announcementBar.primaryText),
@@ -684,7 +686,7 @@ function buildProductTabsFromDraft(product) {
           "Livraison jusqu'a 30 km : 44,00 € TTC. De 31 a 60 km : 66,00 € TTC. Au-dela de 60 km : sur devis."
         ]
       : [
-          `Livraison jusqu'a 30 km : 44,00 € TTC, offerte des ${FREE_SHIPPING_MIN_STERES} steres de bois commandes.`,
+          "Livraison jusqu'a 30 km : 44,00 € TTC.",
           "De 31 a 60 km : 66,00 € TTC. Au-dela de 60 km, la livraison est etablie sur devis."
         ];
   const deliveryPoints = isService
@@ -692,7 +694,6 @@ function buildProductTabsFromDraft(product) {
     : isAccessory
       ? ["Compatible avec les tournees bois et le retrait depot.", "Aucun surcout logistique dedie.", "Sur devis au-dela de 60 km."]
       : [
-          `Offerte des ${FREE_SHIPPING_MIN_STERES} steres dans la zone locale (jusqu'a 30 km).`,
           "44,00 € TTC jusqu'a 30 km, 66,00 € TTC de 31 a 60 km.",
           "Au-dela de 60 km : livraison sur devis."
         ];
@@ -760,6 +761,7 @@ function materializeStorefrontProduct(baseProducts, apiProduct) {
     category: apiProduct.category || baseProduct?.category || "bois-de-chauffage",
     family: apiProduct.family || baseProduct?.family || "Bois",
     vatRate: Number(apiProduct.vatRate) === 20 ? 20 : 10,
+    excludeFromPromotions: apiProduct.excludeFromPromotions === true,
     priceHt: defaultPriceHt,
     price: convertHtToTtc(defaultPriceHt, vatRatio),
     oldPriceHt,
@@ -2596,11 +2598,11 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
   const [promoInput, setPromoInput] = useState(promoCode || "");
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const woodVolume = cartItems.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + getSterEquivalentQuantity(item), 0);
-  const promoResult = promoCode ? validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes) : { valid: false, amount: 0, message: "" };
+  const promoResult = promoCode ? validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes, getPromoEligibleSubtotal(cartItems)) : { valid: false, amount: 0, message: "" };
   const discountAmount = promoResult.valid ? promoResult.amount : 0;
-  // Une remise achete/offert ou un code promo exclut la livraison gratuite au volume.
+  // Une remise achete/offert ou un code promo n'autorise que les promos livraison offerte cumulables.
   const hasActiveOffer = cartItems.some((item) => item.isGift) || discountAmount > 0;
-  const rawShippingEstimate = subtotal === 0 ? { amount: 0, label: "", quoteRequired: false } : computeShipping({ woodVolume, hasActiveOffer });
+  const rawShippingEstimate = subtotal === 0 ? { amount: 0, label: "", quoteRequired: false } : computeShipping({ cartItems, freeShippingRules: settings?.promotions?.freeShippingRules, hasActiveOffer });
   const shippingEstimate = pickupAtDepot
     ? { amount: 0, label: "Retrait au dépôt — gratuit", quoteRequired: false, freeShipping: true }
     : rawShippingEstimate;
@@ -2709,6 +2711,7 @@ function CartPage({ cartItems, setQuantity, addToCart, siteProducts, defaultCate
                 {promoResult.valid ? <div style={{ display: "flex", justifyContent: "space-between", gap: 16, color: "#5C7752" }}><span>Code {promoResult.code}</span><span>−{formatPrice(promoResult.amount)}</span></div> : null}
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA produits {formatVatRateLabel(totals.productsVatRate)}</span><span style={{ color: "#23291F" }}>{formatPrice(totals.productsVat)}</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Livraison HT (estimation)</span><span style={{ color: "#23291F" }}>{shippingEstimate.quoteRequired ? "Sur devis" : shippingEstimate.freeShipping ? "Offerte" : formatPrice(totals.shippingHt)}</span></div>
+                {shippingEstimate.freeShippingLabel ? <div style={{ ...mono, fontSize: 10.5, color: "#5C7752" }}>{shippingEstimate.freeShippingLabel}</div> : null}
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA livraison 10 %</span><span style={{ color: "#23291F" }}>{shippingEstimate.quoteRequired ? "Sur devis" : shippingEstimate.freeShipping ? "Offerte" : formatPrice(totals.shippingVat)}</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16, ...mono, fontSize: 11, letterSpacing: ".05em", color: "#8A9180" }}><span>Total TVA</span><span>{formatPrice(totals.totalVat)}</span></div>
               </div>
@@ -2814,12 +2817,11 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [promoInput, setPromoInput] = useState(promoCode || "");
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const woodVolume = cartItems.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + getSterEquivalentQuantity(item), 0);
-  const promoResult = promoCode ? validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes) : { valid: false, amount: 0, message: "" };
+  const promoResult = promoCode ? validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes, getPromoEligibleSubtotal(cartItems)) : { valid: false, amount: 0, message: "" };
   const discountAmount = promoResult.valid ? promoResult.amount : 0;
-  // Une remise achete/offert ou un code promo exclut la livraison gratuite au volume.
+  // Une remise achete/offert ou un code promo n'autorise que les promos livraison offerte cumulables.
   const hasActiveOffer = cartItems.some((item) => item.isGift) || discountAmount > 0;
-  const rawShippingResult = computeShipping({ postcode: draft.deliveryAddress.postcode, woodVolume, hasActiveOffer });
+  const rawShippingResult = computeShipping({ postcode: draft.deliveryAddress.postcode, cartItems, freeShippingRules: settings?.promotions?.freeShippingRules, hasActiveOffer });
   const shippingResult = pickupAtDepot
     ? { amount: 0, label: "Retrait au dépôt — gratuit", quoteRequired: false, freeShipping: true }
     : rawShippingResult;
@@ -2997,6 +2999,7 @@ function CheckoutPage({ cartItems, addToCart, siteProducts, settings, account, d
               {promoResult.valid ? <div style={{ display: "flex", justifyContent: "space-between", gap: 16, color: "#5C7752" }}><span>Code {promoResult.code}</span><span>−{formatPrice(promoResult.amount)}</span></div> : null}
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA produits {formatVatRateLabel(totals.productsVatRate)}</span><strong>{formatPrice(totals.productsVat)}</strong></div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>Livraison HT</span><strong>{shippingResult.quoteRequired ? "Sur devis" : shippingResult.freeShipping ? "Offerte" : formatPrice(totals.shippingHt)}</strong></div>
+              {shippingResult.freeShippingLabel ? <div style={{ ...mono, fontSize: 10.5, color: "#5C7752" }}>{shippingResult.freeShippingLabel}</div> : null}
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}><span>TVA livraison 10 %</span><strong>{shippingResult.quoteRequired ? "Sur devis" : shippingResult.freeShipping ? "Offerte" : formatPrice(totals.shippingVat)}</strong></div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16, ...mono, fontSize: 11, color: "#8A9180" }}><span>Total TVA</span><span>{formatPrice(totals.totalVat)}</span></div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "baseline" }}><span style={{ ...sans, fontWeight: 700, fontSize: 18 }}>Total TTC</span><strong style={{ ...sans, fontWeight: 700, fontSize: 30 }}>{formatPrice(totals.totalTtc)}</strong></div>
@@ -3252,6 +3255,7 @@ function createProductDraft(categories, settings, creationMode = "product") {
     unit: "",
     sellUnit: "stere",
     vatRate: 10,
+    excludeFromPromotions: false,
     status: "active"
   };
 }
@@ -3278,6 +3282,7 @@ function createProductDraftFromProduct(categories, product, settings) {
     unit: product?.unit || "",
     sellUnit: product?.sellUnit === "m3" ? "m3" : "stere",
     vatRate: Number(product?.vatRate) === 20 ? 20 : 10,
+    excludeFromPromotions: product?.excludeFromPromotions === true,
     status: product?.status || "active"
   };
 }
@@ -3818,6 +3823,7 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
         unit: draft.unit,
         sellUnit: !isAccessoryCategory && !isServiceCategory && draft.sellUnit === "m3" ? "m3" : "stere",
         vatRate: Number(draft.vatRate) === 20 ? 20 : 10,
+        excludeFromPromotions: draft.excludeFromPromotions === true,
         category: categoryType,
         categoryId: draft.categoryId,
         family: familyLabel,
@@ -3928,6 +3934,13 @@ function ProductEditorForm({ categories, settings, initialProduct = null, onSubm
             <option value={20}>20 %</option>
           </select>
         </label>
+        <label style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+          <input type="checkbox" checked={draft.excludeFromPromotions === true} onChange={(event) => updateDraft("excludeFromPromotions", event.target.checked)} style={{ marginTop: 4 }} />
+          <span style={{ display: "grid", gap: 4 }}>
+            <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>EXCLU DES OFFRES</span>
+            <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>Ce produit ne compte pas dans les remises achete/offert et les codes promo ne s'appliquent pas a son prix.</span>
+          </span>
+        </label>
         {!isServiceCategory ? <label style={{ display: "grid", gap: 6 }}>
           <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>PRIX REMISE HT</span>
           <input value={draft.oldPrice} onChange={(event) => updateDraft("oldPrice", event.target.value)} placeholder="Ex: 139" type="number" step="0.01" min="0" className="lbb-admin-input" />
@@ -4015,7 +4028,7 @@ function AdminProductsIndex({ products: adminProducts, categories, onStockUpdate
           {filteredProducts.map((product) => <AdminRow key={product.id} className="lbb-admin-table-products-cms" cells={[
             <span style={{ display: "flex", alignItems: "center", gap: 12 }}>{product.image ? <img src={product.image} alt={product.name} style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 12, background: "#F3EEE4" }} /> : <span style={{ width: 44, height: 44, borderRadius: 12, border: "1px dashed rgba(35,41,31,.18)", background: "#FBFAF5", display: "grid", placeItems: "center", ...mono, fontSize: 9, color: "#8A9180" }}>PHOTO</span>}<span style={{ display: "grid", gap: 3 }}><strong style={{ ...sans, fontSize: 15, color: "#2C241D" }}>{product.name}</strong><span style={{ ...mono, fontSize: 10, color: "#A0917E" }}>{product.sku}</span></span></span>,
             <AdminPill>{getCategoryLabel(product.id)}</AdminPill>,
-            <span style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}><strong style={{ ...sans, fontSize: 15, color: "#2C241D" }}>{formatPrice(product.price)}</strong><AdminPill tone={Number(product.vatRate) === 20 ? "warning" : "neutral"}>TVA {Number(product.vatRate) === 20 ? 20 : 10} %</AdminPill></span>,
+            <span style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}><strong style={{ ...sans, fontSize: 15, color: "#2C241D" }}>{formatPrice(product.price)}</strong><AdminPill tone={Number(product.vatRate) === 20 ? "warning" : "neutral"}>TVA {Number(product.vatRate) === 20 ? 20 : 10} %</AdminPill>{product.excludeFromPromotions === true ? <AdminPill tone="warning">Hors offres</AdminPill> : null}</span>,
             <span style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}><AdminPill tone={product.isLowStock ? "warning" : "success"}>{product.stockLabel}</AdminPill><button type="button" className="lbb-btn lbb-btn-small lbb-btn-secondary" onClick={() => onStockUpdate(product.id, product.stockQty + 10)}>+10</button></span>,
             <AdminPill tone={product.isLowStock ? "warning" : "success"}>{product.isLowStock ? "Stock bas" : product.status === "active" ? "Publie" : "Brouillon"}</AdminPill>,
             <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><Link to={product.slug ? `/produit/${product.slug}` : "/admin/products"} className="lbb-btn lbb-btn-secondary lbb-btn-small">Voir</Link><Link to={`/admin/products/${product.id}/edit`} className="lbb-btn lbb-btn-small lbb-btn-primary">Modifier</Link><button type="button" className="lbb-btn lbb-btn-small lbb-btn-secondary" onClick={() => handleDeleteClick(product)}>Supprimer</button></span>
@@ -4586,6 +4599,121 @@ function AdminVolumeDiscountEditor({ categories, rules, onAdd, onRemove }) {
   );
 }
 
+const freeShippingZoneLabels = { local: "Zone locale (31)", nearby: "Zone 31-60 km (09, 11, 32, 65, 81, 82)" };
+
+function AdminFreeShippingEditor({ categories, rules, onAdd, onRemove }) {
+  const [label, setLabel] = useState("");
+  const [minSteres, setMinSteres] = useState("5");
+  const [minSubtotal, setMinSubtotal] = useState("0");
+  const [zones, setZones] = useState(["local"]);
+  const [categorySlugs, setCategorySlugs] = useState([]);
+  const [cumulative, setCumulative] = useState(false);
+
+  function toggleValue(setter, value) {
+    setter((current) => (current.includes(value) ? current.filter((entry) => entry !== value) : [...current, value]));
+  }
+
+  function handleAdd() {
+    const steres = Math.max(0, Number(minSteres) || 0);
+    const amount = Math.max(0, Number(minSubtotal) || 0);
+    if ((steres <= 0 && amount <= 0) || zones.length === 0) return;
+    const thresholds = [steres > 0 ? `${formatDecimal(steres)} stères` : null, amount > 0 ? formatPrice(amount) : null].filter(Boolean).join(" et ");
+    onAdd({
+      label: label.trim() || `Livraison offerte dès ${thresholds}`,
+      minSteres: steres,
+      minSubtotal: amount,
+      zones,
+      categorySlugs,
+      cumulative,
+      active: true
+    });
+    setLabel("");
+    setCategorySlugs([]);
+  }
+
+  function describeRule(rule) {
+    const parts = [];
+    if (rule.minSteres > 0) parts.push(`dès ${formatDecimal(rule.minSteres)} stères`);
+    if (rule.minSubtotal > 0) parts.push(`dès ${formatPrice(rule.minSubtotal)} TTC`);
+    parts.push(rule.zones.map((zone) => freeShippingZoneLabels[zone] || zone).join(" + "));
+    parts.push(rule.categorySlugs?.length
+      ? rule.categorySlugs.map((slug) => categories.find((category) => category.slug === slug)?.label || slug).join(", ")
+      : "Toutes catégories");
+    parts.push(rule.cumulative ? "cumulable" : "non cumulable");
+    return parts.join(" · ");
+  }
+
+  const chipStyle = (checked) => ({
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    fontSize: 13,
+    color: "#2C241D",
+    border: `1px solid ${checked ? "#2C241D" : "rgba(35,41,31,.15)"}`,
+    background: checked ? "#2C241D0d" : "#FBFAF5",
+    borderRadius: 999,
+    padding: "6px 12px",
+    cursor: "pointer"
+  });
+
+  return (
+    <div style={{ display: "grid", gap: 12, alignContent: "start" }}>
+      <span style={{ ...mono, fontSize: 10.5, letterSpacing: ".08em", color: "#8A9180" }}>LIVRAISON OFFERTE</span>
+      <span style={{ fontSize: 14, color: "#6B7263" }}>Ex: "Livraison offerte dès 5 stères en zone locale". Le seuil en stères ne compte que le bois de chauffage ; les produits exclus des offres ne comptent pas. Sans promo active, la livraison est toujours payante.</span>
+      <div style={{ display: "grid", gap: 10 }}>
+        {rules.length === 0 ? <span style={{ ...mono, fontSize: 10.5, color: "#8A9180" }}>Aucune promo livraison configurée.</span> : null}
+        {rules.map((rule) => (
+          <div key={rule.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: "#FBFAF5", border: "1px solid rgba(35,41,31,.08)", borderRadius: 16, padding: "12px 14px" }}>
+            <span style={{ display: "grid", gap: 2 }}>
+              <strong style={{ ...sans, fontWeight: 600, fontSize: 15, color: "#2C241D" }}>{rule.label}</strong>
+              <span style={{ ...mono, fontSize: 10, color: "#8A9180" }}>{describeRule(rule)}</span>
+            </span>
+            <button type="button" className="lbb-btn lbb-btn-small lbb-btn-secondary" onClick={() => onRemove(rule.id)}>Retirer</button>
+          </div>
+        ))}
+      </div>
+      <div className="lbb-two-col" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }}>
+        <input value={label} onChange={(event) => setLabel(event.target.value)} placeholder="Libellé (ex: Livraison offerte dès 5 stères)" className="lbb-admin-input" />
+        <label style={{ display: "grid", gap: 4 }}>
+          <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#8A9180" }}>MINIMUM STÈRES (0 = aucun)</span>
+          <input value={minSteres} onChange={(event) => setMinSteres(event.target.value)} type="number" min="0" step="0.5" className="lbb-admin-input" />
+        </label>
+        <label style={{ display: "grid", gap: 4 }}>
+          <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#8A9180" }}>MINIMUM D'ACHAT TTC (0 = aucun)</span>
+          <input value={minSubtotal} onChange={(event) => setMinSubtotal(event.target.value)} type="number" min="0" step="1" className="lbb-admin-input" />
+        </label>
+      </div>
+      <div style={{ display: "grid", gap: 8 }}>
+        <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#8A9180" }}>ZONES CONCERNÉES</span>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {FREE_SHIPPING_ZONES.map((zone) => (
+            <label key={zone} style={chipStyle(zones.includes(zone))}>
+              <input type="checkbox" checked={zones.includes(zone)} onChange={() => toggleValue(setZones, zone)} style={{ margin: 0 }} />
+              {freeShippingZoneLabels[zone]}
+            </label>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: "grid", gap: 8 }}>
+        <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#8A9180" }}>CATÉGORIES PRISES EN COMPTE (aucune sélection = toutes catégories)</span>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {categories.map((category) => (
+            <label key={category.id} style={chipStyle(categorySlugs.includes(category.slug))}>
+              <input type="checkbox" checked={categorySlugs.includes(category.slug)} onChange={() => toggleValue(setCategorySlugs, category.slug)} style={{ margin: 0 }} />
+              {category.label}
+            </label>
+          ))}
+        </div>
+      </div>
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "#2C241D" }}>
+        <input type="checkbox" checked={cumulative} onChange={(event) => setCumulative(event.target.checked)} />
+        Cumulable avec les remises achetés/offerts et les codes promo
+      </label>
+      <button type="button" className="lbb-btn lbb-btn-primary" style={{ width: "fit-content" }} onClick={handleAdd}>Ajouter la promo livraison</button>
+    </div>
+  );
+}
+
 function AdminPromoCodeEditor({ codes, onAdd, onRemove }) {
   const [code, setCode] = useState("");
   const [type, setType] = useState("percent");
@@ -4653,6 +4781,7 @@ function AdminSettings({ session, profile, settings, categories, products, custo
   const [heroProofTertiaryText, setHeroProofTertiaryText] = useState(productSettings.heroProof.tertiaryText);
   const [volumeDiscounts, setVolumeDiscounts] = useState(productSettings.promotions.volumeDiscounts);
   const [promoCodes, setPromoCodes] = useState(productSettings.promotions.promoCodes);
+  const [freeShippingRules, setFreeShippingRules] = useState(productSettings.promotions.freeShippingRules);
   const [lengthDraft, setLengthDraft] = useState("");
   const [dryingDraft, setDryingDraft] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -4671,6 +4800,7 @@ function AdminSettings({ session, profile, settings, categories, products, custo
     setHeroProofTertiaryText(productSettings.heroProof.tertiaryText);
     setVolumeDiscounts(productSettings.promotions.volumeDiscounts);
     setPromoCodes(productSettings.promotions.promoCodes);
+    setFreeShippingRules(productSettings.promotions.freeShippingRules);
     setLengthDraft("");
     setDryingDraft("");
   }, [productSettings, profile]);
@@ -4686,10 +4816,10 @@ function AdminSettings({ session, profile, settings, categories, products, custo
     setter((current) => current.length <= 1 && !allowEmpty ? current : current.filter((item) => item !== value));
   }
 
-  async function savePromotions(nextVolumeDiscounts, nextPromoCodes) {
+  async function savePromotions(nextVolumeDiscounts, nextPromoCodes, nextFreeShippingRules = freeShippingRules) {
     setFeedback("");
     try {
-      await onUpdateSettings({ promotions: { volumeDiscounts: nextVolumeDiscounts, promoCodes: nextPromoCodes } });
+      await onUpdateSettings({ promotions: { volumeDiscounts: nextVolumeDiscounts, promoCodes: nextPromoCodes, freeShippingRules: nextFreeShippingRules } });
       setFeedback("Promotions enregistrees.");
     } catch (updateError) {
       setFeedback(updateError.message);
@@ -4720,6 +4850,18 @@ function AdminSettings({ session, profile, settings, categories, products, custo
     savePromotions(volumeDiscounts, next);
   }
 
+  function addFreeShippingRule(rule) {
+    const next = [...freeShippingRules, { id: `ship_${Date.now().toString(36)}`, ...rule }];
+    setFreeShippingRules(next);
+    savePromotions(volumeDiscounts, promoCodes, next);
+  }
+
+  function removeFreeShippingRule(id) {
+    const next = freeShippingRules.filter((rule) => rule.id !== id);
+    setFreeShippingRules(next);
+    savePromotions(volumeDiscounts, promoCodes, next);
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setFeedback("");
@@ -4747,7 +4889,8 @@ function AdminSettings({ session, profile, settings, categories, products, custo
         },
         promotions: {
           volumeDiscounts,
-          promoCodes
+          promoCodes,
+          freeShippingRules
         }
       });
       setFeedback("Nom admin, bandeaux, textes accueil et promotions enregistres.");
@@ -4809,6 +4952,7 @@ function AdminSettings({ session, profile, settings, categories, products, custo
         </div>
         <AdminVolumeDiscountEditor categories={categories} rules={volumeDiscounts} onAdd={addVolumeDiscount} onRemove={removeVolumeDiscount} />
         <AdminPromoCodeEditor codes={promoCodes} onAdd={addPromoCode} onRemove={removePromoCode} />
+        <AdminFreeShippingEditor categories={categories} rules={freeShippingRules} onAdd={addFreeShippingRule} onRemove={removeFreeShippingRule} />
         <div style={{ display: "grid", gap: 6 }}>
           <span style={{ ...mono, fontSize: 10, letterSpacing: ".08em", color: "#8A9180" }}>BANDEAU PROMOTIONNEL</span>
           <strong style={{ ...sans, fontWeight: 700, fontSize: 24, letterSpacing: "-.03em", color: "#2C241D" }}>Sur-header du site public</strong>

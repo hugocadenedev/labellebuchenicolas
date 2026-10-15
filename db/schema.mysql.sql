@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS products (
   unit_label VARCHAR(100) NULL,
   sell_unit VARCHAR(10) NOT NULL DEFAULT 'stere',
   vat_rate DECIMAL(5,2) NOT NULL DEFAULT 10.00,
+  exclude_from_promotions TINYINT(1) NOT NULL DEFAULT 0,
   badge VARCHAR(100) NULL,
   badge_tone VARCHAR(50) NULL,
   rating_label VARCHAR(50) NULL,
@@ -107,6 +108,9 @@ CREATE TABLE IF NOT EXISTS products (
 
 -- Ajout retroactif pour les bases deja migrees avant l'introduction du taux de TVA par produit (10% par defaut, 20% pour certains produits).
 ALTER TABLE products ADD COLUMN IF NOT EXISTS vat_rate DECIMAL(5,2) NOT NULL DEFAULT 10.00;
+
+-- Ajout retroactif du drapeau "exclu des offres" (remises achete/offert et codes promo).
+ALTER TABLE products ADD COLUMN IF NOT EXISTS exclude_from_promotions TINYINT(1) NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS product_categories (
   product_id BIGINT UNSIGNED NOT NULL,

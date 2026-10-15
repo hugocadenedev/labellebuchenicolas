@@ -2,7 +2,7 @@ import Stripe from "stripe";
 import { appConfig, isStripeEnabled, isStripeWebhookEnabled } from "./config.js";
 import { createOrder, getSettings, listProducts } from "./dataStore.js";
 import { computeShipping } from "../shared/deliveryZones.js";
-import { computeVolumeDiscount, validatePromoCode, getSterEquivalentQuantity } from "../shared/promotions.js";
+import { computeVolumeDiscount, validatePromoCode, getPromoEligibleSubtotal, getSterEquivalentQuantity } from "../shared/promotions.js";
 import {
   clearPendingStripeCheckout,
   readPendingStripeCheckout,
@@ -129,20 +129,20 @@ export async function createStripeCheckoutSession(req, res, next) {
       ...item,
       price: Number(item.unitPrice || 0),
       sellUnit: productById.get(item.productId)?.sellUnit,
-      length: item.length || productById.get(item.productId)?.length
+      length: item.length || productById.get(item.productId)?.length,
+      excludeFromPromotions: productById.get(item.productId)?.excludeFromPromotions === true
     }));
-    const woodVolume = discountItems.filter((item) => item.category === "bois-de-chauffage").reduce((sum, item) => sum + getSterEquivalentQuantity(item), 0);
 
     const settings = await getSettings();
     const volumeDiscount = computeVolumeDiscount(discountItems, settings?.promotions?.volumeDiscounts);
-    const promoResult = validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes);
+    const promoResult = validatePromoCode(promoCode, subtotal, settings?.promotions?.promoCodes, getPromoEligibleSubtotal(discountItems));
     if (promoCode && !promoResult.valid) {
       return res.status(400).json({ message: promoResult.message || "Code promo invalide." });
     }
     const discountAmount = roundCurrency(volumeDiscount.amount + promoResult.amount);
-    // Une remise achete/offert ou un code promo exclut la livraison gratuite au volume.
+    // Une remise achete/offert ou un code promo n'autorise que les promos livraison offerte cumulables.
     const hasActiveOffer = volumeDiscount.amount > 0 || promoResult.amount > 0;
-    const shippingResult = computeShipping({ postcode: deliveryAddress?.postcode, woodVolume, hasActiveOffer });
+    const shippingResult = computeShipping({ postcode: deliveryAddress?.postcode, cartItems: discountItems, freeShippingRules: settings?.promotions?.freeShippingRules, hasActiveOffer });
     if (!pickupAtDepot && shippingResult.quoteRequired) {
       return res.status(400).json({ message: "Cette adresse est hors zone de livraison automatique. Contactez-nous pour établir un devis." });
     }

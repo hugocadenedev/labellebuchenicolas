@@ -1,3 +1,5 @@
+import { findFreeShippingRule } from "./promotions.js";
+
 // Estimation de zone de livraison par departement (sans API de geolocalisation externe).
 // Depot de reference: Montgaillard-Lauragais (31290).
 export const DEPOT_DEPARTMENT = "31";
@@ -9,9 +11,6 @@ const ZONE_RULES = {
   nearby: { amount: 66, label: "Livraison de 31 a 60 km" },
   far: { amount: null, label: "Hors zone (plus de 60 km) : livraison sur devis" }
 };
-
-// Offre livraison gratuite : uniquement en zone locale (<=30 km) a partir de 5 steres commandes.
-export const FREE_SHIPPING_MIN_STERES = 5;
 
 export function extractDepartment(postcode) {
   const digits = String(postcode || "").replace(/\D/g, "");
@@ -27,17 +26,26 @@ export function resolveDeliveryZone(postcode) {
 }
 
 // Sans code postal connu, on affiche une estimation locale par defaut (majorite des clients).
+// La livraison offerte vient uniquement des promos "livraison offerte" configurees en admin (freeShippingRules).
 // hasActiveOffer : une remise automatique (achete/offert) ou un code promo est appliquee sur la commande,
-// auquel cas la livraison gratuite au volume n'est plus cumulable.
-export function computeShipping({ postcode, woodVolume = 0, hasActiveOffer = false }) {
+// auquel cas seules les promos livraison marquees "cumulables" s'appliquent.
+export function computeShipping({ postcode, cartItems = [], freeShippingRules = [], hasActiveOffer = false }) {
   const zone = resolveDeliveryZone(postcode);
-  const rule = ZONE_RULES[zone === "unknown" ? "local" : zone];
+  const effectiveZone = zone === "unknown" ? "local" : zone;
+  const rule = ZONE_RULES[effectiveZone];
 
   if (rule.amount == null) {
     return { zone, amount: 0, quoteRequired: true, label: rule.label };
   }
 
-  const freeShipping = !hasActiveOffer && zone !== "far" && (zone === "local" || zone === "unknown") && Number(woodVolume) >= FREE_SHIPPING_MIN_STERES;
-  const amount = freeShipping ? 0 : rule.amount;
-  return { zone, amount, quoteRequired: false, label: rule.label, freeShipping };
+  const freeShippingRule = findFreeShippingRule(cartItems, freeShippingRules, { zone: effectiveZone, hasOtherOffer: hasActiveOffer });
+  const freeShipping = Boolean(freeShippingRule);
+  return {
+    zone,
+    amount: freeShipping ? 0 : rule.amount,
+    quoteRequired: false,
+    label: rule.label,
+    freeShipping,
+    freeShippingLabel: freeShippingRule?.label || ""
+  };
 }
